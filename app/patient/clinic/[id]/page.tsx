@@ -176,7 +176,25 @@ export default function ClinicPage() {
     if (!profile) return;
 
     const slot = slots.find(s => s.id === slotId);
-    if (!slot) return;
+    if (!slot || !slot.is_available) {
+      alert("This slot is no longer available. Please select another slot.");
+      loadClinicData(); // Reload to refresh slot availability
+      return;
+    }
+
+    // Double-check slot is not booked
+    const { data: existingAppointment } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("slot_id", slotId)
+      .eq("status", "scheduled")
+      .single();
+
+    if (existingAppointment) {
+      alert("This slot has already been booked. Please select another slot.");
+      loadClinicData();
+      return;
+    }
 
     try {
       // Create appointment
@@ -206,7 +224,8 @@ export default function ClinicPage() {
       loadClinicData(); // Reload to update slot availability
     } catch (error) {
       console.error("Error booking appointment:", error);
-      alert("Failed to book appointment. Please try again.");
+      alert("Failed to book appointment. This slot may have been booked by someone else. Please try another slot.");
+      loadClinicData();
     }
   };
 
