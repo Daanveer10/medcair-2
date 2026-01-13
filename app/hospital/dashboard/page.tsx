@@ -233,66 +233,27 @@ export default function HospitalDashboard() {
 
     setCreating(true);
     try {
-      // Find or create patient profile
-      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(patientEmail);
-      let patientProfileId: string;
-
-      if (existingUser?.user) {
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("id")
-          .eq("user_id", existingUser.user.id)
-          .single();
-        patientProfileId = profile?.id || "";
-      } else {
-        // For demo: create a temporary patient profile
-        // In production, you'd want to handle this differently
-        alert("Patient email not found. Please ask patient to sign up first.");
-        setCreating(false);
-        return;
-      }
-
-      if (!patientProfileId) {
-        alert("Could not find patient profile.");
-        setCreating(false);
-        return;
-      }
-
-      const slot = slots.find(s => s.id === selectedSlot);
-      if (!slot) return;
-
-      // Create appointment
-      const { error } = await supabase
-        .from("appointments")
-        .insert({
-          patient_id: patientProfileId,
-          clinic_id: slot.clinic_id,
-          doctor_id: slot.doctor_id,
-          slot_id: slot.id,
-          appointment_date: slot.date,
-          appointment_time: slot.start_time,
-          status: "scheduled",
-        });
-
-      if (error) throw error;
-
-      // Mark slot as unavailable
-      await supabase
-        .from("appointment_slots")
-        .update({ is_available: false })
-        .eq("id", slot.id);
-
-      // Reset form
+      // Find patient profile by looking up user by email in auth.users
+      // Note: This requires the patient to already have an account
+      // First, try to get user email from auth (we'll use a workaround)
+      // Since we can't access admin API from client, we'll search user_profiles
+      // by checking if we can find the user through a different method
+      
+      // Alternative: Search in a way that works with RLS
+      // Actually, hospitals can't query all user_profiles due to RLS
+      // So we'll simplify: require patient to book themselves, or
+      // Show a message that this feature requires patient registration
+      
+      alert("Note: Patient appointment booking is best done by patients themselves through the patient portal. For now, please direct patients to sign up and book through their dashboard. Alternatively, you can manage appointment slots in Settings.");
+      setCreating(false);
       setShowCreateModal(false);
-      setSelectedClinic("");
-      setSelectedDoctor("");
-      setSelectedSlot("");
-      setPatientName("");
-      setPatientEmail("");
+      return;
 
-      // Reload appointments
-      loadAppointments();
-      alert("Appointment created successfully!");
+      // TODO: For production, create a server-side API route that can:
+      // 1. Accept patient email/name
+      // 2. Use admin API to find/create user
+      // 3. Create appointment
+      // This requires server-side code with service role key
     } catch (error: any) {
       console.error("Error creating appointment:", error);
       alert(`Error: ${error.message || "Failed to create appointment"}`);
@@ -566,128 +527,40 @@ export default function HospitalDashboard() {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <form onSubmit={handleCreateAppointment} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="patientName" className="text-sm font-bold">Patient Name *</Label>
-                    <Input
-                      id="patientName"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      required
-                      className="h-11 border-2 border-pink-200 focus:border-pink-500"
-                      placeholder="Enter patient full name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="patientEmail" className="text-sm font-bold">Patient Email *</Label>
-                    <Input
-                      id="patientEmail"
-                      type="email"
-                      value={patientEmail}
-                      onChange={(e) => setPatientEmail(e.target.value)}
-                      required
-                      className="h-11 border-2 border-pink-200 focus:border-pink-500"
-                      placeholder="patient@example.com"
-                    />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-bold text-blue-900 mb-1">Note: Patient Booking</p>
+                    <p className="text-sm text-blue-800">
+                      Patients can book appointments directly through the patient portal. 
+                      To manage appointment slots, go to Settings to create and manage available time slots.
+                    </p>
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="clinic" className="text-sm font-bold">Select Clinic *</Label>
-                  <select
-                    id="clinic"
-                    value={selectedClinic}
-                    onChange={(e) => {
-                      setSelectedClinic(e.target.value);
-                      setSelectedDoctor("");
-                      setSelectedSlot("");
-                    }}
-                    required
-                    className="w-full h-11 px-3 border-2 border-blue-200 rounded-md focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="">Choose a clinic...</option>
-                    {clinics.map((clinic) => (
-                      <option key={clinic.id} value={clinic.id}>
-                        {clinic.name} - {clinic.department}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedClinic && (
-                  <div className="space-y-2">
-                    <Label htmlFor="doctor" className="text-sm font-bold">Select Doctor *</Label>
-                    <select
-                      id="doctor"
-                      value={selectedDoctor}
-                      onChange={(e) => {
-                        setSelectedDoctor(e.target.value);
-                        setSelectedSlot("");
-                      }}
-                      required
-                      className="w-full h-11 px-3 border-2 border-blue-200 rounded-md focus:border-blue-500 focus:outline-none"
-                    >
-                      <option value="">Choose a doctor...</option>
-                      {doctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          {doctor.name} - {doctor.specialization}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {selectedDoctor && (
-                  <div className="space-y-2">
-                    <Label htmlFor="slot" className="text-sm font-bold">Select Time Slot *</Label>
-                    <select
-                      id="slot"
-                      value={selectedSlot}
-                      onChange={(e) => setSelectedSlot(e.target.value)}
-                      required
-                      className="w-full h-11 px-3 border-2 border-green-200 rounded-md focus:border-green-500 focus:outline-none"
-                    >
-                      <option value="">Choose a time slot...</option>
-                      {slots
-                        .filter(slot => slot.doctor_id === selectedDoctor)
-                        .map((slot) => (
-                          <option key={slot.id} value={slot.id}>
-                            {new Date(slot.date).toLocaleDateString()} - {slot.start_time} to {slot.end_time}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-4">
+              </div>
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">To enable direct appointment creation by hospitals,</p>
+                <p className="text-sm text-gray-500 mb-6">this feature requires server-side implementation with admin API access.</p>
+                <div className="flex gap-3 justify-center">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setShowCreateModal(false)}
-                    className="flex-1 border-2"
+                    className="border-2"
                   >
-                    Cancel
+                    Close
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={creating || !selectedSlot}
-                    className="flex-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white hover:opacity-90 font-bold shadow-lg"
-                  >
-                    {creating ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Create Appointment
-                      </>
-                    )}
-                  </Button>
+                  <Link href="/hospital/settings">
+                    <Button
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 font-bold shadow-lg"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Go to Settings
+                    </Button>
+                  </Link>
                 </div>
-              </form>
+              </div>
             </CardContent>
           </Card>
         </div>
