@@ -3,14 +3,10 @@
 -- 
 -- IMPORTANT: Before running this script:
 -- 1. Create at least one hospital user account (sign up as "hospital" role)
--- 2. Get the user_id from auth.users table
--- 3. Replace the user_id references below, OR
--- 4. The script will try to find a user with 'hospital' in their email
+-- 2. The script will automatically find the hospital user
+-- 3. If no hospital user exists, create one first
 
 -- Step 1: Create demo hospitals
--- If you have a hospital user, replace the SELECT below with the actual user_id
--- Example: '00000000-0000-0000-0000-000000000000'::uuid
-
 DO $$
 DECLARE
   hospital_user_id UUID;
@@ -24,7 +20,7 @@ BEGIN
   
   -- If no hospital user found, you'll need to create one first
   IF hospital_user_id IS NULL THEN
-    RAISE NOTICE 'No hospital user found. Please create a hospital account first, then update the user_id in this script.';
+    RAISE NOTICE 'No hospital user found. Please create a hospital account first, then run this script again.';
     RETURN;
   END IF;
   
@@ -69,11 +65,7 @@ BEGIN
   RAISE NOTICE 'Hospitals created successfully';
 END $$;
 
--- Step 2: Get hospital IDs (adjust based on your actual hospital IDs)
--- You can check with: SELECT id, name FROM hospitals;
-
--- Step 3: Insert demo clinics
--- Replace hospital_id values with actual IDs from your hospitals table
+-- Step 2: Insert demo clinics
 INSERT INTO clinics (hospital_id, name, department, specialties, description)
 SELECT 
   h.id,
@@ -97,7 +89,7 @@ CROSS JOIN (VALUES
 WHERE h.name IN ('City General Hospital', 'Metro Health Center', 'Regional Medical Institute')
 ON CONFLICT DO NOTHING;
 
--- Step 4: Insert demo doctors
+-- Step 3: Insert demo doctors (matching by department)
 INSERT INTO doctors (clinic_id, name, specialization, email, phone)
 SELECT 
   c.id,
@@ -106,42 +98,30 @@ SELECT
   doctor_data.email,
   doctor_data.phone
 FROM clinics c
-CROSS JOIN (VALUES
-  ('Dr. Sarah Johnson', 'Cardiologist', 'sarah.johnson@hospital.com', '+1-555-1001'),
-  ('Dr. Michael Chen', 'Neurologist', 'michael.chen@hospital.com', '+1-555-1002'),
-  ('Dr. Emily Rodriguez', 'Orthopedic Surgeon', 'emily.rodriguez@hospital.com', '+1-555-1003'),
-  ('Dr. James Wilson', 'Pediatrician', 'james.wilson@hospital.com', '+1-555-1004'),
-  ('Dr. Lisa Anderson', 'Dermatologist', 'lisa.anderson@hospital.com', '+1-555-1005'),
-  ('Dr. Robert Taylor', 'Oncologist', 'robert.taylor@hospital.com', '+1-555-1006'),
-  ('Dr. Maria Garcia', 'Endocrinologist', 'maria.garcia@hospital.com', '+1-555-1007'),
-  ('Dr. David Brown', 'Gastroenterologist', 'david.brown@hospital.com', '+1-555-1008'),
-  ('Dr. Jennifer Lee', 'Pulmonologist', 'jennifer.lee@hospital.com', '+1-555-1009'),
-  ('Dr. Christopher Martinez', 'Rheumatologist', 'christopher.martinez@hospital.com', '+1-555-1010')
-) AS doctor_data(name, specialization, email, phone)
-WHERE c.department = 
-  CASE doctor_data.specialization
-    WHEN 'Cardiologist' THEN 'Cardiology'
-    WHEN 'Neurologist' THEN 'Neurology'
-    WHEN 'Orthopedic Surgeon' THEN 'Orthopedics'
-    WHEN 'Pediatrician' THEN 'Pediatrics'
-    WHEN 'Dermatologist' THEN 'Dermatology'
-    WHEN 'Oncologist' THEN 'Oncology'
-    WHEN 'Endocrinologist' THEN 'Endocrinology'
-    WHEN 'Gastroenterologist' THEN 'Gastroenterology'
-    WHEN 'Pulmonologist' THEN 'Pulmonology'
-    WHEN 'Rheumatologist' THEN 'Rheumatology'
-  END
+INNER JOIN (VALUES
+  ('Dr. Sarah Johnson', 'Cardiologist', 'sarah.johnson@hospital.com', '+1-555-1001', 'Cardiology'),
+  ('Dr. Michael Chen', 'Neurologist', 'michael.chen@hospital.com', '+1-555-1002', 'Neurology'),
+  ('Dr. Emily Rodriguez', 'Orthopedic Surgeon', 'emily.rodriguez@hospital.com', '+1-555-1003', 'Orthopedics'),
+  ('Dr. James Wilson', 'Pediatrician', 'james.wilson@hospital.com', '+1-555-1004', 'Pediatrics'),
+  ('Dr. Lisa Anderson', 'Dermatologist', 'lisa.anderson@hospital.com', '+1-555-1005', 'Dermatology'),
+  ('Dr. Robert Taylor', 'Oncologist', 'robert.taylor@hospital.com', '+1-555-1006', 'Oncology'),
+  ('Dr. Maria Garcia', 'Endocrinologist', 'maria.garcia@hospital.com', '+1-555-1007', 'Endocrinology'),
+  ('Dr. David Brown', 'Gastroenterologist', 'david.brown@hospital.com', '+1-555-1008', 'Gastroenterology'),
+  ('Dr. Jennifer Lee', 'Pulmonologist', 'jennifer.lee@hospital.com', '+1-555-1009', 'Pulmonology'),
+  ('Dr. Christopher Martinez', 'Rheumatologist', 'christopher.martinez@hospital.com', '+1-555-1010', 'Rheumatology')
+) AS doctor_data(name, specialization, email, phone, department)
+ON c.department = doctor_data.department
 ON CONFLICT DO NOTHING;
 
--- Step 5: Create demo appointment slots for the next 7 days
+-- Step 4: Create demo appointment slots for the next 7 days
 -- This creates slots for each doctor, every day for the next week
 INSERT INTO appointment_slots (clinic_id, doctor_id, date, start_time, end_time, is_available)
 SELECT 
   c.id,
   d.id,
   date_slot.date,
-  time_slot.start_time,
-  time_slot.end_time,
+  time_slot.start_time::TIME,
+  time_slot.end_time::TIME,
   true
 FROM clinics c
 INNER JOIN doctors d ON d.clinic_id = c.id
@@ -150,16 +130,16 @@ CROSS JOIN (
   FROM generate_series(0, 6) n
 ) date_slot
 CROSS JOIN (VALUES
-  ('09:00:00', '09:30:00'),
-  ('09:30:00', '10:00:00'),
-  ('10:00:00', '10:30:00'),
-  ('10:30:00', '11:00:00'),
-  ('11:00:00', '11:30:00'),
-  ('14:00:00', '14:30:00'),
-  ('14:30:00', '15:00:00'),
-  ('15:00:00', '15:30:00'),
-  ('15:30:00', '16:00:00'),
-  ('16:00:00', '16:30:00')
+  ('09:00:00'::TEXT, '09:30:00'::TEXT),
+  ('09:30:00'::TEXT, '10:00:00'::TEXT),
+  ('10:00:00'::TEXT, '10:30:00'::TEXT),
+  ('10:30:00'::TEXT, '11:00:00'::TEXT),
+  ('11:00:00'::TEXT, '11:30:00'::TEXT),
+  ('14:00:00'::TEXT, '14:30:00'::TEXT),
+  ('14:30:00'::TEXT, '15:00:00'::TEXT),
+  ('15:00:00'::TEXT, '15:30:00'::TEXT),
+  ('15:30:00'::TEXT, '16:00:00'::TEXT),
+  ('16:00:00'::TEXT, '16:30:00'::TEXT)
 ) AS time_slot(start_time, end_time)
 WHERE c.name IN (
   SELECT name FROM (VALUES
