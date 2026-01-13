@@ -1,50 +1,73 @@
 -- Add Demo Clinics and Hospitals
 -- Run this in your Supabase SQL Editor to populate demo data
+-- 
+-- IMPORTANT: Before running this script:
+-- 1. Create at least one hospital user account (sign up as "hospital" role)
+-- 2. Get the user_id from auth.users table
+-- 3. Replace the user_id references below, OR
+-- 4. The script will try to find a user with 'hospital' in their email
 
--- Step 1: Create demo hospitals (if they don't exist)
--- Note: Replace 'YOUR_USER_ID' with an actual hospital user_id from auth.users
--- Or create a test hospital user first
+-- Step 1: Create demo hospitals
+-- If you have a hospital user, replace the SELECT below with the actual user_id
+-- Example: '00000000-0000-0000-0000-000000000000'::uuid
 
--- First, let's create a demo hospital user (you'll need to sign up as hospital first, then use that user_id)
--- For now, we'll use a placeholder - replace with actual user_id
-
--- Insert demo hospitals
-INSERT INTO hospitals (user_id, name, address, city, state, zip_code, phone, email, description)
-VALUES
-  (
-    (SELECT id FROM auth.users WHERE email LIKE '%hospital%' LIMIT 1), -- Replace with actual hospital user_id
-    'City General Hospital',
-    '123 Medical Center Drive',
-    'New York',
-    'NY',
-    '10001',
-    '+1-555-0101',
-    'info@citygeneral.com',
-    'A leading healthcare facility providing comprehensive medical services'
-  ),
-  (
-    (SELECT id FROM auth.users WHERE email LIKE '%hospital%' LIMIT 1),
-    'Metro Health Center',
-    '456 Healthcare Boulevard',
-    'Los Angeles',
-    'CA',
-    '90001',
-    '+1-555-0102',
-    'contact@metrohealth.com',
-    'State-of-the-art medical center serving the community'
-  ),
-  (
-    (SELECT id FROM auth.users WHERE email LIKE '%hospital%' LIMIT 1),
-    'Regional Medical Institute',
-    '789 Wellness Avenue',
-    'Chicago',
-    'IL',
-    '60601',
-    '+1-555-0103',
-    'info@regionalmed.com',
-    'Comprehensive healthcare services with expert medical professionals'
-  )
-ON CONFLICT DO NOTHING;
+DO $$
+DECLARE
+  hospital_user_id UUID;
+BEGIN
+  -- Try to find a hospital user
+  SELECT id INTO hospital_user_id
+  FROM auth.users u
+  JOIN user_profiles p ON p.user_id = u.id
+  WHERE p.role = 'hospital'
+  LIMIT 1;
+  
+  -- If no hospital user found, you'll need to create one first
+  IF hospital_user_id IS NULL THEN
+    RAISE NOTICE 'No hospital user found. Please create a hospital account first, then update the user_id in this script.';
+    RETURN;
+  END IF;
+  
+  -- Insert demo hospitals
+  INSERT INTO hospitals (user_id, name, address, city, state, zip_code, phone, email, description)
+  VALUES
+    (
+      hospital_user_id,
+      'City General Hospital',
+      '123 Medical Center Drive',
+      'New York',
+      'NY',
+      '10001',
+      '+1-555-0101',
+      'info@citygeneral.com',
+      'A leading healthcare facility providing comprehensive medical services'
+    ),
+    (
+      hospital_user_id,
+      'Metro Health Center',
+      '456 Healthcare Boulevard',
+      'Los Angeles',
+      'CA',
+      '90001',
+      '+1-555-0102',
+      'contact@metrohealth.com',
+      'State-of-the-art medical center serving the community'
+    ),
+    (
+      hospital_user_id,
+      'Regional Medical Institute',
+      '789 Wellness Avenue',
+      'Chicago',
+      'IL',
+      '60601',
+      '+1-555-0103',
+      'info@regionalmed.com',
+      'Comprehensive healthcare services with expert medical professionals'
+    )
+  ON CONFLICT DO NOTHING;
+  
+  RAISE NOTICE 'Hospitals created successfully';
+END $$;
 
 -- Step 2: Get hospital IDs (adjust based on your actual hospital IDs)
 -- You can check with: SELECT id, name FROM hospitals;
@@ -121,7 +144,7 @@ SELECT
   time_slot.end_time,
   true
 FROM clinics c
-CROSS JOIN doctors d ON d.clinic_id = c.id
+INNER JOIN doctors d ON d.clinic_id = c.id
 CROSS JOIN (
   SELECT CURRENT_DATE + (n || ' days')::interval as date
   FROM generate_series(0, 6) n
