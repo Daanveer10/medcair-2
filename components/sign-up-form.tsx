@@ -56,17 +56,9 @@ export function SignUpForm({
       });
       if (signUpError) throw signUpError;
       
-      // Create user profile
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from("user_profiles")
-          .insert({
-            user_id: data.user.id,
-            role: userRole,
-            full_name: fullName,
-          });
-        if (profileError) throw profileError;
-      }
+      // Profile will be automatically created by database trigger
+      // The trigger reads role and full_name from raw_user_meta_data
+      // No need to manually create profile here
       
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
