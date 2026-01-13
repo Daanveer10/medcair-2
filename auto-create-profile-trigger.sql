@@ -25,7 +25,9 @@ CREATE TRIGGER on_auth_user_created
 
 -- Step 3: Still need the INSERT policy (but trigger will handle it)
 -- This policy allows the trigger to work
-CREATE POLICY IF NOT EXISTS "Users can insert their own profile"
+-- Drop policy if it exists, then create it
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+CREATE POLICY "Users can insert their own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 

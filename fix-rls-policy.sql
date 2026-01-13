@@ -2,7 +2,9 @@
 -- Run this in your Supabase SQL Editor if you've already created the tables
 
 -- Option 1: Simple fix - just add the INSERT policy
-CREATE POLICY IF NOT EXISTS "Users can insert their own profile"
+-- Drop policy if it exists first (PostgreSQL doesn't support IF NOT EXISTS for policies)
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+CREATE POLICY "Users can insert their own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
