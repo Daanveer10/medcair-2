@@ -16,7 +16,7 @@ DECLARE
   hospital_user_id UUID;
 BEGIN
   -- Try to find a hospital user
-  SELECT id INTO hospital_user_id
+  SELECT u.id INTO hospital_user_id
   FROM auth.users u
   JOIN user_profiles p ON p.user_id = u.id
   WHERE p.role = 'hospital'
