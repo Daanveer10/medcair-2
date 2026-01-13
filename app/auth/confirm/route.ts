@@ -9,21 +9,43 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = searchParams.get("next") ?? "/";
 
-  if (token_hash && type) {
-    const supabase = await createClient();
+    if (token_hash && type) {
+      const supabase = await createClient();
 
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (!error) {
-      // redirect user to specified redirect URL or root of app
-      redirect(next);
-    } else {
-      // redirect the user to an error page with some instructions
-      redirect(`/auth/error?error=${error?.message}`);
+      const { error } = await supabase.auth.verifyOtp({
+        type,
+        token_hash,
+      });
+      if (!error) {
+        // After email confirmation, ensure profile exists
+        // Trigger should have created it, but verify and create if needed
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("user_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+          
+          // If profile doesn't exist (trigger failed), create it from metadata
+          if (!profile && user.user_metadata) {
+            await supabase
+              .from("user_profiles")
+              .insert({
+                user_id: user.id,
+                role: user.user_metadata.role || 'patient',
+                full_name: user.user_metadata.full_name || 'User',
+              });
+          }
+        }
+        
+        // redirect user to specified redirect URL or root of app
+        redirect(next);
+      } else {
+        // redirect the user to an error page with some instructions
+        redirect(`/auth/error?error=${error?.message}`);
+      }
     }
-  }
 
   // redirect the user to an error page with some instructions
   redirect(`/auth/error?error=No token hash or type`);

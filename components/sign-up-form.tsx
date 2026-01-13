@@ -58,34 +58,8 @@ export function SignUpForm({
       
       // Profile will be automatically created by database trigger
       // The trigger reads role and full_name from raw_user_meta_data
-      // Fallback: Try to create profile manually if trigger didn't work
-      if (data.user) {
-        // Wait a moment for trigger to fire
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Check if profile exists, if not create it manually
-        const { data: existingProfile } = await supabase
-          .from("user_profiles")
-          .select("id")
-          .eq("user_id", data.user.id)
-          .single();
-        
-        if (!existingProfile) {
-          // Fallback: Create profile manually if trigger didn't work
-          const { error: profileError } = await supabase
-            .from("user_profiles")
-            .insert({
-              user_id: data.user.id,
-              role: userRole,
-              full_name: fullName,
-            });
-          
-          if (profileError) {
-            console.error("Profile creation error:", profileError);
-            // Don't throw - user is created, profile can be created later
-          }
-        }
-      }
+      // It uses SECURITY DEFINER so it bypasses RLS and always works
+      // No need for manual fallback - trigger handles it at database level
       
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
