@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle, History, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 // Prevent static generation - requires authentication
@@ -45,10 +45,11 @@ export default function PatientAppointments() {
   const supabase = createClient();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPrevious, setShowPrevious] = useState(false);
 
   useEffect(() => {
     loadAppointments();
-  }, []);
+  }, [showPrevious]);
 
   const loadAppointments = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -66,7 +67,10 @@ export default function PatientAppointments() {
     if (!profile) return;
 
     try {
-      const { data, error } = await supabase
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let query = supabase
         .from("appointments")
         .select(`
           id,
@@ -87,9 +91,20 @@ export default function PatientAppointments() {
             specialization
           )
         `)
-        .eq("patient_id", profile.id)
-        .order("appointment_date", { ascending: false })
-        .order("appointment_time", { ascending: false });
+        .eq("patient_id", profile.id);
+
+      // Filter based on showPrevious state
+      if (showPrevious) {
+        // Show previous appointments (past dates or completed/cancelled)
+        query = query.or(`appointment_date.lt.${today.toISOString().split("T")[0]},status.eq.completed,status.eq.cancelled`);
+      } else {
+        // Show active appointments (future dates with scheduled status)
+        query = query.gte("appointment_date", today.toISOString().split("T")[0]).eq("status", "scheduled");
+      }
+
+      const { data, error } = await query
+        .order("appointment_date", showPrevious ? { ascending: false } : { ascending: true })
+        .order("appointment_time", showPrevious ? { ascending: false } : { ascending: true });
 
       if (error) throw error;
 
@@ -138,6 +153,16 @@ export default function PatientAppointments() {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
 
     try {
+      const appointment = appointments.find((a) => a.id === appointmentId);
+      if (!appointment) return;
+
+      // Get slot_id from appointment
+      const { data: appointmentData } = await supabase
+        .from("appointments")
+        .select("slot_id")
+        .eq("id", appointmentId)
+        .single();
+
       const { error } = await supabase
         .from("appointments")
         .update({ status: "cancelled" })
@@ -146,10 +171,11 @@ export default function PatientAppointments() {
       if (error) throw error;
 
       // Free up the slot
-      const appointment = appointments.find((a) => a.id === appointmentId);
-      if (appointment) {
-        // Note: In a real app, you'd need to get the slot_id from the appointment
-        // For now, we'll just update the appointment status
+      if (appointmentData?.slot_id) {
+        await supabase
+          .from("appointment_slots")
+          .update({ is_available: true })
+          .eq("id", appointmentData.slot_id);
       }
 
       alert("Appointment cancelled successfully!");
@@ -160,51 +186,112 @@ export default function PatientAppointments() {
     }
   };
 
+  const activeAppointments = appointments.filter(
+    apt => apt.status === "scheduled" && new Date(apt.appointment_date) >= new Date()
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-cyan-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link href="/patient/dashboard">
-          <Button variant="ghost" className="mb-6">
+          <Button variant="ghost" className="mb-6 hover:bg-pink-100">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>
         </Link>
 
-        <h2 className="text-3xl font-bold mb-8">My Appointments</h2>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <Sparkles className="h-8 w-8 text-pink-500" />
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-600 bg-clip-text text-transparent">
+              My Appointments
+            </h2>
+          </div>
+          
+          <div className="flex items-center gap-4 mt-4">
+            <Button
+              variant={!showPrevious ? "default" : "outline"}
+              onClick={() => setShowPrevious(false)}
+              className={!showPrevious ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white" : ""}
+            >
+              Active Appointments
+              {!showPrevious && activeAppointments.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">
+                  {activeAppointments.length}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant={showPrevious ? "default" : "outline"}
+              onClick={() => setShowPrevious(true)}
+              className={showPrevious ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+            >
+              <History className="h-4 w-4 mr-2" />
+              Previous Appointments
+            </Button>
+          </div>
+        </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading appointments...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent"></div>
+            <p className="text-gray-600 mt-4 font-medium">Loading appointments...</p>
           </div>
         ) : (
           <div className="space-y-4">
             {appointments.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-gray-500 text-center py-8">No appointments yet.</p>
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-pink-50 to-violet-50">
+                <CardContent className="pt-6 text-center py-12">
+                  <Calendar className="h-16 w-16 text-pink-400 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-gray-900 mb-2">
+                    {showPrevious ? "No previous appointments" : "No active appointments"}
+                  </p>
+                  <p className="text-gray-600 mb-4">
+                    {showPrevious 
+                      ? "You haven't had any previous appointments yet." 
+                      : "You don't have any upcoming appointments. Book one now!"}
+                  </p>
+                  {!showPrevious && (
+                    <Link href="/patient/dashboard">
+                      <Button className="bg-gradient-to-r from-pink-500 to-violet-500 text-white hover:opacity-90">
+                        Browse Clinics
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
             ) : (
               appointments.map((appointment) => (
-                <Card key={appointment.id}>
-                  <CardHeader>
+                <Card
+                  key={appointment.id}
+                  className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
+                >
+                  <div className={`absolute top-0 left-0 right-0 h-2 ${
+                    appointment.status === "scheduled" ? "bg-gradient-to-r from-blue-500 to-cyan-500" :
+                    appointment.status === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
+                    appointment.status === "cancelled" ? "bg-gradient-to-r from-red-500 to-pink-500" :
+                    "bg-gradient-to-r from-gray-400 to-gray-500"
+                  }`}></div>
+                  <CardHeader className="pt-5">
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{appointment.clinic.name}</CardTitle>
-                        <CardDescription>{appointment.clinic.department}</CardDescription>
+                        <CardTitle className="text-xl mb-1 group-hover:text-pink-600 transition-colors">
+                          {appointment.clinic.name}
+                        </CardTitle>
+                        <CardDescription className="font-medium">{appointment.clinic.department}</CardDescription>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
                           appointment.status === "scheduled"
-                            ? "bg-blue-100 text-blue-700"
+                            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
                             : appointment.status === "completed"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
                             : appointment.status === "cancelled"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+                            : "bg-gray-400 text-white"
                         }`}
                       >
-                        {appointment.status}
+                        {appointment.status.toUpperCase()}
                       </span>
                     </div>
                   </CardHeader>
@@ -212,58 +299,80 @@ export default function PatientAppointments() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>
-                            {new Date(appointment.appointment_date).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </span>
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500">DATE</p>
+                            <span className="font-semibold text-gray-900">
+                              {new Date(appointment.appointment_date).toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          <span>{appointment.appointment_time}</span>
+                          <div className="p-2 bg-violet-100 rounded-lg">
+                            <Clock className="h-4 w-4 text-violet-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500">TIME</p>
+                            <span className="font-semibold text-gray-900">{appointment.appointment_time}</span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span>{appointment.doctor.name} - {appointment.doctor.specialization}</span>
+                          <div className="p-2 bg-pink-100 rounded-lg">
+                            <User className="h-4 w-4 text-pink-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500">DOCTOR</p>
+                            <span className="font-semibold text-gray-900">
+                              {appointment.doctor.name} - {appointment.doctor.specialization}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-gray-400" />
-                          <span>{appointment.hospital.name}</span>
-                          <span className="text-xs text-gray-500">({appointment.hospital.address})</span>
+                          <div className="p-2 bg-cyan-100 rounded-lg">
+                            <MapPin className="h-4 w-4 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500">LOCATION</p>
+                            <span className="font-semibold text-gray-900">{appointment.hospital.name}</span>
+                            <p className="text-xs text-gray-600">{appointment.hospital.address}</p>
+                          </div>
                         </div>
                       </div>
 
                       {appointment.reason && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-700 mb-1">Reason:</p>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm font-bold text-gray-700 mb-1">Reason:</p>
                           <p className="text-sm text-gray-600">{appointment.reason}</p>
                         </div>
                       )}
 
                       {appointment.follow_ups && appointment.follow_ups.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Follow-ups:</p>
+                          <p className="text-sm font-bold text-gray-700 mb-2">Follow-ups:</p>
                           <div className="space-y-2">
                             {appointment.follow_ups.map((followUp) => (
                               <div
                                 key={followUp.id}
-                                className="p-3 bg-gray-50 rounded-lg border"
+                                className="p-3 bg-gradient-to-r from-violet-50 to-pink-50 rounded-lg border border-violet-200"
                               >
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="text-sm font-medium">
+                                  <span className="text-sm font-semibold">
                                     {new Date(followUp.follow_up_date).toLocaleDateString()} at {followUp.follow_up_time}
                                   </span>
                                   <span
-                                    className={`px-2 py-1 rounded text-xs ${
+                                    className={`px-2 py-1 rounded text-xs font-bold ${
                                       followUp.status === "completed"
-                                        ? "bg-green-100 text-green-700"
+                                        ? "bg-green-500 text-white"
                                         : followUp.status === "pending"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-red-100 text-red-700"
+                                        ? "bg-yellow-500 text-white"
+                                        : "bg-red-500 text-white"
                                     }`}
                                   >
                                     {followUp.status}
@@ -278,11 +387,12 @@ export default function PatientAppointments() {
                         </div>
                       )}
 
-                      {appointment.status === "scheduled" && (
+                      {appointment.status === "scheduled" && !showPrevious && (
                         <Button
                           variant="destructive"
                           size="sm"
                           onClick={() => handleCancelAppointment(appointment.id)}
+                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90"
                         >
                           Cancel Appointment
                         </Button>

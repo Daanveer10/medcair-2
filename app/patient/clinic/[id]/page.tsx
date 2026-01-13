@@ -117,11 +117,25 @@ export default function ClinicPage() {
 
       if (slotsError) throw slotsError;
 
+      // Get all appointments for these slots to check which are booked
+      const slotIds = (slotsData || []).map(s => s.id);
+      const { data: appointmentsData } = await supabase
+        .from("appointments")
+        .select("slot_id, status")
+        .in("slot_id", slotIds)
+        .eq("status", "scheduled");
+
+      const bookedSlotIds = new Set(
+        (appointmentsData || []).map(apt => apt.slot_id)
+      );
+
       // Transform slots data - handle doctor relation (Supabase returns as array)
       const transformedSlots = (slotsData || []).map((slot: any) => {
         const doctorData = Array.isArray(slot.doctor) 
           ? slot.doctor[0] 
           : slot.doctor;
+        
+        const isBooked = bookedSlotIds.has(slot.id);
         
         return {
           id: slot.id,
@@ -129,7 +143,7 @@ export default function ClinicPage() {
           date: slot.date,
           start_time: slot.start_time,
           end_time: slot.end_time,
-          is_available: slot.is_available,
+          is_available: slot.is_available && !isBooked, // Slot is available only if not booked
           doctor: {
             id: doctorData?.id || "",
             name: doctorData?.name || "Unknown",
@@ -308,16 +322,16 @@ export default function ClinicPage() {
                         {dateSlots.map((slot) => (
                           <div
                             key={slot.id}
-                            className={`p-4 rounded-lg border-2 ${
+                            className={`p-4 rounded-lg border-2 transition-all ${
                               slot.is_available
-                                ? "border-green-200 bg-green-50 hover:bg-green-100"
-                                : "border-red-200 bg-red-50 opacity-60"
+                                ? "border-green-300 bg-green-50 hover:bg-green-100 hover:shadow-md"
+                                : "border-red-300 bg-red-100 opacity-80 cursor-not-allowed"
                             }`}
                           >
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-500" />
-                                <span className="font-medium">
+                                <Clock className={`h-4 w-4 ${slot.is_available ? "text-gray-600" : "text-red-600"}`} />
+                                <span className={`font-medium ${slot.is_available ? "text-gray-900" : "text-red-700"}`}>
                                   {slot.start_time} - {slot.end_time}
                                 </span>
                               </div>
@@ -328,21 +342,26 @@ export default function ClinicPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-2 mb-3">
-                              <User className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-600">
+                              <User className={`h-4 w-4 ${slot.is_available ? "text-gray-400" : "text-red-500"}`} />
+                              <span className={`text-sm ${slot.is_available ? "text-gray-600" : "text-red-600"}`}>
                                 {slot.doctor.name} - {slot.doctor.specialization}
                               </span>
                             </div>
                             {slot.is_available ? (
                               <Button
                                 size="sm"
-                                className="w-full"
+                                className="w-full bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 text-white"
                                 onClick={() => handleBookAppointment(slot.id)}
                               >
                                 Book Appointment
                               </Button>
                             ) : (
-                              <Button size="sm" variant="outline" className="w-full" disabled>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full border-red-300 text-red-700 bg-red-50 cursor-not-allowed" 
+                                disabled
+                              >
                                 Booked
                               </Button>
                             )}
