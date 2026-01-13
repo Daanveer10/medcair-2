@@ -21,7 +21,7 @@ export default function Home() {
                   <Stethoscope className="h-5 w-5 text-blue-600" />
                 </div>
                 <Link href={"/"} className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  MedCair AI
+                  medcAIr
                 </Link>
               </div>
             </div>
@@ -221,7 +221,7 @@ export default function Home() {
               <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">What Our Users Say</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                  { name: "Sarah Johnson", role: "Patient", text: "MedCair AI made finding and booking appointments so easy! No more waiting on hold.", rating: 5 },
+                  { name: "Sarah Johnson", role: "Patient", text: "medcAIr made finding and booking appointments so easy! No more waiting on hold.", rating: 5 },
                   { name: "Dr. Michael Chen", role: "Hospital Admin", text: "This platform has streamlined our appointment management. Highly recommended!", rating: 5 },
                   { name: "Emily Rodriguez", role: "Patient", text: "The reminders and follow-up features are a game-changer. Never miss an appointment!", rating: 5 },
                 ].map((testimonial, idx) => (
@@ -250,7 +250,7 @@ export default function Home() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <Stethoscope className="h-6 w-6 text-blue-600" />
-                  <span className="text-xl font-bold text-gray-900">MedCair AI</span>
+                  <span className="text-xl font-bold text-gray-900">medcAIr</span>
                 </div>
                 <p className="text-sm text-gray-600">
                   Your intelligent healthcare management platform.
@@ -283,7 +283,7 @@ export default function Home() {
             </div>
             <div className="pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
               <p className="text-sm text-gray-600">
-                © 2024 MedCair AI. All rights reserved.
+                © 2024 medcAIr. All rights reserved.
               </p>
               <p className="text-sm text-gray-600">
                 Powered by{" "}

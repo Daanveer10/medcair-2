@@ -223,14 +223,14 @@ export default function PatientDashboard() {
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-600 bg-clip-text text-transparent">
-                MedCair AI
+                medcAIr
               </h1>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/patient/appointments">
                 <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-pink-100">
                   <Calendar className="h-4 w-4 text-pink-600" />
-                  <span className="font-medium">My Appointments</span>
+                  <span className="font-medium text-black">My Appointments</span>
                   {upcomingAppointments > 0 && (
                     <span className="ml-1 px-2.5 py-0.5 bg-gradient-to-r from-pink-500 to-violet-500 text-white rounded-full text-xs font-bold shadow-md">
                       {upcomingAppointments}

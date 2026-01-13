@@ -9,7 +9,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "MedCair AI - Hospital Receptionist",
+  title: "medcAIr - Hospital Receptionist",
   description: "AI-powered hospital receptionist for managing appointments, clinic search, and follow-ups",
 };
 
