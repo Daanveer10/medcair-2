@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings } from "lucide-react";
+import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 // Prevent static generation - requires authentication
@@ -29,6 +29,29 @@ interface Appointment {
   };
 }
 
+interface Clinic {
+  id: string;
+  name: string;
+  department: string;
+}
+
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  clinic_id: string;
+}
+
+interface Slot {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  clinic_id: string;
+  doctor_id: string;
+}
+
 export default function HospitalDashboard() {
   const router = useRouter();
   const supabase = createClient();
@@ -36,11 +59,35 @@ export default function HospitalDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [hospitalId, setHospitalId] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [selectedClinic, setSelectedClinic] = useState("");
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [patientName, setPatientName] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     checkUser();
     loadAppointments();
   }, []);
+
+  useEffect(() => {
+    if (showCreateModal && hospitalId) {
+      loadClinics();
+    }
+  }, [showCreateModal, hospitalId]);
+
+  useEffect(() => {
+    if (selectedClinic) {
+      loadDoctors();
+      loadSlots();
+    }
+  }, [selectedClinic]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -72,6 +119,37 @@ export default function HospitalDashboard() {
     if (hospital) {
       setHospitalId(hospital.id);
     }
+  };
+
+  const loadClinics = async () => {
+    if (!hospitalId) return;
+    const { data } = await supabase
+      .from("clinics")
+      .select("id, name, department")
+      .eq("hospital_id", hospitalId);
+    setClinics(data || []);
+  };
+
+  const loadDoctors = async () => {
+    if (!selectedClinic) return;
+    const { data } = await supabase
+      .from("doctors")
+      .select("id, name, specialization, clinic_id")
+      .eq("clinic_id", selectedClinic);
+    setDoctors(data || []);
+  };
+
+  const loadSlots = async () => {
+    if (!selectedClinic) return;
+    const { data } = await supabase
+      .from("appointment_slots")
+      .select("id, date, start_time, end_time, is_available, clinic_id, doctor_id")
+      .eq("clinic_id", selectedClinic)
+      .eq("is_available", true)
+      .gte("date", new Date().toISOString().split("T")[0])
+      .order("date", { ascending: true })
+      .order("start_time", { ascending: true });
+    setSlots(data || []);
   };
 
   const loadAppointments = async () => {
@@ -125,7 +203,6 @@ export default function HospitalDashboard() {
       if (error) throw error;
 
       // Transform the data to match the interface
-      // Supabase returns relations as arrays, but we expect single objects
       const transformedAppointments = (data || []).map((apt: any) => ({
         id: apt.id,
         appointment_date: apt.appointment_date,
@@ -150,6 +227,80 @@ export default function HospitalDashboard() {
     }
   };
 
+  const handleCreateAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSlot || !patientName || !patientEmail) return;
+
+    setCreating(true);
+    try {
+      // Find or create patient profile
+      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(patientEmail);
+      let patientProfileId: string;
+
+      if (existingUser?.user) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("user_id", existingUser.user.id)
+          .single();
+        patientProfileId = profile?.id || "";
+      } else {
+        // For demo: create a temporary patient profile
+        // In production, you'd want to handle this differently
+        alert("Patient email not found. Please ask patient to sign up first.");
+        setCreating(false);
+        return;
+      }
+
+      if (!patientProfileId) {
+        alert("Could not find patient profile.");
+        setCreating(false);
+        return;
+      }
+
+      const slot = slots.find(s => s.id === selectedSlot);
+      if (!slot) return;
+
+      // Create appointment
+      const { error } = await supabase
+        .from("appointments")
+        .insert({
+          patient_id: patientProfileId,
+          clinic_id: slot.clinic_id,
+          doctor_id: slot.doctor_id,
+          slot_id: slot.id,
+          appointment_date: slot.date,
+          appointment_time: slot.start_time,
+          status: "scheduled",
+        });
+
+      if (error) throw error;
+
+      // Mark slot as unavailable
+      await supabase
+        .from("appointment_slots")
+        .update({ is_available: false })
+        .eq("id", slot.id);
+
+      // Reset form
+      setShowCreateModal(false);
+      setSelectedClinic("");
+      setSelectedDoctor("");
+      setSelectedSlot("");
+      setPatientName("");
+      setPatientEmail("");
+
+      // Reload appointments
+      loadAppointments();
+      alert("Appointment created successfully!");
+    } catch (error: any) {
+      console.error("Error creating appointment:", error);
+      alert(`Error: ${error.message || "Failed to create appointment"}`);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/auth/login");
@@ -162,18 +313,61 @@ export default function HospitalDashboard() {
     (apt) => apt.appointment_date === new Date().toISOString().split("T")[0]
   );
 
+  const filteredAppointments = statusFilter === "all" 
+    ? appointments 
+    : appointments.filter(apt => apt.status === statusFilter);
+
+  const stats = [
+    {
+      label: "Today's Appointments",
+      value: todayAppointments.length,
+      icon: <Calendar className="h-6 w-6" />,
+      gradient: "from-orange-500 via-red-500 to-pink-500",
+    },
+    {
+      label: "Upcoming",
+      value: upcomingAppointments.length,
+      icon: <Clock className="h-6 w-6" />,
+      gradient: "from-blue-500 via-cyan-500 to-teal-500",
+    },
+    {
+      label: "Total Appointments",
+      value: appointments.length,
+      icon: <Users className="h-6 w-6" />,
+      gradient: "from-purple-500 via-violet-500 to-fuchsia-500",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <nav className="bg-white border-b shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Vibrant Navbar */}
+      <nav className="bg-white/90 backdrop-blur-md border-b border-blue-200/50 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <Stethoscope className="h-6 w-6 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">MedCair AI - Hospital Portal</h1>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                <Stethoscope className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                MedCair AI - Hospital Portal
+              </h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, {userName}</span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Link href="/hospital/settings">
+                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-blue-100">
+                  <Settings className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">Settings</span>
+                </Button>
+              </Link>
+              <div className="hidden sm:block text-sm font-medium text-gray-700">
+                Welcome, <span className="text-blue-600 font-bold">{userName}</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLogout}
+                className="border-blue-200 hover:bg-blue-50"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -183,114 +377,163 @@ export default function HospitalDashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Hospital Dashboard</h2>
-          <p className="text-gray-600">Manage appointments, schedules, and follow-ups</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today&apos;s Appointments</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{todayAppointments.length}</div>
-              <p className="text-xs text-muted-foreground">Scheduled for today</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{upcomingAppointments.length}</div>
-              <p className="text-xs text-muted-foreground">Total upcoming appointments</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{appointments.length}</div>
-              <p className="text-xs text-muted-foreground">All time appointments</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Appointments</h3>
-            <Link href="/hospital/settings">
-              <Button>
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Settings
-              </Button>
-            </Link>
+          <div className="flex items-center gap-3 mb-3">
+            <Sparkles className="h-8 w-8 text-blue-500" />
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Hospital Dashboard
+            </h2>
           </div>
+          <p className="text-lg text-gray-700 font-medium">Manage appointments, schedules, and patient care</p>
         </div>
 
+        {/* Vibrant Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {stats.map((stat, idx) => (
+            <div
+              key={idx}
+              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 shadow-xl transform hover:scale-105 transition-all duration-300`}
+            >
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm text-white">
+                    {stat.icon}
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-white opacity-90 mb-1">{stat.label}</p>
+                <p className="text-4xl font-bold text-white">{stat.value}</p>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions Bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-2xl font-bold text-gray-900">Appointments</h3>
+            <div className="flex gap-2">
+              <Button
+                variant={statusFilter === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+                className={statusFilter === "all" ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+              >
+                All
+              </Button>
+              <Button
+                variant={statusFilter === "scheduled" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("scheduled")}
+                className={statusFilter === "scheduled" ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+              >
+                Scheduled
+              </Button>
+              <Button
+                variant={statusFilter === "completed" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("completed")}
+                className={statusFilter === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white" : ""}
+              >
+                Completed
+              </Button>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white hover:opacity-90 shadow-lg hover:shadow-xl font-bold"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Create Appointment
+          </Button>
+        </div>
+
+        {/* Appointments List */}
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">Loading appointments...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            <p className="text-gray-600 mt-4 font-medium">Loading appointments...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.length === 0 ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-gray-500 text-center py-8">No appointments yet.</p>
+            {filteredAppointments.length === 0 ? (
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
+                <CardContent className="pt-6 text-center py-12">
+                  <Calendar className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-gray-900 mb-2">No appointments found</p>
+                  <p className="text-gray-600 mb-4">Create your first appointment to get started</p>
+                  <Button
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:opacity-90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Appointment
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
-              appointments.map((appointment) => (
-                <Card key={appointment.id}>
+              filteredAppointments.map((appointment) => (
+                <Card
+                  key={appointment.id}
+                  className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
+                >
+                  <div className={`absolute top-0 left-0 right-0 h-2 ${
+                    appointment.status === "scheduled" ? "bg-gradient-to-r from-blue-500 to-cyan-500" :
+                    appointment.status === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
+                    appointment.status === "cancelled" ? "bg-gradient-to-r from-red-500 to-pink-500" :
+                    "bg-gradient-to-r from-gray-400 to-gray-500"
+                  }`}></div>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">
-                            {new Date(appointment.appointment_date).toLocaleDateString("en-US", {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </span>
-                          <Clock className="h-4 w-4 text-gray-400 ml-4" />
-                          <span>{appointment.appointment_time}</span>
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Calendar className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-lg text-gray-900">
+                              {new Date(appointment.appointment_date).toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Clock className="h-4 w-4 text-gray-500" />
+                              <span className="text-gray-700 font-semibold">{appointment.appointment_time}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <p className="font-medium">
-                            Patient: {appointment.patient.full_name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Clinic: {appointment.clinic.name}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Doctor: {appointment.doctor.name}
-                          </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-12">
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 mb-1">PATIENT</p>
+                            <p className="font-semibold text-gray-900">{appointment.patient.full_name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 mb-1">CLINIC</p>
+                            <p className="font-semibold text-gray-900">{appointment.clinic.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 mb-1">DOCTOR</p>
+                            <p className="font-semibold text-gray-900">{appointment.doctor.name}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="ml-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
                             appointment.status === "scheduled"
-                              ? "bg-blue-100 text-blue-700"
+                              ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
                               : appointment.status === "completed"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
                               : appointment.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
+                              ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+                              : "bg-gray-400 text-white"
                           }`}
                         >
-                          {appointment.status}
+                          {appointment.status.toUpperCase()}
                         </span>
                       </div>
                     </div>
@@ -301,6 +544,154 @@ export default function HospitalDashboard() {
           </div>
         )}
       </main>
+
+      {/* Create Appointment Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-white">
+            <CardHeader className="bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-2xl font-bold">Create New Appointment</CardTitle>
+                  <CardDescription className="text-white/90 mt-1">Book an appointment for a patient</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleCreateAppointment} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="patientName" className="text-sm font-bold">Patient Name *</Label>
+                    <Input
+                      id="patientName"
+                      value={patientName}
+                      onChange={(e) => setPatientName(e.target.value)}
+                      required
+                      className="h-11 border-2 border-pink-200 focus:border-pink-500"
+                      placeholder="Enter patient full name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="patientEmail" className="text-sm font-bold">Patient Email *</Label>
+                    <Input
+                      id="patientEmail"
+                      type="email"
+                      value={patientEmail}
+                      onChange={(e) => setPatientEmail(e.target.value)}
+                      required
+                      className="h-11 border-2 border-pink-200 focus:border-pink-500"
+                      placeholder="patient@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="clinic" className="text-sm font-bold">Select Clinic *</Label>
+                  <select
+                    id="clinic"
+                    value={selectedClinic}
+                    onChange={(e) => {
+                      setSelectedClinic(e.target.value);
+                      setSelectedDoctor("");
+                      setSelectedSlot("");
+                    }}
+                    required
+                    className="w-full h-11 px-3 border-2 border-blue-200 rounded-md focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Choose a clinic...</option>
+                    {clinics.map((clinic) => (
+                      <option key={clinic.id} value={clinic.id}>
+                        {clinic.name} - {clinic.department}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedClinic && (
+                  <div className="space-y-2">
+                    <Label htmlFor="doctor" className="text-sm font-bold">Select Doctor *</Label>
+                    <select
+                      id="doctor"
+                      value={selectedDoctor}
+                      onChange={(e) => {
+                        setSelectedDoctor(e.target.value);
+                        setSelectedSlot("");
+                      }}
+                      required
+                      className="w-full h-11 px-3 border-2 border-blue-200 rounded-md focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">Choose a doctor...</option>
+                      {doctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          {doctor.name} - {doctor.specialization}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedDoctor && (
+                  <div className="space-y-2">
+                    <Label htmlFor="slot" className="text-sm font-bold">Select Time Slot *</Label>
+                    <select
+                      id="slot"
+                      value={selectedSlot}
+                      onChange={(e) => setSelectedSlot(e.target.value)}
+                      required
+                      className="w-full h-11 px-3 border-2 border-green-200 rounded-md focus:border-green-500 focus:outline-none"
+                    >
+                      <option value="">Choose a time slot...</option>
+                      {slots
+                        .filter(slot => slot.doctor_id === selectedDoctor)
+                        .map((slot) => (
+                          <option key={slot.id} value={slot.id}>
+                            {new Date(slot.date).toLocaleDateString()} - {slot.start_time} to {slot.end_time}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 border-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creating || !selectedSlot}
+                    className="flex-1 bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white hover:opacity-90 font-bold shadow-lg"
+                  >
+                    {creating ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Create Appointment
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
