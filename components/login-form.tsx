@@ -38,8 +38,23 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      // Get user profile to determine role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (profile?.role === "hospital") {
+          router.push("/hospital/dashboard");
+        } else {
+          router.push("/patient/dashboard");
+        }
+      } else {
+        router.push("/protected");
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

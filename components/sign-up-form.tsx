@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { UserRole } from "@/lib/types";
 
 export function SignUpForm({
   className,
@@ -23,6 +24,8 @@ export function SignUpForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [userRole, setUserRole] = useState<UserRole>("patient");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -40,14 +43,31 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/protected`,
+          data: {
+            full_name: fullName,
+            role: userRole,
+          },
         },
       });
-      if (error) throw error;
+      if (signUpError) throw signUpError;
+      
+      // Create user profile
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from("user_profiles")
+          .insert({
+            user_id: data.user.id,
+            role: userRole,
+            full_name: fullName,
+          });
+        if (profileError) throw profileError;
+      }
+      
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -67,6 +87,17 @@ export function SignUpForm({
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -76,6 +107,33 @@ export function SignUpForm({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="userRole">I am a</Label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="userRole"
+                      value="patient"
+                      checked={userRole === "patient"}
+                      onChange={(e) => setUserRole(e.target.value as UserRole)}
+                      className="w-4 h-4"
+                    />
+                    <span>Patient</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="userRole"
+                      value="hospital"
+                      checked={userRole === "hospital"}
+                      onChange={(e) => setUserRole(e.target.value as UserRole)}
+                      className="w-4 h-4"
+                    />
+                    <span>Hospital</span>
+                  </label>
+                </div>
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">

@@ -1,109 +1,157 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# MedCair AI - Hospital Receptionist Web App
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
-
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+An AI-powered hospital receptionist web application built with Next.js and Supabase. This app helps hospitals manage appointments and allows patients to search for clinics, book appointments, and manage follow-ups.
 
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### For Patients
+- **Smart Clinic Search**: Search for clinics by disease, specialty, availability, and location
+- **Real-time Slot Availability**: View booked and free appointment slots
+- **Easy Appointment Booking**: Book appointments with just a few clicks
+- **Appointment Management**: View and manage all your appointments
+- **Follow-up Tracking**: See scheduled follow-ups for your appointments
 
-## Demo
+### For Hospitals
+- **Multi-clinic Management**: Manage multiple clinics and departments
+- **Appointment Scheduling**: Create and manage appointment slots
+- **Doctor Management**: Add doctors and their specializations
+- **Dashboard Overview**: View all appointments, today's schedule, and statistics
+- **Follow-up Scheduling**: Schedule follow-ups for patients
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## Tech Stack
 
-## Deploy to Vercel
+- **Framework**: Next.js 15 (App Router)
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI + shadcn/ui
+- **Icons**: Lucide React
+- **TypeScript**: Full type safety
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## Getting Started
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+### Prerequisites
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+- Node.js 18+ and npm/yarn
+- A Supabase account and project
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### Installation
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd medcair-2
+```
 
-## Clone and run locally
+2. Install dependencies:
+```bash
+npm install
+```
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+3. Set up environment variables:
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-2. Create a Next.js app using the Supabase Starter template npx command
+4. Set up the database:
+   - Go to your Supabase project dashboard
+   - Navigate to SQL Editor
+   - Run the SQL script from `supabase-schema.sql` to create all necessary tables, indexes, and RLS policies
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+5. Run the development server:
+```bash
+npm run dev
+```
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+## Database Schema
 
-3. Use `cd` to change into the app's directory
+The application uses the following main tables:
 
-   ```bash
-   cd with-supabase-app
-   ```
+- **user_profiles**: User information with role (patient/hospital)
+- **hospitals**: Hospital information
+- **clinics**: Clinic/department information within hospitals
+- **doctors**: Doctor information linked to clinics
+- **appointment_slots**: Available time slots for appointments
+- **appointments**: Patient appointments
+- **follow_ups**: Follow-up appointments
 
-4. Rename `.env.example` to `.env.local` and update the following:
+All tables have Row Level Security (RLS) enabled with appropriate policies.
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+## Project Structure
 
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+```
+medcair-2/
+├── app/
+│   ├── auth/              # Authentication pages
+│   ├── patient/           # Patient interface
+│   │   ├── dashboard/     # Patient dashboard with clinic search
+│   │   ├── clinic/        # Clinic detail and booking page
+│   │   └── appointments/  # Patient appointments view
+│   ├── hospital/          # Hospital interface
+│   │   ├── dashboard/     # Hospital dashboard
+│   │   └── settings/      # Hospital settings and slot management
+│   └── protected/         # Protected route (redirects based on role)
+├── components/            # Reusable components
+├── lib/                   # Utilities and types
+│   ├── supabase/          # Supabase client setup
+│   └── types.ts           # TypeScript type definitions
+└── supabase-schema.sql    # Database schema
+```
 
-5. You can now run the Next.js local development server:
+## User Roles
 
-   ```bash
-   npm run dev
-   ```
+### Patient
+- Can search for clinics
+- Can view available slots
+- Can book appointments
+- Can view and manage their appointments
+- Can see follow-ups
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+### Hospital
+- Can create and manage clinics
+- Can add doctors
+- Can create appointment slots
+- Can view all appointments
+- Can schedule follow-ups
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+## Features in Detail
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+### Clinic Search
+Patients can search for clinics using:
+- Clinic or department name
+- Disease/condition/specialty
+- City/location
 
-## Feedback and issues
+### Slot Visualization
+When viewing a clinic, patients can see:
+- All available slots for the next 7 days
+- Booked slots (marked in red)
+- Free slots (marked in green)
+- Doctor information for each slot
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+### Appointment Management
+- Hospitals can view all appointments in a unified dashboard
+- Patients can view their appointment history
+- Both can see appointment status (scheduled, completed, cancelled)
 
-## More Supabase examples
+## Security
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+- Row Level Security (RLS) is enabled on all tables
+- Users can only access their own data
+- Hospitals can only manage their own clinics and appointments
+- Patients can only view and manage their own appointments
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+This project is open source and available under the MIT License.
