@@ -115,6 +115,7 @@ ON CONFLICT DO NOTHING;
 
 -- Step 4: Create demo appointment slots for the next 7 days
 -- This creates slots for each doctor, every day for the next week
+-- Removed WHERE clause to create slots for ALL clinics with doctors
 INSERT INTO appointment_slots (clinic_id, doctor_id, date, start_time, end_time, is_available)
 SELECT 
   c.id,
@@ -141,15 +142,6 @@ CROSS JOIN (VALUES
   ('15:30:00'::TEXT, '16:00:00'::TEXT),
   ('16:00:00'::TEXT, '16:30:00'::TEXT)
 ) AS time_slot(start_time, end_time)
-WHERE c.name IN (
-  SELECT name FROM (VALUES
-    ('Cardiology Center'),
-    ('Neurology Department'),
-    ('Orthopedics Clinic'),
-    ('Pediatrics Unit'),
-    ('Dermatology Center')
-  ) AS clinic_names(name)
-)
 ON CONFLICT DO NOTHING;
 
 -- Verification queries
