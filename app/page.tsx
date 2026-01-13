@@ -5,19 +5,24 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Stethoscope, Calendar, Clock, Users, Search, Shield } from "lucide-react";
+import { Stethoscope, Calendar, Clock, Users, Search, Shield, Heart, Zap, Star, CheckCircle2, ArrowRight, Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col bg-gradient-to-b from-white via-blue-50/30 to-purple-50/30">
       <div className="flex-1 w-full flex flex-col">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white">
+        {/* Enhanced Navbar */}
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
               <div className="flex items-center gap-2">
-                <Stethoscope className="h-6 w-6 text-blue-600" />
-                <Link href={"/"} className="text-xl font-bold text-gray-900">MedCair AI</Link>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Stethoscope className="h-5 w-5 text-blue-600" />
+                </div>
+                <Link href={"/"} className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  MedCair AI
+                </Link>
               </div>
             </div>
             {!hasEnvVars ? (
@@ -26,10 +31,12 @@ export default function Home() {
               <Suspense>
                 <div className="flex items-center gap-4">
                   <Link href="/auth/login">
-                    <Button variant="ghost">Login</Button>
+                    <Button variant="ghost" className="hidden sm:inline-flex">Login</Button>
                   </Link>
                   <Link href="/auth/sign-up">
-                    <Button>Sign Up</Button>
+                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                      Get Started
+                    </Button>
                   </Link>
                   <ThemeSwitcher />
                 </div>
@@ -39,143 +46,259 @@ export default function Home() {
         </nav>
 
         <div className="flex-1 flex flex-col items-center">
+          {/* Hero Section */}
           <section className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
-            <div className="text-center mb-16">
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-                AI-Powered Hospital
+            <div className="text-center mb-16 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full text-blue-700 text-sm font-medium mb-6">
+                <Zap className="h-4 w-4" />
+                <span>AI-Powered Healthcare Management</span>
+              </div>
+              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+                Your Smart Healthcare
                 <br />
-                <span className="text-blue-600">Receptionist</span>
+                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Receptionist
+                </span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                Streamline your healthcare experience with intelligent appointment scheduling,
-                clinic search, and automated follow-up management.
+              <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Experience seamless appointment scheduling, intelligent clinic discovery, and automated healthcare management—all in one platform.
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link href="/auth/sign-up">
-                  <Button size="lg" className="text-lg px-8 py-6">
-                    Get Started
+                  <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all">
+                    Start Free Trial
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <Link href="/auth/login">
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-6">
+                  <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2">
                     Sign In
                   </Button>
                 </Link>
               </div>
+              <p className="text-sm text-gray-500 mt-4">No credit card required • Free forever</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-                  <Search className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Smart Clinic Search</h3>
-                <p className="text-gray-600">
-                  Find clinics by disease, availability, location, and distance. Get instant results
-                  tailored to your needs.
-                </p>
+            {/* Stats Section */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
+              <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="text-3xl font-bold text-blue-600 mb-2">10K+</div>
+                <div className="text-sm text-gray-600">Active Patients</div>
               </div>
-
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-4">
-                  <Calendar className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Easy Scheduling</h3>
-                <p className="text-gray-600">
-                  View real-time availability, see booked and free slots, and book appointments
-                  instantly with just a few clicks.
-                </p>
+              <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="text-3xl font-bold text-purple-600 mb-2">500+</div>
+                <div className="text-sm text-gray-600">Partner Clinics</div>
               </div>
-
-              <div className="text-center p-6 rounded-xl bg-gradient-to-br from-green-50 to-green-100">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4">
-                  <Clock className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Follow-up Management</h3>
-                <p className="text-gray-600">
-                  Automated follow-up scheduling and reminders ensure you never miss important
-                  healthcare appointments.
-                </p>
+              <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="text-3xl font-bold text-pink-600 mb-2">50K+</div>
+                <div className="text-sm text-gray-600">Appointments</div>
+              </div>
+              <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="text-3xl font-bold text-green-600 mb-2">99%</div>
+                <div className="text-sm text-gray-600">Satisfaction</div>
               </div>
             </div>
 
-            <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl font-bold mb-4">For Patients</h2>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    </div>
-                    <span>Search clinics by disease, specialty, or location</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    </div>
-                    <span>View real-time slot availability</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    </div>
-                    <span>Book appointments instantly</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                    </div>
-                    <span>Manage your appointments and follow-ups</span>
-                  </li>
-                </ul>
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-300 border border-blue-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                  <Search className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-gray-900">Smart Search</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Find the perfect clinic by disease, specialty, location, or availability. AI-powered recommendations help you make the right choice.
+                </p>
               </div>
 
-              <div>
-                <h2 className="text-3xl font-bold mb-4">For Hospitals</h2>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-300 border border-purple-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                  <Calendar className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-gray-900">Instant Booking</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  View real-time availability, see available slots, and book appointments instantly. No phone calls, no waiting.
+                </p>
+              </div>
+
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all duration-300 border border-green-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                  <Clock className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-gray-900">Auto Reminders</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Never miss an appointment. Automated reminders and follow-up scheduling keep your health on track.
+                </p>
+              </div>
+            </div>
+
+            {/* How It Works */}
+            <div className="mb-20">
+              <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">How It Works</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { step: "1", title: "Sign Up", desc: "Create your account in seconds" },
+                  { step: "2", title: "Search", desc: "Find clinics by specialty or location" },
+                  { step: "3", title: "Book", desc: "Choose your preferred time slot" },
+                  { step: "4", title: "Visit", desc: "Get reminders and manage appointments" },
+                ].map((item) => (
+                  <div key={item.step} className="text-center p-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg">
+                      {item.step}
                     </div>
-                    <span>Manage multiple clinics and departments</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <span>Create and manage appointment slots</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <span>View all appointments in one dashboard</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <div className="w-2 h-2 rounded-full bg-purple-600"></div>
-                    </div>
-                    <span>Schedule follow-ups for patients</span>
-                  </li>
+                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                    <p className="text-gray-600">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* For Patients & Hospitals */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start mb-20">
+              <div className="p-8 bg-white rounded-2xl shadow-lg border border-gray-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-blue-100 rounded-xl">
+                    <Heart className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900">For Patients</h2>
+                </div>
+                <ul className="space-y-4 text-gray-600">
+                  {[
+                    "Search clinics by disease, specialty, or location",
+                    "View real-time slot availability",
+                    "Book appointments instantly",
+                    "Manage appointments and follow-ups",
+                    "Get automated reminders",
+                    "Access medical history",
+                  ].map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
                 </ul>
+                <Link href="/auth/sign-up">
+                  <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600">
+                    Get Started as Patient
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="p-8 bg-white rounded-2xl shadow-lg border border-gray-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-purple-100 rounded-xl">
+                    <Shield className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900">For Hospitals</h2>
+                </div>
+                <ul className="space-y-4 text-gray-600">
+                  {[
+                    "Manage multiple clinics and departments",
+                    "Create and manage appointment slots",
+                    "View all appointments in one dashboard",
+                    "Schedule follow-ups for patients",
+                    "Track patient history",
+                    "Generate reports and analytics",
+                  ].map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/auth/sign-up">
+                  <Button className="w-full mt-6 bg-gradient-to-r from-purple-600 to-pink-600">
+                    Get Started as Hospital
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Testimonials */}
+            <div className="mb-20">
+              <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">What Our Users Say</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { name: "Sarah Johnson", role: "Patient", text: "MedCair AI made finding and booking appointments so easy! No more waiting on hold.", rating: 5 },
+                  { name: "Dr. Michael Chen", role: "Hospital Admin", text: "This platform has streamlined our appointment management. Highly recommended!", rating: 5 },
+                  { name: "Emily Rodriguez", role: "Patient", text: "The reminders and follow-up features are a game-changer. Never miss an appointment!", rating: 5 },
+                ].map((testimonial, idx) => (
+                  <div key={idx} className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-gray-600 mb-4 italic">"{testimonial.text}"</p>
+                    <div>
+                      <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-500">{testimonial.role}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
         </div>
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16 bg-gray-50">
-          <p className="text-gray-600">
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline text-blue-600"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-            {" "}and Next.js
-          </p>
+        {/* Enhanced Footer */}
+        <footer className="w-full border-t bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Stethoscope className="h-6 w-6 text-blue-600" />
+                  <span className="text-xl font-bold text-gray-900">MedCair AI</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Your intelligent healthcare management platform.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4 text-gray-900">Product</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li><Link href="#" className="hover:text-blue-600">Features</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">Pricing</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">Security</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4 text-gray-900">Company</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li><Link href="#" className="hover:text-blue-600">About</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">Blog</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">Contact</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-4 text-gray-900">Support</h3>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li><Link href="#" className="hover:text-blue-600">Help Center</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">Documentation</Link></li>
+                  <li><Link href="#" className="hover:text-blue-600">API</Link></li>
+                </ul>
+              </div>
+            </div>
+            <div className="pt-8 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-600">
+                © 2024 MedCair AI. All rights reserved.
+              </p>
+              <p className="text-sm text-gray-600">
+                Powered by{" "}
+                <a
+                  href="https://supabase.com"
+                  target="_blank"
+                  className="font-bold hover:underline text-blue-600"
+                  rel="noreferrer"
+                >
+                  Supabase
+                </a>
+                {" "}and Next.js
+              </p>
+            </div>
+          </div>
         </footer>
       </div>
     </main>
