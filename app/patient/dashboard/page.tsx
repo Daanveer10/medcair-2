@@ -381,7 +381,7 @@ export default function PatientDashboard() {
                   placeholder="Search clinics, departments, or specialties..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-14 text-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500"
+                  className="pl-12 h-14 text-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500 text-black placeholder:text-gray-400"
                 />
               </div>
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showFilters ? "block" : "hidden sm:grid"}`}>
@@ -392,7 +392,7 @@ export default function PatientDashboard() {
                     placeholder="e.g., Cardiology, Diabetes, Hypertension..."
                     value={diseaseFilter}
                     onChange={(e) => setDiseaseFilter(e.target.value)}
-                    className="h-11 border-2 border-violet-200 focus:border-violet-500"
+                    className="h-11 border-2 border-violet-200 focus:border-violet-500 text-black placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -402,7 +402,7 @@ export default function PatientDashboard() {
                     placeholder="Enter city name..."
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
-                    className="h-11 border-2 border-cyan-200 focus:border-cyan-500"
+                    className="h-11 border-2 border-cyan-200 focus:border-cyan-500 text-black placeholder:text-gray-400"
                   />
                 </div>
               </div>
