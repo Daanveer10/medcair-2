@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings } from "lucide-react";
 import Link from "next/link";
 
+// Prevent static generation - requires authentication
+export const dynamic = 'force-dynamic';
+
 interface Appointment {
   id: string;
   appointment_date: string;
@@ -121,7 +124,25 @@ export default function HospitalDashboard() {
 
       if (error) throw error;
 
-      setAppointments((data || []) as Appointment[]);
+      // Transform the data to match the interface
+      // Supabase returns relations as arrays, but we expect single objects
+      const transformedAppointments = (data || []).map((apt: any) => ({
+        id: apt.id,
+        appointment_date: apt.appointment_date,
+        appointment_time: apt.appointment_time,
+        status: apt.status,
+        patient: {
+          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
+        },
+        clinic: {
+          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
+        },
+        doctor: {
+          name: Array.isArray(apt.doctor) ? apt.doctor[0]?.name : apt.doctor?.name || "Unknown",
+        },
+      }));
+
+      setAppointments(transformedAppointments);
     } catch (error) {
       console.error("Error loading appointments:", error);
     } finally {
@@ -247,13 +268,13 @@ export default function HospitalDashboard() {
                         </div>
                         <div className="space-y-1">
                           <p className="font-medium">
-                            Patient: {(appointment.patient as any)?.full_name || "N/A"}
+                            Patient: {appointment.patient.full_name}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Clinic: {(appointment.clinic as any)?.name || "N/A"}
+                            Clinic: {appointment.clinic.name}
                           </p>
                           <p className="text-sm text-gray-600">
-                            Doctor: {(appointment.doctor as any)?.name || "N/A"}
+                            Doctor: {appointment.doctor.name}
                           </p>
                         </div>
                       </div>

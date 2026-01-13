@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
 
+// Prevent static generation - requires authentication and dynamic params
+export const dynamic = 'force-dynamic';
+
 interface Slot {
   id: string;
   doctor_id: string;
@@ -69,12 +72,21 @@ export default function ClinicPage() {
 
       if (clinicError) throw clinicError;
 
+      // Transform hospital relation (Supabase returns as array)
+      const hospitalData = Array.isArray(clinicData.hospital) 
+        ? clinicData.hospital[0] 
+        : clinicData.hospital;
+
       setClinic({
         id: clinicData.id,
         name: clinicData.name,
         department: clinicData.department,
         specialties: clinicData.specialties || [],
-        hospital: clinicData.hospital,
+        hospital: {
+          name: hospitalData?.name || "Unknown",
+          address: hospitalData?.address || "Unknown",
+          city: hospitalData?.city || "Unknown",
+        },
       });
 
       // Load slots for next 7 days
@@ -105,16 +117,26 @@ export default function ClinicPage() {
 
       if (slotsError) throw slotsError;
 
-      // Transform slots data
-      const transformedSlots = (slotsData || []).map((slot: any) => ({
-        id: slot.id,
-        doctor_id: slot.doctor_id,
-        date: slot.date,
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        is_available: slot.is_available,
-        doctor: slot.doctor,
-      }));
+      // Transform slots data - handle doctor relation (Supabase returns as array)
+      const transformedSlots = (slotsData || []).map((slot: any) => {
+        const doctorData = Array.isArray(slot.doctor) 
+          ? slot.doctor[0] 
+          : slot.doctor;
+        
+        return {
+          id: slot.id,
+          doctor_id: slot.doctor_id,
+          date: slot.date,
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          is_available: slot.is_available,
+          doctor: {
+            id: doctorData?.id || "",
+            name: doctorData?.name || "Unknown",
+            specialization: doctorData?.specialization || "Unknown",
+          },
+        };
+      });
 
       setSlots(transformedSlots);
     } catch (error) {

@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 
+// Prevent static generation - requires authentication
+export const dynamic = 'force-dynamic';
+
 export default function HospitalSettings() {
   const router = useRouter();
   const supabase = createClient();

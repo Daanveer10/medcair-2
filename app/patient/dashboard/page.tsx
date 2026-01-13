@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Search, Calendar, MapPin, Clock, Stethoscope, LogOut } from "lucide-react";
 import Link from "next/link";
 
+// Prevent static generation - requires authentication
+export const dynamic = 'force-dynamic';
+
 interface Clinic {
   id: string;
   name: string;
@@ -79,14 +82,25 @@ export default function PatientDashboard() {
       
       if (error) throw error;
       
-      // Transform data
-      const transformedClinics = (data || []).map((clinic: any) => ({
-        id: clinic.id,
-        name: clinic.name,
-        department: clinic.department,
-        specialties: clinic.specialties || [],
-        hospital: clinic.hospital,
-      }));
+      // Transform data - handle hospital relation (Supabase returns as array)
+      const transformedClinics = (data || []).map((clinic: any) => {
+        const hospitalData = Array.isArray(clinic.hospital) 
+          ? clinic.hospital[0] 
+          : clinic.hospital;
+        
+        return {
+          id: clinic.id,
+          name: clinic.name,
+          department: clinic.department,
+          specialties: clinic.specialties || [],
+          hospital: {
+            name: hospitalData?.name || "Unknown",
+            address: hospitalData?.address || "Unknown",
+            city: hospitalData?.city || "Unknown",
+            distance: hospitalData?.distance,
+          },
+        };
+      });
       
       setClinics(transformedClinics);
     } catch (error) {

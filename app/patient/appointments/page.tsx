@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
 
+// Prevent static generation - requires authentication
+export const dynamic = 'force-dynamic';
+
 interface Appointment {
   id: string;
   appointment_date: string;
@@ -90,7 +93,7 @@ export default function PatientAppointments() {
 
       if (error) throw error;
 
-      // Load follow-ups for each appointment
+      // Load follow-ups for each appointment and transform data
       const appointmentsWithFollowUps = await Promise.all(
         (data || []).map(async (apt: any) => {
           const { data: followUps } = await supabase
@@ -99,14 +102,31 @@ export default function PatientAppointments() {
             .eq("appointment_id", apt.id)
             .order("follow_up_date", { ascending: true });
 
+          // Transform relations from arrays to objects
           return {
-            ...apt,
+            id: apt.id,
+            appointment_date: apt.appointment_date,
+            appointment_time: apt.appointment_time,
+            status: apt.status,
+            reason: apt.reason,
+            clinic: {
+              name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
+              department: Array.isArray(apt.clinic) ? apt.clinic[0]?.department : apt.clinic?.department || "Unknown",
+            },
+            hospital: {
+              name: Array.isArray(apt.hospital) ? apt.hospital[0]?.name : apt.hospital?.name || "Unknown",
+              address: Array.isArray(apt.hospital) ? apt.hospital[0]?.address : apt.hospital?.address || "Unknown",
+            },
+            doctor: {
+              name: Array.isArray(apt.doctor) ? apt.doctor[0]?.name : apt.doctor?.name || "Unknown",
+              specialization: Array.isArray(apt.doctor) ? apt.doctor[0]?.specialization : apt.doctor?.specialization || "Unknown",
+            },
             follow_ups: followUps || [],
           };
         })
       );
 
-      setAppointments(appointmentsWithFollowUps as Appointment[]);
+      setAppointments(appointmentsWithFollowUps);
     } catch (error) {
       console.error("Error loading appointments:", error);
     } finally {
@@ -170,8 +190,8 @@ export default function PatientAppointments() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{(appointment.clinic as any)?.name}</CardTitle>
-                        <CardDescription>{(appointment.clinic as any)?.department}</CardDescription>
+                        <CardTitle>{appointment.clinic.name}</CardTitle>
+                        <CardDescription>{appointment.clinic.department}</CardDescription>
                       </div>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -208,11 +228,12 @@ export default function PatientAppointments() {
                         </div>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-gray-400" />
-                          <span>{(appointment.doctor as any)?.name} - {(appointment.doctor as any)?.specialization}</span>
+                          <span>{appointment.doctor.name} - {appointment.doctor.specialization}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-gray-400" />
-                          <span>{(appointment.hospital as any)?.name}</span>
+                          <span>{appointment.hospital.name}</span>
+                          <span className="text-xs text-gray-500">({appointment.hospital.address})</span>
                         </div>
                       </div>
 
