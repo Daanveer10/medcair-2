@@ -3,17 +3,42 @@
 -- Run this in your Supabase SQL Editor
 
 -- Step 1: Create the function that will create the profile
+-- This version includes better error handling and logging
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  user_role TEXT;
+  user_full_name TEXT;
 BEGIN
+  -- Extract metadata (handle both JSONB and text formats)
+  user_role := COALESCE(
+    NEW.raw_user_meta_data->>'role',
+    (NEW.raw_user_meta_data->'role')::text,
+    'patient'
+  );
+  
+  user_full_name := COALESCE(
+    NEW.raw_user_meta_data->>'full_name',
+    (NEW.raw_user_meta_data->'full_name')::text,
+    'User'
+  );
+  
+  -- Remove quotes if present (JSONB sometimes returns quoted strings)
+  user_role := TRIM(BOTH '"' FROM user_role);
+  user_full_name := TRIM(BOTH '"' FROM user_full_name);
+  
+  -- Insert the profile
   INSERT INTO public.user_profiles (user_id, role, full_name)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'role', 'patient'),
-    COALESCE(NEW.raw_user_meta_data->>'full_name', 'User')
-  )
+  VALUES (NEW.id, user_role, user_full_name)
   ON CONFLICT (user_id) DO NOTHING; -- Prevent errors if profile already exists
+  
   RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log error but don't fail the user creation
+    -- You can check Supabase logs to see these errors
+    RAISE WARNING 'Error creating user profile for user %: %', NEW.id, SQLERRM;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

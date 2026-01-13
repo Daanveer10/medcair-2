@@ -58,7 +58,34 @@ export function SignUpForm({
       
       // Profile will be automatically created by database trigger
       // The trigger reads role and full_name from raw_user_meta_data
-      // No need to manually create profile here
+      // Fallback: Try to create profile manually if trigger didn't work
+      if (data.user) {
+        // Wait a moment for trigger to fire
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if profile exists, if not create it manually
+        const { data: existingProfile } = await supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("user_id", data.user.id)
+          .single();
+        
+        if (!existingProfile) {
+          // Fallback: Create profile manually if trigger didn't work
+          const { error: profileError } = await supabase
+            .from("user_profiles")
+            .insert({
+              user_id: data.user.id,
+              role: userRole,
+              full_name: fullName,
+            });
+          
+          if (profileError) {
+            console.error("Profile creation error:", profileError);
+            // Don't throw - user is created, profile can be created later
+          }
+        }
+      }
       
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
