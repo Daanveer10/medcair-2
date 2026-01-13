@@ -90,6 +90,7 @@ WHERE h.name IN ('City General Hospital', 'Metro Health Center', 'Regional Medic
 ON CONFLICT DO NOTHING;
 
 -- Step 3: Insert demo doctors (matching by department)
+-- Using a simpler approach with direct department matching
 INSERT INTO doctors (clinic_id, name, specialization, email, phone)
 SELECT 
   c.id,
@@ -98,7 +99,7 @@ SELECT
   doctor_data.email,
   doctor_data.phone
 FROM clinics c
-INNER JOIN (VALUES
+CROSS JOIN (VALUES
   ('Dr. Sarah Johnson', 'Cardiologist', 'sarah.johnson@hospital.com', '+1-555-1001', 'Cardiology'),
   ('Dr. Michael Chen', 'Neurologist', 'michael.chen@hospital.com', '+1-555-1002', 'Neurology'),
   ('Dr. Emily Rodriguez', 'Orthopedic Surgeon', 'emily.rodriguez@hospital.com', '+1-555-1003', 'Orthopedics'),
@@ -110,7 +111,7 @@ INNER JOIN (VALUES
   ('Dr. Jennifer Lee', 'Pulmonologist', 'jennifer.lee@hospital.com', '+1-555-1009', 'Pulmonology'),
   ('Dr. Christopher Martinez', 'Rheumatologist', 'christopher.martinez@hospital.com', '+1-555-1010', 'Rheumatology')
 ) AS doctor_data(name, specialization, email, phone, department)
-ON c.department = doctor_data.department
+WHERE c.department = doctor_data.department
 ON CONFLICT DO NOTHING;
 
 -- Step 4: Create demo appointment slots for the next 7 days
