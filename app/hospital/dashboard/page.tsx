@@ -18,6 +18,7 @@ interface Appointment {
   appointment_date: string;
   appointment_time: string;
   status: string;
+  slot_id?: string;
   patient: {
     full_name: string;
   };
@@ -208,6 +209,7 @@ export default function HospitalDashboard() {
         appointment_date: apt.appointment_date,
         appointment_time: apt.appointment_time,
         status: apt.status,
+        slot_id: apt.slot_id,
         patient: {
           full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
         },
@@ -276,20 +278,11 @@ export default function HospitalDashboard() {
 
       // Update slot availability to false since appointment is accepted
       const appointment = appointments.find(apt => apt.id === appointmentId);
-      if (appointment) {
-        // Get slot_id from appointment (we need to fetch it)
-        const { data: aptData } = await supabase
-          .from("appointments")
-          .select("slot_id")
-          .eq("id", appointmentId)
-          .single();
-        
-        if (aptData?.slot_id) {
-          await supabase
-            .from("appointment_slots")
-            .update({ is_available: false })
-            .eq("id", aptData.slot_id);
-        }
+      if (appointment?.slot_id) {
+        await supabase
+          .from("appointment_slots")
+          .update({ is_available: false })
+          .eq("id", appointment.slot_id);
       }
 
       alert("Appointment accepted successfully!");
