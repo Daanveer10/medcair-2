@@ -262,13 +262,74 @@ export default function HospitalDashboard() {
     }
   };
 
+  const handleAcceptAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ 
+          status: "accepted",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", appointmentId);
+
+      if (error) throw error;
+
+      // Update slot availability to false since appointment is accepted
+      const appointment = appointments.find(apt => apt.id === appointmentId);
+      if (appointment) {
+        // Get slot_id from appointment (we need to fetch it)
+        const { data: aptData } = await supabase
+          .from("appointments")
+          .select("slot_id")
+          .eq("id", appointmentId)
+          .single();
+        
+        if (aptData?.slot_id) {
+          await supabase
+            .from("appointment_slots")
+            .update({ is_available: false })
+            .eq("id", aptData.slot_id);
+        }
+      }
+
+      alert("Appointment accepted successfully!");
+      loadAppointments(); // Reload to refresh the list
+    } catch (error: any) {
+      console.error("Error accepting appointment:", error);
+      alert(`Error: ${error.message || "Failed to accept appointment"}`);
+    }
+  };
+
+  const handleDeclineAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from("appointments")
+        .update({ 
+          status: "declined",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", appointmentId);
+
+      if (error) throw error;
+
+      alert("Appointment declined.");
+      loadAppointments(); // Reload to refresh the list
+    } catch (error: any) {
+      console.error("Error declining appointment:", error);
+      alert(`Error: ${error.message || "Failed to decline appointment"}`);
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/auth/login");
   };
 
+  const pendingAppointments = appointments.filter(
+    (apt) => apt.status === "pending"
+  );
   const upcomingAppointments = appointments.filter(
-    (apt) => apt.status === "scheduled" && new Date(apt.appointment_date) >= new Date()
+    (apt) => (apt.status === "scheduled" || apt.status === "accepted") && new Date(apt.appointment_date) >= new Date()
   );
   const todayAppointments = upcomingAppointments.filter(
     (apt) => apt.appointment_date === new Date().toISOString().split("T")[0]
@@ -280,6 +341,12 @@ export default function HospitalDashboard() {
 
   const stats = [
     {
+      label: "Pending Requests",
+      value: pendingAppointments.length,
+      icon: <Clock className="h-6 w-6" />,
+      gradient: "bg-yellow-500",
+    },
+    {
       label: "Today's Appointments",
       value: todayAppointments.length,
       icon: <Calendar className="h-6 w-6" />,
@@ -289,12 +356,6 @@ export default function HospitalDashboard() {
       label: "Upcoming",
       value: upcomingAppointments.length,
       icon: <Clock className="h-6 w-6" />,
-      gradient: "bg-green-600",
-    },
-    {
-      label: "Total Appointments",
-      value: appointments.length,
-      icon: <Users className="h-6 w-6" />,
       gradient: "bg-green-600",
     },
   ];
@@ -392,6 +453,19 @@ export default function HospitalDashboard() {
                 Scheduled
               </Button>
               <Button
+                variant={statusFilter === "pending" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("pending")}
+                className={statusFilter === "pending" ? "bg-yellow-500 text-white" : ""}
+              >
+                Pending
+                {pendingAppointments.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">
+                    {pendingAppointments.length}
+                  </span>
+                )}
+              </Button>
+              <Button
                 variant={statusFilter === "completed" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("completed")}
@@ -440,8 +514,10 @@ export default function HospitalDashboard() {
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
                   <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "scheduled" ? "bg-green-600" :
+                    appointment.status === "pending" ? "bg-yellow-500" :
+                    appointment.status === "accepted" || appointment.status === "scheduled" ? "bg-green-600" :
                     appointment.status === "completed" ? "bg-green-600" :
+                    appointment.status === "declined" ? "bg-red-500" :
                     appointment.status === "cancelled" ? "bg-red-500" :
                     "bg-gray-400"
                   }`}></div>
@@ -485,11 +561,13 @@ export default function HospitalDashboard() {
                       <div className="ml-4">
                         <span
                           className={`px-4 py-2 rounded-full text-sm font-bold ${
-                            appointment.status === "scheduled"
+                            appointment.status === "pending"
+                              ? "bg-yellow-500 text-white"
+                              : appointment.status === "accepted" || appointment.status === "scheduled"
                               ? "bg-green-600 text-white"
                               : appointment.status === "completed"
                               ? "bg-green-600 text-white"
-                              : appointment.status === "cancelled"
+                              : appointment.status === "declined" || appointment.status === "cancelled"
                               ? "bg-red-500 text-white"
                               : "bg-gray-400 text-white"
                           }`}
@@ -498,6 +576,25 @@ export default function HospitalDashboard() {
                         </span>
                       </div>
                     </div>
+                    {appointment.status === "pending" && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 flex gap-3">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-green-600 text-white hover:bg-green-700"
+                          onClick={() => handleAcceptAppointment(appointment.id)}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeclineAppointment(appointment.id)}
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))

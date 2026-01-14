@@ -69,7 +69,7 @@ export interface Appointment {
   slot_id: string;
   appointment_date: string;
   appointment_time: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'accepted' | 'declined' | 'scheduled' | 'completed' | 'cancelled' | 'no_show';
   reason?: string;
   notes?: string;
   created_at: string;

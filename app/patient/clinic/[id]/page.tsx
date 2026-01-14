@@ -18,6 +18,7 @@ interface Slot {
   start_time: string;
   end_time: string;
   is_available: boolean;
+  slot_status?: 'available' | 'booked' | 'pending' | 'unavailable';
   doctor: {
     id: string;
     name: string;
@@ -136,6 +137,18 @@ export default function ClinicPage() {
           : slot.doctor;
         
         const isBooked = bookedSlotIds.has(slot.id);
+        const isPendingByMe = pendingByCurrentUser.has(slot.id);
+        const isPendingByOthers = pendingByOthers.has(slot.id);
+        
+        // Determine slot status
+        let slotStatus: 'available' | 'booked' | 'pending' | 'unavailable' = 'available';
+        if (isBooked) {
+          slotStatus = 'booked';
+        } else if (isPendingByMe) {
+          slotStatus = 'pending';
+        } else if (isPendingByOthers) {
+          slotStatus = 'unavailable';
+        }
         
         return {
           id: slot.id,
@@ -143,7 +156,8 @@ export default function ClinicPage() {
           date: slot.date,
           start_time: slot.start_time,
           end_time: slot.end_time,
-          is_available: slot.is_available && !isBooked, // Slot is available only if not booked
+          is_available: slot.is_available && !isBooked && !isPendingByOthers, // Available if not booked and not pending by others
+          slot_status: slotStatus, // Track status for UI display
           doctor: {
             id: doctorData?.id || "",
             name: doctorData?.name || "Unknown",
@@ -182,22 +196,26 @@ export default function ClinicPage() {
       return;
     }
 
-    // Double-check slot is not booked
+    // Double-check slot is not booked or pending
     const { data: existingAppointment } = await supabase
       .from("appointments")
-      .select("id")
+      .select("id, status")
       .eq("slot_id", slotId)
-      .eq("status", "scheduled")
+      .in("status", ["pending", "accepted", "scheduled"])
       .single();
 
     if (existingAppointment) {
-      alert("This slot has already been booked. Please select another slot.");
+      if (existingAppointment.status === "pending") {
+        alert("This slot is currently pending approval. Please select another slot.");
+      } else {
+        alert("This slot has already been booked. Please select another slot.");
+      }
       loadClinicData();
       return;
     }
 
     try {
-      // Create appointment
+      // Create appointment with pending status (waiting for hospital approval)
       const { data: appointment, error: appointmentError } = await supabase
         .from("appointments")
         .insert({
@@ -207,21 +225,18 @@ export default function ClinicPage() {
           slot_id: slotId,
           appointment_date: slot.date,
           appointment_time: slot.start_time,
-          status: "scheduled",
+          status: "pending", // Start as pending, hospital will accept/decline
         })
         .select()
         .single();
 
       if (appointmentError) throw appointmentError;
 
-      // Update slot availability
-      await supabase
-        .from("appointment_slots")
-        .update({ is_available: false })
-        .eq("id", slotId);
+      // Don't update slot availability yet - wait for hospital approval
+      // Slot will show as unavailable to others but pending to the requester
 
-      alert("Appointment booked successfully!");
-      loadClinicData(); // Reload to update slot availability
+      alert("Appointment request submitted! The hospital will review and respond shortly. You can check the status in 'My Appointments'.");
+      loadClinicData(); // Reload to show updated status
     } catch (error) {
       console.error("Error booking appointment:", error);
       alert("Failed to book appointment. This slot may have been booked by someone else. Please try another slot.");
@@ -333,40 +348,54 @@ export default function ClinicPage() {
                         })}
                       </CardTitle>
                       <CardDescription>
-                        {freeSlots.length} available slots, {bookedSlots.length} booked
+                        {freeSlots.length} available slots, {dateSlots.filter((s: any) => s.slot_status === 'booked').length} booked, {dateSlots.filter((s: any) => s.slot_status === 'pending' || s.slot_status === 'unavailable').length} pending
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {dateSlots.map((slot) => (
-                          <div
-                            key={slot.id}
-                            className={`p-4 rounded-lg border-2 transition-all ${
-                              slot.is_available
-                                ? "border-green-300 bg-green-50 hover:bg-green-100 hover:shadow-md"
-                                : "border-red-300 bg-red-100 opacity-80 cursor-not-allowed"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Clock className={`h-4 w-4 ${slot.is_available ? "text-gray-600" : "text-red-600"}`} />
-                                <span className={`font-medium ${slot.is_available ? "text-gray-900" : "text-red-700"}`}>
-                                  {slot.start_time} - {slot.end_time}
-                                </span>
-                              </div>
-                              {slot.is_available ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <XCircle className="h-5 w-5 text-red-600" />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <User className={`h-4 w-4 ${slot.is_available ? "text-gray-400" : "text-red-500"}`} />
-                              <span className={`text-sm ${slot.is_available ? "text-gray-600" : "text-red-600"}`}>
-                                {slot.doctor.name} - {slot.doctor.specialization}
-                              </span>
-                            </div>
-                            {slot.is_available ? (
+                        {dateSlots.map((slot: any) => {
+                          const slotStatus = slot.slot_status || (slot.is_available ? 'available' : 'booked');
+                          
+                          // Determine styling based on status
+                          let borderColor = "border-green-300";
+                          let bgColor = "bg-green-50";
+                          let hoverBg = "hover:bg-green-100";
+                          let textColor = "text-gray-900";
+                          let iconColor = "text-gray-600";
+                          let statusIcon = <CheckCircle2 className="h-5 w-5 text-green-600" />;
+                          let buttonContent = null;
+                          let isDisabled = false;
+                          
+                          if (slotStatus === 'booked') {
+                            borderColor = "border-red-300";
+                            bgColor = "bg-red-100";
+                            hoverBg = "";
+                            textColor = "text-red-700";
+                            iconColor = "text-red-600";
+                            statusIcon = <XCircle className="h-5 w-5 text-red-600" />;
+                            buttonContent = <Button size="sm" variant="outline" className="w-full border-red-300 text-red-700 bg-red-50 cursor-not-allowed" disabled>Booked</Button>;
+                            isDisabled = true;
+                          } else if (slotStatus === 'pending') {
+                            borderColor = "border-yellow-400";
+                            bgColor = "bg-yellow-50";
+                            hoverBg = "hover:bg-yellow-100";
+                            textColor = "text-yellow-800";
+                            iconColor = "text-yellow-700";
+                            statusIcon = <Clock className="h-5 w-5 text-yellow-600" />;
+                            buttonContent = <Button size="sm" variant="outline" className="w-full border-yellow-400 text-yellow-700 bg-yellow-50 cursor-not-allowed" disabled>Waiting for Response</Button>;
+                            isDisabled = true;
+                          } else if (slotStatus === 'unavailable') {
+                            borderColor = "border-gray-300";
+                            bgColor = "bg-gray-100";
+                            hoverBg = "";
+                            textColor = "text-gray-600";
+                            iconColor = "text-gray-500";
+                            statusIcon = <XCircle className="h-5 w-5 text-gray-500" />;
+                            buttonContent = <Button size="sm" variant="outline" className="w-full border-gray-300 text-gray-600 bg-gray-50 cursor-not-allowed" disabled>Unavailable</Button>;
+                            isDisabled = true;
+                          } else {
+                            // available
+                            buttonContent = (
                               <Button
                                 size="sm"
                                 className="w-full bg-green-600 text-white hover:bg-green-700"
@@ -374,18 +403,33 @@ export default function ClinicPage() {
                               >
                                 Book Appointment
                               </Button>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-full border-red-300 text-red-700 bg-red-50 cursor-not-allowed" 
-                                disabled
-                              >
-                                Booked
-                              </Button>
-                            )}
-                          </div>
-                        ))}
+                            );
+                          }
+                          
+                          return (
+                            <div
+                              key={slot.id}
+                              className={`p-4 rounded-lg border-2 transition-all ${borderColor} ${bgColor} ${hoverBg} ${isDisabled ? 'opacity-80 cursor-not-allowed' : ''}`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Clock className={`h-4 w-4 ${iconColor}`} />
+                                  <span className={`font-medium ${textColor}`}>
+                                    {slot.start_time} - {slot.end_time}
+                                  </span>
+                                </div>
+                                {statusIcon}
+                              </div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <User className={`h-4 w-4 ${iconColor === "text-gray-600" ? "text-gray-400" : iconColor}`} />
+                                <span className={`text-sm ${textColor}`}>
+                                  {slot.doctor.name} - {slot.doctor.specialization}
+                                </span>
+                              </div>
+                              {buttonContent}
+                            </div>
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
