@@ -51,7 +51,6 @@ export default function ClinicPage() {
     loadClinicData();
 
     // Set up real-time subscription for appointment changes
-    const supabase = createClient();
     const channel = supabase
       .channel('appointment-changes')
       .on(
@@ -288,6 +287,30 @@ export default function ClinicPage() {
 
       // Don't update slot availability yet - wait for hospital approval
       // Slot will show as unavailable to others but pending to the requester
+
+      // Send notification email
+      const { data: clinicInfo } = await supabase
+        .from("clinics")
+        .select("name")
+        .eq("id", params.id)
+        .single();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user?.email && clinicInfo) {
+        try {
+          const { sendAppointmentConfirmation } = await import("@/lib/notifications");
+          await sendAppointmentConfirmation(
+            user.email,
+            slot.date,
+            slot.start_time,
+            clinicInfo.name,
+            slot.doctor.name
+          );
+        } catch (error) {
+          console.error("Error sending email:", error);
+        }
+      }
 
       alert("Appointment request submitted! The hospital will review and respond shortly. You can check the status in 'My Appointments'.");
       loadClinicData(); // Reload to show updated status

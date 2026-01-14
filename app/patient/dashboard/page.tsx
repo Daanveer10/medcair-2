@@ -163,8 +163,12 @@ export default function PatientDashboard() {
     
     const matchesCity = !cityFilter ||
       clinic.hospital.city.toLowerCase().includes(cityFilter.toLowerCase());
+
+    const matchesDistance = !distanceFilter || 
+      !clinic.hospital.distance || 
+      parseFloat(clinic.hospital.distance) <= distanceFilter;
     
-    return matchesSearch && matchesDisease && matchesCity;
+    return matchesSearch && matchesDisease && matchesCity && matchesDistance;
   });
 
   // Get recommended clinics (top 6 with most specialties or random)

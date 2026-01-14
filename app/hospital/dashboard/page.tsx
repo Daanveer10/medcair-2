@@ -19,6 +19,8 @@ interface Appointment {
   appointment_time: string;
   status: string;
   slot_id?: string;
+  patient_id?: string | null;
+  clinic_id?: string | null;
   patient: {
     full_name: string;
   };
@@ -77,7 +79,6 @@ export default function HospitalDashboard() {
     loadAppointments();
 
     // Set up real-time subscription for appointment changes
-    const supabase = createClient();
     const channel = supabase
       .channel('hospital-appointments')
       .on(
@@ -235,6 +236,8 @@ export default function HospitalDashboard() {
         appointment_time: apt.appointment_time,
         status: apt.status,
         slot_id: apt.slot_id,
+        patient_id: apt.patient_id || null,
+        clinic_id: apt.clinic_id || null,
         patient: {
           full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
         },
@@ -310,38 +313,19 @@ export default function HospitalDashboard() {
           .eq("id", appointment.slot_id);
       }
 
-      // Send notification email to patient
-      const { data: patientProfile } = await supabase
-        .from("user_profiles")
-        .select("user_id")
-        .eq("id", appointment?.patient?.full_name ? "" : "")
-        .single();
-
-      // Get patient email from auth
-      if (appointment) {
-        const { data: patientData } = await supabase
-          .from("user_profiles")
-          .select("user_id")
-          .eq("id", appointment.patient.full_name)
-          .single();
-
-        if (patientData) {
-          // Get user email (requires admin access or patient lookup)
-          try {
-            const { sendAppointmentStatusUpdate } = await import("@/lib/notifications");
-            // Note: In production, fetch patient email from auth.users or store in profile
-            // For now, we'll create the notification record
-            const { createNotification } = await import("@/lib/notifications");
-            await createNotification({
-              type: 'appointment_accepted',
-              appointmentId: appointmentId,
-              patientId: appointment.patient.full_name, // This should be patient_id
-              clinicId: appointment.clinic.name, // This should be clinic_id
-              message: `Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been accepted.`
-            });
-          } catch (error) {
-            console.error("Error sending notification:", error);
-          }
+      // Send notification to patient
+      if (appointment && appointment.patient_id) {
+        try {
+          const { createNotification } = await import("@/lib/notifications");
+          await createNotification({
+            type: 'appointment_accepted',
+            appointmentId: appointmentId,
+            patientId: appointment.patient_id,
+            clinicId: appointment.clinic_id || "",
+            message: `Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been accepted.`
+          });
+        } catch (error) {
+          console.error("Error creating notification:", error);
         }
       }
 
@@ -364,6 +348,23 @@ export default function HospitalDashboard() {
         .eq("id", appointmentId);
 
       if (error) throw error;
+
+      // Send notification to patient
+      const appointment = appointments.find(apt => apt.id === appointmentId);
+      if (appointment && appointment.patient_id) {
+        try {
+          const { createNotification } = await import("@/lib/notifications");
+          await createNotification({
+            type: 'appointment_declined',
+            appointmentId: appointmentId,
+            patientId: appointment.patient_id,
+            clinicId: appointment.clinic_id || "",
+            message: `Your appointment request for ${appointment.appointment_date} at ${appointment.appointment_time} has been declined. Please select another time slot.`
+          });
+        } catch (error) {
+          console.error("Error creating notification:", error);
+        }
+      }
 
       alert("Appointment declined.");
       loadAppointments(); // Reload to refresh the list
