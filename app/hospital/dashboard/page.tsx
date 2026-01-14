@@ -179,7 +179,7 @@ export default function HospitalDashboard() {
 
       const clinicIds = clinics.map(c => c.id);
 
-      // Get appointments for these clinics
+      // Get appointments for these clinics (including pending ones)
       const { data, error } = await supabase
         .from("appointments")
         .select(`
@@ -187,6 +187,7 @@ export default function HospitalDashboard() {
           appointment_date,
           appointment_time,
           status,
+          slot_id,
           patient:user_profiles!appointments_patient_id_fkey (
             full_name
           ),
