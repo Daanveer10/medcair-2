@@ -31,7 +31,7 @@ export default function Home() {
               <Suspense>
                 <div className="flex items-center gap-4">
                   <Link href="/auth/login">
-                    <Button variant="ghost" className="hidden sm:inline-flex">Login</Button>
+                    <Button variant="outline" className="hidden sm:inline-flex border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">Login</Button>
                   </Link>
                   <Link href="/auth/sign-up">
                   <Button className="bg-green-600 text-white hover:bg-green-700">

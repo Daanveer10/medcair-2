@@ -370,8 +370,8 @@ export default function HospitalDashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Link href="/hospital/settings">
-                <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-300 hover:bg-gray-100">
-                  <Settings className="h-4 w-4 text-gray-700" />
+                <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
+                  <Settings className="h-4 w-4 text-gray-900" />
                   <span className="font-medium text-gray-900">Settings</span>
                 </Button>
               </Link>
