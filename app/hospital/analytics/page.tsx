@@ -164,10 +164,11 @@ export default function HospitalAnalytics() {
 
       // Group by clinic
       const clinicCounts: Record<string, number> = {};
-      appointments?.forEach(apt => {
-        const clinicName = Array.isArray(apt.clinic) 
-          ? apt.clinic[0]?.name || "Unknown"
-          : apt.clinic?.name || "Unknown";
+      appointments?.forEach((apt: any) => {
+        const clinicData = apt.clinic;
+        const clinicName = Array.isArray(clinicData) 
+          ? clinicData[0]?.name || "Unknown"
+          : (clinicData?.name || "Unknown");
         clinicCounts[clinicName] = (clinicCounts[clinicName] || 0) + 1;
       });
       const appointmentsByClinic = Object.entries(clinicCounts)
