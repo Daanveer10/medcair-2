@@ -118,16 +118,45 @@ export default function ClinicPage() {
 
       if (slotsError) throw slotsError;
 
-      // Get all appointments for these slots to check which are booked
+      // Get all appointments for these slots to check which are booked/pending
       const slotIds = (slotsData || []).map(s => s.id);
       const { data: appointmentsData } = await supabase
         .from("appointments")
-        .select("slot_id, status")
+        .select("slot_id, status, patient_id")
         .in("slot_id", slotIds)
-        .eq("status", "scheduled");
+        .in("status", ["pending", "accepted", "scheduled"]);
 
+      // Get current user's profile to check if they have pending appointments
+      const { data: { user } } = await supabase.auth.getUser();
+      let currentPatientId: string | null = null;
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+        currentPatientId = profile?.id || null;
+      }
+
+      // Separate booked (accepted/scheduled) and pending appointments
       const bookedSlotIds = new Set(
-        (appointmentsData || []).map(apt => apt.slot_id)
+        (appointmentsData || [])
+          .filter(apt => apt.status === "accepted" || apt.status === "scheduled")
+          .map(apt => apt.slot_id)
+      );
+
+      // Pending appointments by current user (waiting for response)
+      const pendingByCurrentUser = new Set(
+        (appointmentsData || [])
+          .filter(apt => apt.status === "pending" && apt.patient_id === currentPatientId)
+          .map(apt => apt.slot_id)
+      );
+
+      // Pending appointments by other users (unavailable)
+      const pendingByOthers = new Set(
+        (appointmentsData || [])
+          .filter(apt => apt.status === "pending" && apt.patient_id !== currentPatientId)
+          .map(apt => apt.slot_id)
       );
 
       // Transform slots data - handle doctor relation (Supabase returns as array)
