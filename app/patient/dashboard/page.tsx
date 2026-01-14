@@ -127,17 +127,44 @@ export default function PatientDashboard() {
             name,
             address,
             city,
-            state
+            latitude,
+            longitude
           )
         `);
       
       if (error) throw error;
+
+      // Calculate distance if user allows geolocation
+      let userLat: number | null = null;
+      let userLng: number | null = null;
+      
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          userLat = position.coords.latitude;
+          userLng = position.coords.longitude;
+        } catch (error) {
+          console.log("Geolocation not available or denied");
+        }
+      }
       
       // Transform data - handle hospital relation (Supabase returns as array)
       const transformedClinics = (data || []).map((clinic: any) => {
         const hospitalData = Array.isArray(clinic.hospital) 
           ? clinic.hospital[0] 
           : clinic.hospital;
+        
+        let distance: number | null = null;
+        if (userLat && userLng && hospitalData?.latitude && hospitalData?.longitude) {
+          distance = calculateDistance(
+            userLat,
+            userLng,
+            parseFloat(hospitalData.latitude),
+            parseFloat(hospitalData.longitude)
+          );
+        }
         
         return {
           id: clinic.id,
@@ -148,7 +175,7 @@ export default function PatientDashboard() {
             name: hospitalData?.name || "Unknown",
             address: hospitalData?.address || "Unknown",
             city: hospitalData?.city || "Unknown",
-            distance: hospitalData?.distance,
+            distance: distance ? distance.toFixed(1) : null,
           },
         };
       });
