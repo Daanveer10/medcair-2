@@ -49,6 +49,31 @@ export default function ClinicPage() {
 
   useEffect(() => {
     loadClinicData();
+
+    // Set up real-time subscription for appointment changes
+    const supabase = createClient();
+    const channel = supabase
+      .channel('appointment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `clinic_id=eq.${params.id}`
+        },
+        (payload) => {
+          console.log('Appointment change detected:', payload);
+          // Reload clinic data when appointments change
+          loadClinicData();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [params.id]);
 
   const loadClinicData = async () => {

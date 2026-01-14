@@ -40,6 +40,7 @@ export default function PatientDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [diseaseFilter, setDiseaseFilter] = useState("");
   const [cityFilter, setCityFilter] = useState("");
+  const [distanceFilter, setDistanceFilter] = useState<number | null>(null);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -400,6 +401,17 @@ export default function PatientDashboard() {
                     placeholder="Enter city name..."
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
+                    className="h-11 border-2 border-gray-300 focus:border-green-600 text-black placeholder:text-gray-400"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="distance" className="text-sm font-bold text-gray-700">Max Distance (km)</Label>
+                  <Input
+                    id="distance"
+                    type="number"
+                    placeholder="e.g., 10"
+                    value={distanceFilter || ""}
+                    onChange={(e) => setDistanceFilter(e.target.value ? parseFloat(e.target.value) : null)}
                     className="h-11 border-2 border-gray-300 focus:border-green-600 text-black placeholder:text-gray-400"
                   />
                 </div>
