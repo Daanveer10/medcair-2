@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, Calendar, MapPin, Clock, Stethoscope, LogOut, Heart, TrendingUp, Bell, Filter, Star, ChevronRight, Sparkles, Zap } from "lucide-react";
 import Link from "next/link";
+import { NotificationCenter } from "@/components/notification-center";
+import { ClinicCardSkeleton } from "@/components/skeleton-loader";
 
 // Calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -59,12 +61,88 @@ export default function PatientDashboard() {
   const [userName, setUserName] = useState("");
   const [upcomingAppointments, setUpcomingAppointments] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [favoriteClinicIds, setFavoriteClinicIds] = useState<Set<string>>(new Set());
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   useEffect(() => {
     checkUser();
     loadClinics();
     loadUpcomingAppointments();
+    loadFavorites();
   }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      const { data } = await supabase
+        .from("favorite_clinics")
+        .select("clinic_id")
+        .eq("patient_id", profile.id);
+
+      if (data) {
+        setFavoriteClinicIds(new Set(data.map(f => f.clinic_id)));
+      }
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
+  };
+
+  const toggleFavorite = async (clinicId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      const isFavorite = favoriteClinicIds.has(clinicId);
+
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from("favorite_clinics")
+          .delete()
+          .eq("patient_id", profile.id)
+          .eq("clinic_id", clinicId);
+
+        if (error) throw error;
+        setFavoriteClinicIds(prev => {
+          const next = new Set(prev);
+          next.delete(clinicId);
+          return next;
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from("favorite_clinics")
+          .insert({
+            patient_id: profile.id,
+            clinic_id: clinicId
+          });
+
+        if (error) throw error;
+        setFavoriteClinicIds(prev => new Set(prev).add(clinicId));
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      alert("Failed to update favorites.");
+    }
+  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -175,7 +253,7 @@ export default function PatientDashboard() {
             name: hospitalData?.name || "Unknown",
             address: hospitalData?.address || "Unknown",
             city: hospitalData?.city || "Unknown",
-            distance: distance ? distance.toFixed(1) : null,
+            distance: distance ? parseFloat(distance.toFixed(1)) : undefined,
           },
         };
       });
@@ -194,6 +272,7 @@ export default function PatientDashboard() {
   };
 
   const filteredClinics = clinics.filter((clinic) => {
+    const matchesFavorites = !showFavoritesOnly || favoriteClinicIds.has(clinic.id);
     const matchesSearch = !searchTerm || 
       clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       clinic.department.toLowerCase().includes(searchTerm.toLowerCase());
@@ -206,9 +285,9 @@ export default function PatientDashboard() {
 
     const matchesDistance = !distanceFilter || 
       !clinic.hospital.distance || 
-      parseFloat(clinic.hospital.distance) <= distanceFilter;
+      clinic.hospital.distance <= distanceFilter;
     
-    return matchesSearch && matchesDisease && matchesCity && matchesDistance;
+    return matchesFavorites && matchesSearch && matchesDisease && matchesCity && matchesDistance;
   });
 
   // Get recommended clinics (top 6 with most specialties or random)
@@ -272,6 +351,7 @@ export default function PatientDashboard() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              <NotificationCenter />
               <Link href="/patient/appointments">
                 <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
                   <Calendar className="h-4 w-4 text-gray-900" />
@@ -476,6 +556,15 @@ export default function PatientDashboard() {
               <p className="text-gray-700 font-semibold text-lg">
                 Found <span className="text-green-600 font-bold text-2xl">{filteredClinics.length}</span> {filteredClinics.length === 1 ? "clinic" : "clinics"}
               </p>
+              <Button
+                variant={showFavoritesOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={showFavoritesOnly ? "bg-green-600 text-white" : ""}
+              >
+                <Heart className={`h-4 w-4 mr-2 ${showFavoritesOnly ? "fill-white" : ""}`} />
+                Favorites Only
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClinics.map((clinic, idx) => (
@@ -491,8 +580,23 @@ export default function PatientDashboard() {
                         </CardTitle>
                         <CardDescription className="text-sm font-medium text-gray-600">{clinic.department}</CardDescription>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
-                        <Heart className="h-4 w-4 text-gray-400 hover:text-green-600 transition-colors" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleFavorite(clinic.id);
+                        }}
+                        className="h-8 w-8 p-0 hover:bg-red-50"
+                      >
+                        <Heart
+                          className={`h-5 w-5 ${
+                            favoriteClinicIds.has(clinic.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-400 hover:text-red-500"
+                          }`}
+                        />
                       </Button>
                     </div>
                   </CardHeader>

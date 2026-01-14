@@ -20,39 +20,29 @@ This document outlines the immediate enhancements that have been implemented and
 - `app/patient/clinic/[id]/page.tsx` - Real-time slot updates
 - `app/hospital/dashboard/page.tsx` - Real-time appointment list updates
 
-### 2. Email Notifications
+### 2. In-App Notifications
 
 **What it does:**
-- Sends email notifications for appointment status changes
-- Confirmation emails when appointments are requested
-- Status update emails when appointments are accepted/declined
+- Creates in-app notifications for appointment status changes
+- Notifies patients when appointments are requested
+- Notifies patients when appointments are accepted/declined
+- All notifications stored in database and visible in-app
 
-**How to integrate:**
-1. The notification system is ready in `lib/notifications.ts`
-2. Currently logs to console (for development)
-3. To enable actual emails, integrate with:
-   - **Resend** (recommended): `npm install resend`
-   - **SendGrid**: `npm install @sendgrid/mail`
-   - **Supabase Edge Functions**: Create a function to send emails
-   - **Nodemailer**: `npm install nodemailer`
+**How it works:**
+1. Notifications are stored in the `notifications` table
+2. Created automatically when:
+   - Patient books an appointment (appointment_created)
+   - Hospital accepts an appointment (appointment_accepted)
+   - Hospital declines an appointment (appointment_declined)
+3. Patients can view their notifications in the app
+4. Notifications are marked as read/unread
 
-**Example integration with Resend:**
-```typescript
-import { Resend } from 'resend';
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function sendEmailNotification(to: string, subject: string, body: string) {
-  await resend.emails.send({
-    from: 'medcAIr <noreply@yourdomain.com>',
-    to: [to],
-    subject: subject,
-    html: body,
-  });
-}
-```
+**Database:**
+- `notifications` table created via `enhance-patient-profile.sql`
+- Includes: type, message, appointment_id, patient_id, clinic_id, read status
 
 **Files created:**
-- `lib/notifications.ts` - Notification system
+- `lib/notifications.ts` - In-app notification system
 
 ### 3. Enhanced Search & Discovery
 
@@ -101,16 +91,12 @@ export async function sendEmailNotification(to: string, subject: string, body: s
 
 ## 🚀 Next Steps
 
-### To Enable Email Notifications:
+### To View Notifications:
 
-1. **Choose an email service** (Resend recommended)
-2. **Install the package**: `npm install resend`
-3. **Add API key** to `.env.local`:
-   ```
-   RESEND_API_KEY=your_api_key_here
-   ```
-4. **Update `lib/notifications.ts`** with actual email sending code
-5. **Test** by booking an appointment
+1. **Run the SQL file**: Execute `enhance-patient-profile.sql` in Supabase (if not already done)
+2. **Create notification center UI** in patient dashboard
+3. **Display notifications** with read/unread status
+4. **Mark as read** when user views notification
 
 ### To Use Enhanced Patient Profiles:
 
@@ -130,7 +116,7 @@ export async function sendEmailNotification(to: string, subject: string, body: s
 
 ## 📝 Notes
 
-- **Email notifications** are currently placeholder - integrate with your preferred service
+- **In-app notifications** are fully functional and stored in database
 - **Geolocation** requires user permission - will gracefully fail if denied
 - **Real-time** requires Supabase Realtime to be enabled in your project settings
 - **Distance calculation** only works if hospitals have latitude/longitude in database
@@ -162,6 +148,6 @@ WHERE id = 'your-hospital-id';
 - **Better UX**: Instant feedback on actions
 - **Location-aware**: Find clinics near you
 - **Comprehensive profiles**: Ready for medical history tracking
-- **Notification system**: Keep users informed
+- **In-app notifications**: Keep users informed without external dependencies
 
-All enhancements are production-ready and can be integrated with external services as needed!
+All enhancements are production-ready!

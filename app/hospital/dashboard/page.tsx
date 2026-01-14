@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
 import Link from "next/link";
 
 // Prevent static generation - requires authentication
@@ -429,6 +429,12 @@ export default function HospitalDashboard() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              <Link href="/hospital/analytics">
+                <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
+                  <BarChart3 className="h-4 w-4 text-gray-900" />
+                  <span className="font-medium text-gray-900">Analytics</span>
+                </Button>
+              </Link>
               <Link href="/hospital/settings">
                 <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
                   <Settings className="h-4 w-4 text-gray-900" />

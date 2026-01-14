@@ -288,28 +288,30 @@ export default function ClinicPage() {
       // Don't update slot availability yet - wait for hospital approval
       // Slot will show as unavailable to others but pending to the requester
 
-      // Send notification email
-      const { data: clinicInfo } = await supabase
-        .from("clinics")
-        .select("name")
-        .eq("id", params.id)
-        .single();
+      // Create in-app notification for patient
+      try {
+        const { createNotification } = await import("@/lib/notifications");
+        const clinicId = Array.isArray(params.id) ? params.id[0] : params.id;
+        if (!clinicId) return;
+        
+        const { data: clinicInfo } = await supabase
+          .from("clinics")
+          .select("name")
+          .eq("id", clinicId)
+          .single();
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user?.email && clinicInfo) {
-        try {
-          const { sendAppointmentConfirmation } = await import("@/lib/notifications");
-          await sendAppointmentConfirmation(
-            user.email,
-            slot.date,
-            slot.start_time,
-            clinicInfo.name,
-            slot.doctor.name
-          );
-        } catch (error) {
-          console.error("Error sending email:", error);
+        if (clinicInfo && appointment) {
+          await createNotification({
+            type: 'appointment_created',
+            appointmentId: appointment.id,
+            patientId: profile.id,
+            clinicId: clinicId,
+            message: `Your appointment request for ${slot.date} at ${slot.start_time} with ${slot.doctor.name} at ${clinicInfo.name} has been submitted. Waiting for hospital approval.`
+          });
         }
+      } catch (error) {
+        console.error("Error creating notification:", error);
+        // Non-critical, continue
       }
 
       alert("Appointment request submitted! The hospital will review and respond shortly. You can check the status in 'My Appointments'.");

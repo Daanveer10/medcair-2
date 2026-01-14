@@ -5,8 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle, History, Sparkles } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle, History, Sparkles, RefreshCw, X } from "lucide-react";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AppointmentCardSkeleton } from "@/components/skeleton-loader";
 
 // Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
@@ -17,6 +20,8 @@ interface Appointment {
   appointment_time: string;
   status: string;
   reason?: string;
+  slot_id?: string;
+  clinic_id?: string;
   clinic: {
     name: string;
     department: string;
@@ -46,6 +51,13 @@ export default function PatientAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPrevious, setShowPrevious] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [rescheduling, setRescheduling] = useState(false);
 
   useEffect(() => {
     loadAppointments();
@@ -78,6 +90,8 @@ export default function PatientAppointments() {
           appointment_time,
           status,
           reason,
+          slot_id,
+          clinic_id,
           clinic:clinics (
             name,
             department
@@ -124,6 +138,8 @@ export default function PatientAppointments() {
             appointment_time: apt.appointment_time,
             status: apt.status,
             reason: apt.reason,
+            slot_id: apt.slot_id,
+            clinic_id: apt.clinic_id,
             clinic: {
               name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
               department: Array.isArray(apt.clinic) ? apt.clinic[0]?.department : apt.clinic?.department || "Unknown",
@@ -149,40 +165,168 @@ export default function PatientAppointments() {
     }
   };
 
-  const handleCancelAppointment = async (appointmentId: string) => {
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
+  const handleCancelClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowCancelModal(true);
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!selectedAppointment) return;
 
     try {
-      const appointment = appointments.find((a) => a.id === appointmentId);
-      if (!appointment) return;
-
-      // Get slot_id from appointment
-      const { data: appointmentData } = await supabase
-        .from("appointments")
-        .select("slot_id")
-        .eq("id", appointmentId)
-        .single();
-
       const { error } = await supabase
         .from("appointments")
-        .update({ status: "cancelled" })
-        .eq("id", appointmentId);
+        .update({ 
+          status: "cancelled",
+          reason: cancelReason || "Cancelled by patient"
+        })
+        .eq("id", selectedAppointment.id);
 
       if (error) throw error;
 
       // Free up the slot
-      if (appointmentData?.slot_id) {
+      if (selectedAppointment.slot_id) {
         await supabase
           .from("appointment_slots")
           .update({ is_available: true })
-          .eq("id", appointmentData.slot_id);
+          .eq("id", selectedAppointment.slot_id);
+      }
+
+      // Create notification
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (profile && selectedAppointment.clinic_id) {
+        const { createNotification } = await import("@/lib/notifications");
+        await createNotification({
+          type: 'appointment_declined',
+          appointmentId: selectedAppointment.id,
+          patientId: profile.id,
+          clinicId: selectedAppointment.clinic_id,
+          message: `Your appointment on ${selectedAppointment.appointment_date} at ${selectedAppointment.appointment_time} has been cancelled.`
+        });
       }
 
       alert("Appointment cancelled successfully!");
+      setShowCancelModal(false);
+      setCancelReason("");
+      setSelectedAppointment(null);
       loadAppointments();
     } catch (error) {
       console.error("Error cancelling appointment:", error);
       alert("Failed to cancel appointment.");
+    }
+  };
+
+  const handleRescheduleClick = async (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowRescheduleModal(true);
+    
+    // Load available slots for this clinic
+    if (appointment.clinic_id) {
+      try {
+        const { data } = await supabase
+          .from("appointment_slots")
+          .select(`
+            id,
+            date,
+            start_time,
+            end_time,
+            doctor:doctors (
+              name,
+              specialization
+            )
+          `)
+          .eq("clinic_id", appointment.clinic_id)
+          .eq("is_available", true)
+          .gte("date", new Date().toISOString().split("T")[0])
+          .order("date", { ascending: true })
+          .order("start_time", { ascending: true });
+
+        // Filter out slots that are already booked
+        const { data: bookedSlots } = await supabase
+          .from("appointments")
+          .select("slot_id")
+          .in("status", ["pending", "accepted", "scheduled"])
+          .neq("id", appointment.id);
+
+        const bookedSlotIds = new Set((bookedSlots || []).map(s => s.slot_id));
+        const available = (data || []).filter(slot => !bookedSlotIds.has(slot.id));
+        
+        setAvailableSlots(available);
+      } catch (error) {
+        console.error("Error loading slots:", error);
+      }
+    }
+  };
+
+  const handleRescheduleAppointment = async () => {
+    if (!selectedAppointment || !selectedSlot) return;
+
+    setRescheduling(true);
+    try {
+      // Free up old slot
+      if (selectedAppointment.slot_id) {
+        await supabase
+          .from("appointment_slots")
+          .update({ is_available: true })
+          .eq("id", selectedAppointment.slot_id);
+      }
+
+      // Get new slot details
+      const newSlot = availableSlots.find(s => s.id === selectedSlot);
+      if (!newSlot) throw new Error("Slot not found");
+
+      // Update appointment with new slot
+      const { error } = await supabase
+        .from("appointments")
+        .update({
+          slot_id: selectedSlot,
+          appointment_date: newSlot.date,
+          appointment_time: newSlot.start_time,
+          status: "pending" // Reset to pending for hospital approval
+        })
+        .eq("id", selectedAppointment.id);
+
+      if (error) throw error;
+
+      // Mark new slot as unavailable
+      await supabase
+        .from("appointment_slots")
+        .update({ is_available: false })
+        .eq("id", selectedSlot);
+
+      // Create notification
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (profile && selectedAppointment.clinic_id) {
+        const { createNotification } = await import("@/lib/notifications");
+        await createNotification({
+          type: 'appointment_created',
+          appointmentId: selectedAppointment.id,
+          patientId: profile.id,
+          clinicId: selectedAppointment.clinic_id,
+          message: `Your appointment has been rescheduled to ${newSlot.date} at ${newSlot.start_time}. Waiting for hospital approval.`
+        });
+      }
+
+      alert("Appointment rescheduled successfully! Waiting for hospital approval.");
+      setShowRescheduleModal(false);
+      setSelectedSlot("");
+      setSelectedAppointment(null);
+      loadAppointments();
+    } catch (error) {
+      console.error("Error rescheduling appointment:", error);
+      alert("Failed to reschedule appointment.");
+    } finally {
+      setRescheduling(false);
     }
   };
 
@@ -233,9 +377,10 @@ export default function PatientAppointments() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent"></div>
-            <p className="text-gray-600 mt-4 font-medium">Loading appointments...</p>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <AppointmentCardSkeleton key={i} />
+            ))}
           </div>
         ) : (
           <div className="space-y-4">
@@ -388,20 +533,151 @@ export default function PatientAppointments() {
                       )}
 
                       {appointment.status === "scheduled" && !showPrevious && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleCancelAppointment(appointment.id)}
-                          className="bg-red-500 text-white hover:bg-red-600"
-                        >
-                          Cancel Appointment
-                        </Button>
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRescheduleClick(appointment)}
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Reschedule
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleCancelClick(appointment)}
+                            className="bg-red-500 text-white hover:bg-red-600"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel Appointment
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
               ))
             )}
+          </div>
+        )}
+
+        {/* Cancel Modal */}
+        {showCancelModal && selectedAppointment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle>Cancel Appointment</CardTitle>
+                <CardDescription>
+                  Are you sure you want to cancel this appointment?
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="cancelReason">Reason for cancellation (optional)</Label>
+                  <Input
+                    id="cancelReason"
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="Enter reason..."
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setCancelReason("");
+                      setSelectedAppointment(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Keep Appointment
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleCancelAppointment}
+                    className="flex-1 bg-red-500 hover:bg-red-600"
+                  >
+                    Cancel Appointment
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Reschedule Modal */}
+        {showRescheduleModal && selectedAppointment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Reschedule Appointment</CardTitle>
+                <CardDescription>
+                  Select a new date and time for your appointment
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {availableSlots.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No available slots found. Please try again later.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot.id}
+                          onClick={() => setSelectedSlot(slot.id)}
+                          className={`p-3 border-2 rounded-lg text-left transition-all ${
+                            selectedSlot === slot.id
+                              ? "border-green-600 bg-green-50"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                        >
+                          <div className="font-semibold text-gray-900">
+                            {new Date(slot.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {slot.start_time} - {slot.end_time}
+                          </div>
+                          {slot.doctor && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Dr. {Array.isArray(slot.doctor) ? slot.doctor[0]?.name : slot.doctor?.name}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-3 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowRescheduleModal(false);
+                          setSelectedSlot("");
+                          setSelectedAppointment(null);
+                        }}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleRescheduleAppointment}
+                        disabled={!selectedSlot || rescheduling}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        {rescheduling ? "Rescheduling..." : "Confirm Reschedule"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
