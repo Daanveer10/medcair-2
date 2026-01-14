@@ -241,7 +241,7 @@ export default function ClinicPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-500">Loading clinic information...</p>
       </div>
     );
@@ -249,7 +249,7 @@ export default function ClinicPage() {
 
   if (!clinic) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <Card>
           <CardContent className="pt-6">
             <p className="text-gray-500">Clinic not found.</p>
@@ -263,7 +263,7 @@ export default function ClinicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link href="/patient/dashboard">
           <Button variant="ghost" className="mb-6">
@@ -369,7 +369,7 @@ export default function ClinicPage() {
                             {slot.is_available ? (
                               <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:opacity-90 text-white"
+                                className="w-full bg-green-600 text-white hover:bg-green-700"
                                 onClick={() => handleBookAppointment(slot.id)}
                               >
                                 Book Appointment

@@ -300,34 +300,34 @@ export default function HospitalDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
-      {/* Vibrant Navbar */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-cyan-200/50 shadow-lg sticky top-0 z-50">
+    <div className="min-h-screen bg-white">
+      {/* Clean Navbar */}
+      <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <div className="p-2.5 bg-green-600 rounded-lg">
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold gradient-text-vibrant">
+              <h1 className="text-2xl font-bold text-black">
                 medcAIr - Hospital Portal
               </h1>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/hospital/settings">
-                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-cyan-100">
-                  <Settings className="h-4 w-4 text-cyan-600" />
+                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-gray-100">
+                  <Settings className="h-4 w-4 text-gray-600" />
                   <span className="font-medium">Settings</span>
                 </Button>
               </Link>
               <div className="hidden sm:block text-sm font-medium text-gray-700">
-                Welcome, <span className="text-cyan-600 font-bold">{userName}</span>
+                Welcome, <span className="text-black font-bold">{userName}</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="border-cyan-200 hover:bg-cyan-50"
+                className="border-gray-300 hover:bg-gray-50"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -341,8 +341,8 @@ export default function HospitalDashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-cyan-500" />
-            <h2 className="text-4xl md:text-5xl font-bold gradient-text-vibrant">
+            <Sparkles className="h-8 w-8 text-green-600" />
+            <h2 className="text-4xl md:text-5xl font-bold text-black">
               Hospital Dashboard
             </h2>
           </div>
@@ -354,7 +354,7 @@ export default function HospitalDashboard() {
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 shadow-xl transform hover:scale-105 transition-all duration-300`}
+              className={`relative overflow-hidden rounded-lg ${stat.gradient} p-6 shadow-md transform hover:scale-105 transition-all duration-300`}
             >
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
@@ -379,7 +379,7 @@ export default function HospitalDashboard() {
                 variant={statusFilter === "all" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("all")}
-                className={statusFilter === "all" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : ""}
+                className={statusFilter === "all" ? "bg-green-600 text-white" : ""}
               >
                 All
               </Button>
@@ -387,7 +387,7 @@ export default function HospitalDashboard() {
                 variant={statusFilter === "scheduled" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("scheduled")}
-                className={statusFilter === "scheduled" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : ""}
+                className={statusFilter === "scheduled" ? "bg-green-600 text-white" : ""}
               >
                 Scheduled
               </Button>
@@ -395,7 +395,7 @@ export default function HospitalDashboard() {
                 variant={statusFilter === "completed" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("completed")}
-                className={statusFilter === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white" : ""}
+                className={statusFilter === "completed" ? "bg-green-600 text-white" : ""}
               >
                 Completed
               </Button>
@@ -403,7 +403,7 @@ export default function HospitalDashboard() {
           </div>
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white hover:opacity-90 shadow-lg hover:shadow-xl font-bold"
+            className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create Appointment
@@ -419,14 +419,14 @@ export default function HospitalDashboard() {
         ) : (
           <div className="space-y-4">
             {filteredAppointments.length === 0 ? (
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-cyan-50 to-purple-50">
+              <Card className="border border-gray-200 shadow-sm bg-white">
                 <CardContent className="pt-6 text-center py-12">
-                  <Calendar className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
-                  <p className="text-xl font-bold text-gray-900 mb-2">No appointments found</p>
+                  <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-black mb-2">No appointments found</p>
                   <p className="text-gray-600 mb-4">Create your first appointment to get started</p>
                   <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
+                    className="bg-green-600 text-white hover:bg-green-700"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Appointment
@@ -440,10 +440,10 @@ export default function HospitalDashboard() {
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
                   <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "scheduled" ? "bg-gradient-to-r from-cyan-500 to-blue-500" :
-                    appointment.status === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
-                    appointment.status === "cancelled" ? "bg-gradient-to-r from-red-500 to-pink-500" :
-                    "bg-gradient-to-r from-gray-400 to-gray-500"
+                    appointment.status === "scheduled" ? "bg-green-600" :
+                    appointment.status === "completed" ? "bg-green-600" :
+                    appointment.status === "cancelled" ? "bg-red-500" :
+                    "bg-gray-400"
                   }`}></div>
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between">
@@ -484,13 +484,13 @@ export default function HospitalDashboard() {
                       </div>
                       <div className="ml-4">
                         <span
-                          className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
+                          className={`px-4 py-2 rounded-full text-sm font-bold ${
                             appointment.status === "scheduled"
-                              ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
+                              ? "bg-green-600 text-white"
                               : appointment.status === "completed"
-                              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                              ? "bg-green-600 text-white"
                               : appointment.status === "cancelled"
-                              ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+                              ? "bg-red-500 text-white"
                               : "bg-gray-400 text-white"
                           }`}
                         >
