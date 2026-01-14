@@ -228,7 +228,7 @@ export default function PatientDashboard() {
             </div>
             <div className="flex items-center gap-4">
               <Link href="/patient/appointments">
-                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-gray-100">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-gray-100">
                   <Calendar className="h-4 w-4 text-gray-600" />
                   <span className="font-medium text-black">My Appointments</span>
                   {upcomingAppointments > 0 && (
