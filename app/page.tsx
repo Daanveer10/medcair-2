@@ -143,7 +143,7 @@ export default function Home() {
                   { step: "4", title: "Visit", desc: "Get reminders and manage appointments" },
                 ].map((item) => (
                   <div key={item.step} className="text-center p-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg">
                       {item.step}
                     </div>
                     <h3 className="text-xl font-bold mb-2">{item.title}</h3>
@@ -157,8 +157,8 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start mb-20">
               <div className="p-8 bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <Heart className="h-6 w-6 text-blue-600" />
+                  <div className="p-3 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-xl">
+                    <Heart className="h-6 w-6 text-cyan-600" />
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900">For Patients</h2>
                 </div>
@@ -249,7 +249,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
               <div>
                 <div className="flex items-center gap-2 mb-4">
-                  <Stethoscope className="h-6 w-6 text-blue-600" />
+                  <Stethoscope className="h-6 w-6 text-cyan-600" />
                   <span className="text-xl font-bold text-gray-900">medcAIr</span>
                 </div>
                 <p className="text-sm text-gray-600">
@@ -259,25 +259,25 @@ export default function Home() {
               <div>
                 <h3 className="font-semibold mb-4 text-gray-900">Product</h3>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li><Link href="#" className="hover:text-blue-600">Features</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">Pricing</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">Security</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Features</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Pricing</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Security</Link></li>
                 </ul>
               </div>
               <div>
                 <h3 className="font-semibold mb-4 text-gray-900">Company</h3>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li><Link href="#" className="hover:text-blue-600">About</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">Blog</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">Contact</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">About</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Blog</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Contact</Link></li>
                 </ul>
               </div>
               <div>
                 <h3 className="font-semibold mb-4 text-gray-900">Support</h3>
                 <ul className="space-y-2 text-sm text-gray-600">
-                  <li><Link href="#" className="hover:text-blue-600">Help Center</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">Documentation</Link></li>
-                  <li><Link href="#" className="hover:text-blue-600">API</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Help Center</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">Documentation</Link></li>
+                  <li><Link href="#" className="hover:text-cyan-600">API</Link></li>
                 </ul>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function Home() {
             <a
                   href="https://supabase.com"
               target="_blank"
-                  className="font-bold hover:underline text-blue-600"
+                  className="font-bold hover:underline text-cyan-600"
               rel="noreferrer"
             >
               Supabase
