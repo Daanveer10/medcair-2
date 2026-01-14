@@ -283,19 +283,19 @@ export default function HospitalDashboard() {
       label: "Today's Appointments",
       value: todayAppointments.length,
       icon: <Calendar className="h-6 w-6" />,
-      gradient: "from-orange-500 via-red-500 to-pink-500",
+      gradient: "bg-green-600",
     },
     {
       label: "Upcoming",
       value: upcomingAppointments.length,
       icon: <Clock className="h-6 w-6" />,
-      gradient: "from-blue-500 via-cyan-500 to-teal-500",
+      gradient: "bg-green-600",
     },
     {
       label: "Total Appointments",
       value: appointments.length,
       icon: <Users className="h-6 w-6" />,
-      gradient: "from-purple-500 via-violet-500 to-fuchsia-500",
+      gradient: "bg-green-600",
     },
   ];
 
