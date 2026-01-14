@@ -176,21 +176,21 @@ export default function PatientDashboard() {
       label: "Upcoming",
       value: upcomingAppointments.toString(),
       icon: <Calendar className="h-6 w-6" />,
-      bgGradient: "from-cyan-500 via-blue-500 to-indigo-500",
+      bgGradient: "bg-green-600",
       textColor: "text-white",
     },
     {
       label: "Available Clinics",
       value: clinics.length.toString(),
       icon: <Stethoscope className="h-6 w-6" />,
-      bgGradient: "from-purple-500 via-pink-500 to-rose-500",
+      bgGradient: "bg-green-600",
       textColor: "text-white",
     },
     {
       label: "Search Results",
       value: filteredClinics.length.toString(),
       icon: <TrendingUp className="h-6 w-6" />,
-      bgGradient: "from-blue-500 via-cyan-500 to-teal-500",
+      bgGradient: "bg-green-600",
       textColor: "text-white",
     },
   ];
@@ -213,39 +213,39 @@ export default function PatientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
-      {/* Vibrant Navbar */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-cyan-200/50 shadow-lg sticky top-0 z-50">
+    <div className="min-h-screen bg-white">
+      {/* Clean Navbar */}
+      <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <div className="p-2.5 bg-green-600 rounded-lg">
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold gradient-text-vibrant">
+              <h1 className="text-2xl font-bold text-black">
                 medcAIr
               </h1>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/patient/appointments">
-                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-pink-100">
-                  <Calendar className="h-4 w-4 text-pink-600" />
+                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-gray-100">
+                  <Calendar className="h-4 w-4 text-gray-600" />
                   <span className="font-medium text-black">My Appointments</span>
                   {upcomingAppointments > 0 && (
-                    <span className="ml-1 px-2.5 py-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-xs font-bold shadow-md">
+                    <span className="ml-1 px-2.5 py-0.5 bg-green-600 text-white rounded-full text-xs font-bold">
                       {upcomingAppointments}
                     </span>
                   )}
                 </Button>
               </Link>
               <div className="hidden sm:block text-sm font-medium text-gray-700">
-                Welcome, <span className="text-cyan-600 font-bold">{userName}</span>
+                Welcome, <span className="text-black font-bold">{userName}</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="border-cyan-200 hover:bg-cyan-50"
+                className="border-gray-300 hover:bg-gray-50"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -256,34 +256,33 @@ export default function PatientDashboard() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section with Gradient */}
+        {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-cyan-500" />
-            <h2 className="text-4xl md:text-5xl font-bold gradient-text-vibrant">
+            <Sparkles className="h-8 w-8 text-green-600" />
+            <h2 className="text-4xl md:text-5xl font-bold text-black">
               Welcome back, {userName}!
             </h2>
           </div>
-          <p className="text-lg text-gray-700 font-medium">Discover and book your next healthcare appointment</p>
+          <p className="text-lg text-gray-600">Discover and book your next healthcare appointment</p>
         </div>
 
-        {/* Vibrant Quick Stats */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {quickStats.map((stat, idx) => (
             <div
               key={idx}
-              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.bgGradient} p-6 shadow-xl transform hover:scale-105 transition-all duration-300`}
+              className={`relative overflow-hidden rounded-lg ${stat.bgGradient} p-6 shadow-md transform hover:scale-105 transition-all duration-300`}
             >
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`p-3 bg-white/20 rounded-xl backdrop-blur-sm ${stat.textColor}`}>
+                  <div className={`p-3 bg-white/20 rounded-lg ${stat.textColor}`}>
                     {stat.icon}
                   </div>
                 </div>
                 <p className={`text-sm font-semibold ${stat.textColor} opacity-90 mb-1`}>{stat.label}</p>
                 <p className={`text-4xl font-bold ${stat.textColor}`}>{stat.value}</p>
               </div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             </div>
           ))}
         </div>
@@ -292,47 +291,46 @@ export default function PatientDashboard() {
         {recommendedClinics.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-6 w-6 text-cyan-500" />
-              <h3 className="text-2xl font-bold text-gray-900">Recommended for You</h3>
+              <Zap className="h-6 w-6 text-green-600" />
+              <h3 className="text-2xl font-bold text-black">Recommended for You</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {recommendedClinics.map((clinic, idx) => (
                 <Card
                   key={clinic.id}
-                  className={`group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br ${getDepartmentColor(clinic.department)}`}
+                  className="group relative overflow-hidden border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 bg-white"
                 >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full -mr-10 -mt-10"></div>
-                  <CardHeader className="relative z-10 pb-3">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-xl mb-1 text-white font-bold group-hover:scale-105 transition-transform">
+                        <CardTitle className="text-xl mb-1 text-black font-bold group-hover:scale-105 transition-transform">
                           {clinic.name}
                         </CardTitle>
-                        <CardDescription className="text-white/90 text-sm font-medium">
+                        <CardDescription className="text-gray-600 text-sm font-medium">
                           {clinic.department}
                         </CardDescription>
                       </div>
-                      <div className="px-3 py-1 bg-white/30 backdrop-blur-sm rounded-full">
-                        <Star className="h-4 w-4 text-yellow-300 fill-yellow-300" />
+                      <div className="px-3 py-1 bg-gray-100 rounded-full">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="relative z-10">
+                  <CardContent>
                     <div className="space-y-3">
                       <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-white/90 mt-0.5 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-white">{clinic.hospital.name}</p>
-                          <p className="text-xs text-white/80">{clinic.hospital.city}</p>
+                          <p className="text-sm font-semibold text-black">{clinic.hospital.name}</p>
+                          <p className="text-xs text-gray-600">{clinic.hospital.city}</p>
                         </div>
                       </div>
                       
                       {clinic.specialties.length > 0 && (
                         <div>
-                          <p className="text-xs font-semibold text-white/90 mb-2">Specialties:</p>
+                          <p className="text-xs font-semibold text-gray-700 mb-2">Specialties:</p>
                           <div className="flex flex-wrap gap-1.5">
                             {clinic.specialties.slice(0, 2).map((specialty, idx) => (
-                              <span key={idx} className="text-xs bg-white/30 backdrop-blur-sm text-white px-2.5 py-1 rounded-full font-medium">
+                              <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
                                 {specialty}
                               </span>
                             ))}
@@ -341,7 +339,7 @@ export default function PatientDashboard() {
                       )}
                       
                       <Link href={`/patient/clinic/${clinic.id}`}>
-                        <Button className="w-full bg-white text-gray-900 hover:bg-gray-100 font-bold shadow-lg hover:shadow-xl transition-all">
+                        <Button className="w-full bg-green-600 text-white hover:bg-green-700 font-bold shadow-sm hover:shadow-md transition-all">
                           Book Now
                           <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -355,18 +353,18 @@ export default function PatientDashboard() {
         )}
 
         {/* Enhanced Search Section */}
-        <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-b border-cyan-200/50">
+        <Card className="mb-6 border border-gray-200 shadow-sm bg-white">
+          <CardHeader className="bg-white border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl font-bold text-gray-900">Find a Clinic</CardTitle>
-                <CardDescription className="text-gray-600 font-medium">Search by name, specialty, disease, or location</CardDescription>
+                <CardTitle className="text-2xl font-bold text-black">Find a Clinic</CardTitle>
+                <CardDescription className="text-gray-600">Search by name, specialty, disease, or location</CardDescription>
               </div>
-                <Button
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="sm:hidden border border-cyan-200"
+                className="sm:hidden border border-gray-300"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -376,12 +374,12 @@ export default function PatientDashboard() {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cyan-500" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="Search clinics, departments, or specialties..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-14 text-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500 text-black placeholder:text-gray-400"
+                  className="pl-12 h-14 text-lg border-2 border-gray-300 focus:border-green-600 focus:ring-green-600 text-black placeholder:text-gray-400"
                 />
               </div>
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showFilters ? "block" : "hidden sm:grid"}`}>
@@ -392,7 +390,7 @@ export default function PatientDashboard() {
                     placeholder="e.g., Cardiology, Diabetes, Hypertension..."
                     value={diseaseFilter}
                     onChange={(e) => setDiseaseFilter(e.target.value)}
-                    className="h-11 border-2 border-purple-200 focus:border-purple-500 text-black placeholder:text-gray-400"
+                    className="h-11 border-2 border-gray-300 focus:border-green-600 text-black placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -402,7 +400,7 @@ export default function PatientDashboard() {
                     placeholder="Enter city name..."
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
-                    className="h-11 border-2 border-blue-200 focus:border-blue-500 text-black placeholder:text-gray-400"
+                    className="h-11 border-2 border-gray-300 focus:border-green-600 text-black placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -420,38 +418,37 @@ export default function PatientDashboard() {
           <>
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-700 font-semibold text-lg">
-                Found <span className="text-cyan-600 font-bold text-2xl">{filteredClinics.length}</span> {filteredClinics.length === 1 ? "clinic" : "clinics"}
+                Found <span className="text-green-600 font-bold text-2xl">{filteredClinics.length}</span> {filteredClinics.length === 1 ? "clinic" : "clinics"}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClinics.map((clinic, idx) => (
                 <Card
                   key={clinic.id}
-                  className="group relative overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-2"
+                  className="group relative overflow-hidden hover:shadow-lg transition-all duration-300 border border-gray-200 shadow-sm bg-white transform hover:-translate-y-1"
                 >
-                  <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${getDepartmentColor(clinic.department)}`}></div>
-                  <CardHeader className="pb-3 pt-5">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-xl mb-1 group-hover:text-cyan-600 transition-colors font-bold">
+                        <CardTitle className="text-xl mb-1 group-hover:text-green-600 transition-colors font-bold text-black">
                           {clinic.name}
                         </CardTitle>
-                        <CardDescription className="text-sm font-medium">{clinic.department}</CardDescription>
+                        <CardDescription className="text-sm font-medium text-gray-600">{clinic.department}</CardDescription>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-cyan-100">
-                        <Heart className="h-4 w-4 text-gray-400 hover:text-cyan-500 transition-colors" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100">
+                        <Heart className="h-4 w-4 text-gray-400 hover:text-green-600 transition-colors" />
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-cyan-500 mt-0.5 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-gray-900">{clinic.hospital.name}</p>
                           <p className="text-xs text-gray-600">{clinic.hospital.address}, {clinic.hospital.city}</p>
                           {clinic.hospital.distance && (
-                            <p className="text-xs text-cyan-600 font-semibold mt-1">📍 {clinic.hospital.distance} km away</p>
+                            <p className="text-xs text-green-600 font-semibold mt-1">📍 {clinic.hospital.distance} km away</p>
                           )}
                         </div>
                       </div>
@@ -463,7 +460,7 @@ export default function PatientDashboard() {
                             {clinic.specialties.slice(0, 4).map((specialty, idx) => (
                               <span
                                 key={idx}
-                                className={`text-xs bg-gradient-to-r ${getDepartmentColor(clinic.department)} text-white px-3 py-1.5 rounded-full font-semibold shadow-md`}
+                                className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full font-semibold"
                               >
                                 {specialty}
                               </span>
@@ -476,7 +473,7 @@ export default function PatientDashboard() {
                       )}
                       
                       <Link href={`/patient/clinic/${clinic.id}`}>
-                        <Button className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white hover:opacity-90 font-bold shadow-lg hover:shadow-xl transition-all group-hover:scale-105">
+                        <Button className="w-full bg-green-600 text-white hover:bg-green-700 font-bold shadow-sm hover:shadow-md transition-all group-hover:scale-105">
                           View Available Slots
                           <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -490,10 +487,10 @@ export default function PatientDashboard() {
         )}
 
         {!loading && filteredClinics.length === 0 && (
-          <Card className="text-center py-12 border-0 shadow-xl bg-gradient-to-br from-cyan-50 to-purple-50">
+          <Card className="text-center py-12 border border-gray-200 shadow-sm bg-white">
             <CardContent>
-              <Search className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
-              <p className="text-xl font-bold text-gray-900 mb-2">No clinics found</p>
+              <Search className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-xl font-bold text-black mb-2">No clinics found</p>
               <p className="text-gray-600 mb-4">Try adjusting your search filters</p>
               <Button
                 variant="outline"
@@ -502,7 +499,7 @@ export default function PatientDashboard() {
                   setDiseaseFilter("");
                   setCityFilter("");
                 }}
-                className="border-cyan-300 hover:bg-cyan-50"
+                className="border-gray-300 hover:bg-gray-50"
               >
                 Clear Filters
               </Button>
