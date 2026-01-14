@@ -178,7 +178,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <Link href="/auth/sign-up">
-                  <Button className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Button className="w-full mt-6 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500">
                     Get Started as Patient
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
