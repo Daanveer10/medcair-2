@@ -176,21 +176,21 @@ export default function PatientDashboard() {
       label: "Upcoming",
       value: upcomingAppointments.toString(),
       icon: <Calendar className="h-6 w-6" />,
-      bgGradient: "from-pink-500 via-rose-500 to-red-500",
+      bgGradient: "from-cyan-500 via-blue-500 to-indigo-500",
       textColor: "text-white",
     },
     {
       label: "Available Clinics",
       value: clinics.length.toString(),
       icon: <Stethoscope className="h-6 w-6" />,
-      bgGradient: "from-blue-500 via-cyan-500 to-teal-500",
+      bgGradient: "from-purple-500 via-pink-500 to-rose-500",
       textColor: "text-white",
     },
     {
       label: "Search Results",
       value: filteredClinics.length.toString(),
       icon: <TrendingUp className="h-6 w-6" />,
-      bgGradient: "from-purple-500 via-violet-500 to-fuchsia-500",
+      bgGradient: "from-blue-500 via-cyan-500 to-teal-500",
       textColor: "text-white",
     },
   ];
@@ -213,16 +213,16 @@ export default function PatientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
       {/* Vibrant Navbar */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-pink-200/50 shadow-lg sticky top-0 z-50">
+      <nav className="bg-white/90 backdrop-blur-md border-b border-cyan-200/50 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-pink-500 to-violet-600 rounded-xl shadow-lg">
+              <div className="p-2.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-xl shadow-lg">
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold gradient-text-vibrant">
                 medcAIr
               </h1>
             </div>
@@ -232,20 +232,20 @@ export default function PatientDashboard() {
                   <Calendar className="h-4 w-4 text-pink-600" />
                   <span className="font-medium text-black">My Appointments</span>
                   {upcomingAppointments > 0 && (
-                    <span className="ml-1 px-2.5 py-0.5 bg-gradient-to-r from-pink-500 to-violet-500 text-white rounded-full text-xs font-bold shadow-md">
+                    <span className="ml-1 px-2.5 py-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-xs font-bold shadow-md">
                       {upcomingAppointments}
                     </span>
                   )}
                 </Button>
               </Link>
               <div className="hidden sm:block text-sm font-medium text-gray-700">
-                Welcome, <span className="text-pink-600 font-bold">{userName}</span>
+                Welcome, <span className="text-cyan-600 font-bold">{userName}</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="border-pink-200 hover:bg-pink-50"
+                className="border-cyan-200 hover:bg-cyan-50"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -259,8 +259,8 @@ export default function PatientDashboard() {
         {/* Welcome Section with Gradient */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-pink-500" />
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-600 bg-clip-text text-transparent">
+            <Sparkles className="h-8 w-8 text-cyan-500" />
+            <h2 className="text-4xl md:text-5xl font-bold gradient-text-vibrant">
               Welcome back, {userName}!
             </h2>
           </div>
@@ -292,7 +292,7 @@ export default function PatientDashboard() {
         {recommendedClinics.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <Zap className="h-6 w-6 text-yellow-500" />
+              <Zap className="h-6 w-6 text-cyan-500" />
               <h3 className="text-2xl font-bold text-gray-900">Recommended for You</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -356,17 +356,17 @@ export default function PatientDashboard() {
 
         {/* Enhanced Search Section */}
         <Card className="mb-6 border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader className="bg-gradient-to-r from-pink-500/10 via-violet-500/10 to-cyan-500/10 border-b border-pink-200/50">
+          <CardHeader className="bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border-b border-cyan-200/50">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-2xl font-bold text-gray-900">Find a Clinic</CardTitle>
                 <CardDescription className="text-gray-600 font-medium">Search by name, specialty, disease, or location</CardDescription>
               </div>
-              <Button
+                <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="sm:hidden border border-pink-200"
+                className="sm:hidden border border-cyan-200"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -376,12 +376,12 @@ export default function PatientDashboard() {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-pink-500" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cyan-500" />
                 <Input
                   placeholder="Search clinics, departments, or specialties..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 h-14 text-lg border-2 border-pink-200 focus:border-pink-500 focus:ring-pink-500 text-black placeholder:text-gray-400"
+                  className="pl-12 h-14 text-lg border-2 border-cyan-200 focus:border-cyan-500 focus:ring-cyan-500 text-black placeholder:text-gray-400"
                 />
               </div>
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showFilters ? "block" : "hidden sm:grid"}`}>
@@ -392,7 +392,7 @@ export default function PatientDashboard() {
                     placeholder="e.g., Cardiology, Diabetes, Hypertension..."
                     value={diseaseFilter}
                     onChange={(e) => setDiseaseFilter(e.target.value)}
-                    className="h-11 border-2 border-violet-200 focus:border-violet-500 text-black placeholder:text-gray-400"
+                    className="h-11 border-2 border-purple-200 focus:border-purple-500 text-black placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-2">
@@ -402,7 +402,7 @@ export default function PatientDashboard() {
                     placeholder="Enter city name..."
                     value={cityFilter}
                     onChange={(e) => setCityFilter(e.target.value)}
-                    className="h-11 border-2 border-cyan-200 focus:border-cyan-500 text-black placeholder:text-gray-400"
+                    className="h-11 border-2 border-blue-200 focus:border-blue-500 text-black placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -420,7 +420,7 @@ export default function PatientDashboard() {
           <>
             <div className="flex items-center justify-between mb-6">
               <p className="text-gray-700 font-semibold text-lg">
-                Found <span className="text-pink-600 font-bold text-2xl">{filteredClinics.length}</span> {filteredClinics.length === 1 ? "clinic" : "clinics"}
+                Found <span className="text-cyan-600 font-bold text-2xl">{filteredClinics.length}</span> {filteredClinics.length === 1 ? "clinic" : "clinics"}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -433,25 +433,25 @@ export default function PatientDashboard() {
                   <CardHeader className="pb-3 pt-5">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-xl mb-1 group-hover:text-pink-600 transition-colors font-bold">
+                        <CardTitle className="text-xl mb-1 group-hover:text-cyan-600 transition-colors font-bold">
                           {clinic.name}
                         </CardTitle>
                         <CardDescription className="text-sm font-medium">{clinic.department}</CardDescription>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-pink-100">
-                        <Heart className="h-4 w-4 text-gray-400 hover:text-pink-500 transition-colors" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-cyan-100">
+                        <Heart className="h-4 w-4 text-gray-400 hover:text-cyan-500 transition-colors" />
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-pink-500 mt-0.5 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 text-cyan-500 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-gray-900">{clinic.hospital.name}</p>
                           <p className="text-xs text-gray-600">{clinic.hospital.address}, {clinic.hospital.city}</p>
                           {clinic.hospital.distance && (
-                            <p className="text-xs text-pink-600 font-semibold mt-1">📍 {clinic.hospital.distance} km away</p>
+                            <p className="text-xs text-cyan-600 font-semibold mt-1">📍 {clinic.hospital.distance} km away</p>
                           )}
                         </div>
                       </div>
@@ -476,7 +476,7 @@ export default function PatientDashboard() {
                       )}
                       
                       <Link href={`/patient/clinic/${clinic.id}`}>
-                        <Button className={`w-full bg-gradient-to-r ${getDepartmentColor(clinic.department)} text-white hover:opacity-90 font-bold shadow-lg hover:shadow-xl transition-all group-hover:scale-105`}>
+                        <Button className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white hover:opacity-90 font-bold shadow-lg hover:shadow-xl transition-all group-hover:scale-105">
                           View Available Slots
                           <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -490,9 +490,9 @@ export default function PatientDashboard() {
         )}
 
         {!loading && filteredClinics.length === 0 && (
-          <Card className="text-center py-12 border-0 shadow-xl bg-gradient-to-br from-pink-50 to-violet-50">
+          <Card className="text-center py-12 border-0 shadow-xl bg-gradient-to-br from-cyan-50 to-purple-50">
             <CardContent>
-              <Search className="h-16 w-16 text-pink-400 mx-auto mb-4" />
+              <Search className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
               <p className="text-xl font-bold text-gray-900 mb-2">No clinics found</p>
               <p className="text-gray-600 mb-4">Try adjusting your search filters</p>
               <Button
@@ -502,7 +502,7 @@ export default function PatientDashboard() {
                   setDiseaseFilter("");
                   setCityFilter("");
                 }}
-                className="border-pink-300 hover:bg-pink-50"
+                className="border-cyan-300 hover:bg-cyan-50"
               >
                 Clear Filters
               </Button>

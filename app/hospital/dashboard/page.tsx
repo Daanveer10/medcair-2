@@ -300,34 +300,34 @@ export default function HospitalDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
       {/* Vibrant Navbar */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-blue-200/50 shadow-lg sticky top-0 z-50">
+      <nav className="bg-white/90 backdrop-blur-md border-b border-cyan-200/50 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+              <div className="p-2.5 bg-gradient-to-br from-cyan-500 via-blue-500 to-purple-500 rounded-xl shadow-lg">
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold gradient-text-vibrant">
                 medcAIr - Hospital Portal
               </h1>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/hospital/settings">
-                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-blue-100">
-                  <Settings className="h-4 w-4 text-blue-600" />
+                <Button variant="ghost" size="sm" className="hidden sm:flex items-center gap-2 hover:bg-cyan-100">
+                  <Settings className="h-4 w-4 text-cyan-600" />
                   <span className="font-medium">Settings</span>
                 </Button>
               </Link>
               <div className="hidden sm:block text-sm font-medium text-gray-700">
-                Welcome, <span className="text-blue-600 font-bold">{userName}</span>
+                Welcome, <span className="text-cyan-600 font-bold">{userName}</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleLogout}
-                className="border-blue-200 hover:bg-blue-50"
+                className="border-cyan-200 hover:bg-cyan-50"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -341,8 +341,8 @@ export default function HospitalDashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-blue-500" />
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <Sparkles className="h-8 w-8 text-cyan-500" />
+            <h2 className="text-4xl md:text-5xl font-bold gradient-text-vibrant">
               Hospital Dashboard
             </h2>
           </div>
@@ -379,7 +379,7 @@ export default function HospitalDashboard() {
                 variant={statusFilter === "all" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("all")}
-                className={statusFilter === "all" ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+                className={statusFilter === "all" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : ""}
               >
                 All
               </Button>
@@ -387,7 +387,7 @@ export default function HospitalDashboard() {
                 variant={statusFilter === "scheduled" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter("scheduled")}
-                className={statusFilter === "scheduled" ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+                className={statusFilter === "scheduled" ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : ""}
               >
                 Scheduled
               </Button>
@@ -403,7 +403,7 @@ export default function HospitalDashboard() {
           </div>
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white hover:opacity-90 shadow-lg hover:shadow-xl font-bold"
+            className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white hover:opacity-90 shadow-lg hover:shadow-xl font-bold"
           >
             <Plus className="h-5 w-5 mr-2" />
             Create Appointment
@@ -419,14 +419,14 @@ export default function HospitalDashboard() {
         ) : (
           <div className="space-y-4">
             {filteredAppointments.length === 0 ? (
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-cyan-50 to-purple-50">
                 <CardContent className="pt-6 text-center py-12">
-                  <Calendar className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+                  <Calendar className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
                   <p className="text-xl font-bold text-gray-900 mb-2">No appointments found</p>
                   <p className="text-gray-600 mb-4">Create your first appointment to get started</p>
                   <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:opacity-90"
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Appointment
@@ -440,7 +440,7 @@ export default function HospitalDashboard() {
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
                   <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "scheduled" ? "bg-gradient-to-r from-blue-500 to-cyan-500" :
+                    appointment.status === "scheduled" ? "bg-gradient-to-r from-cyan-500 to-blue-500" :
                     appointment.status === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
                     appointment.status === "cancelled" ? "bg-gradient-to-r from-red-500 to-pink-500" :
                     "bg-gradient-to-r from-gray-400 to-gray-500"
@@ -486,7 +486,7 @@ export default function HospitalDashboard() {
                         <span
                           className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
                             appointment.status === "scheduled"
-                              ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+                              ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
                               : appointment.status === "completed"
                               ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
                               : appointment.status === "cancelled"

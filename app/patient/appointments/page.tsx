@@ -191,7 +191,7 @@ export default function PatientAppointments() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-pink-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link href="/patient/dashboard">
           <Button variant="ghost" className="mb-6 hover:bg-pink-100">
@@ -202,8 +202,8 @@ export default function PatientAppointments() {
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-pink-500" />
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-violet-600 to-cyan-600 bg-clip-text text-transparent">
+            <Sparkles className="h-8 w-8 text-cyan-500" />
+            <h2 className="text-4xl font-bold gradient-text-vibrant">
               My Appointments
             </h2>
           </div>
@@ -212,7 +212,7 @@ export default function PatientAppointments() {
             <Button
               variant={!showPrevious ? "default" : "outline"}
               onClick={() => setShowPrevious(false)}
-              className={!showPrevious ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white" : ""}
+              className={!showPrevious ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white" : ""}
             >
               Active Appointments
               {!showPrevious && activeAppointments.length > 0 && (
@@ -224,7 +224,7 @@ export default function PatientAppointments() {
             <Button
               variant={showPrevious ? "default" : "outline"}
               onClick={() => setShowPrevious(true)}
-              className={showPrevious ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white" : ""}
+              className={showPrevious ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white" : ""}
             >
               <History className="h-4 w-4 mr-2" />
               Previous Appointments
@@ -240,9 +240,9 @@ export default function PatientAppointments() {
         ) : (
           <div className="space-y-4">
             {appointments.length === 0 ? (
-              <Card className="border-0 shadow-xl bg-gradient-to-br from-pink-50 to-violet-50">
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-cyan-50 to-purple-50">
                 <CardContent className="pt-6 text-center py-12">
-                  <Calendar className="h-16 w-16 text-pink-400 mx-auto mb-4" />
+                  <Calendar className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
                   <p className="text-xl font-bold text-gray-900 mb-2">
                     {showPrevious ? "No previous appointments" : "No active appointments"}
                   </p>
@@ -253,7 +253,7 @@ export default function PatientAppointments() {
                   </p>
                   {!showPrevious && (
                     <Link href="/patient/dashboard">
-                      <Button className="bg-gradient-to-r from-pink-500 to-violet-500 text-white hover:opacity-90">
+                      <Button className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90">
                         Browse Clinics
                       </Button>
                     </Link>
@@ -267,7 +267,7 @@ export default function PatientAppointments() {
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
                   <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "scheduled" ? "bg-gradient-to-r from-blue-500 to-cyan-500" :
+                    appointment.status === "scheduled" ? "bg-gradient-to-r from-cyan-500 to-blue-500" :
                     appointment.status === "completed" ? "bg-gradient-to-r from-green-500 to-emerald-500" :
                     appointment.status === "cancelled" ? "bg-gradient-to-r from-red-500 to-pink-500" :
                     "bg-gradient-to-r from-gray-400 to-gray-500"
@@ -280,17 +280,17 @@ export default function PatientAppointments() {
                         </CardTitle>
                         <CardDescription className="font-medium">{appointment.clinic.department}</CardDescription>
                       </div>
-                      <span
-                        className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
-                          appointment.status === "scheduled"
-                            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
-                            : appointment.status === "completed"
-                            ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                            : appointment.status === "cancelled"
-                            ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
-                            : "bg-gray-400 text-white"
-                        }`}
-                      >
+                        <span
+                          className={`px-4 py-2 rounded-full text-sm font-bold shadow-md ${
+                            appointment.status === "scheduled"
+                              ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
+                              : appointment.status === "completed"
+                              ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                              : appointment.status === "cancelled"
+                              ? "bg-gradient-to-r from-red-500 to-pink-500 text-white"
+                              : "bg-gray-400 text-white"
+                          }`}
+                        >
                         {appointment.status.toUpperCase()}
                       </span>
                     </div>
@@ -315,8 +315,8 @@ export default function PatientAppointments() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="p-2 bg-violet-100 rounded-lg">
-                            <Clock className="h-4 w-4 text-violet-600" />
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Clock className="h-4 w-4 text-blue-600" />
                           </div>
                           <div>
                             <p className="text-xs font-bold text-gray-500">TIME</p>
@@ -324,8 +324,8 @@ export default function PatientAppointments() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="p-2 bg-pink-100 rounded-lg">
-                            <User className="h-4 w-4 text-pink-600" />
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <User className="h-4 w-4 text-purple-600" />
                           </div>
                           <div>
                             <p className="text-xs font-bold text-gray-500">DOCTOR</p>
@@ -360,7 +360,7 @@ export default function PatientAppointments() {
                             {appointment.follow_ups.map((followUp) => (
                               <div
                                 key={followUp.id}
-                                className="p-3 bg-gradient-to-r from-violet-50 to-pink-50 rounded-lg border border-violet-200"
+                                className="p-3 bg-gradient-to-r from-cyan-50 to-purple-50 rounded-lg border border-cyan-200"
                               >
                                 <div className="flex items-center justify-between mb-1">
                                   <span className="text-sm font-semibold">
@@ -392,7 +392,7 @@ export default function PatientAppointments() {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleCancelAppointment(appointment.id)}
-                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90"
+                          className="bg-gradient-to-r from-red-500 to-rose-500 hover:opacity-90"
                         >
                           Cancel Appointment
                         </Button>

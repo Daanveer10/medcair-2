@@ -369,7 +369,7 @@ export default function ClinicPage() {
                             {slot.is_available ? (
                               <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-pink-500 to-violet-500 hover:opacity-90 text-white"
+                                className="w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:opacity-90 text-white"
                                 onClick={() => handleBookAppointment(slot.id)}
                               >
                                 Book Appointment

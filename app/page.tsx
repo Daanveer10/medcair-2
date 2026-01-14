@@ -10,17 +10,17 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col bg-gradient-to-b from-white via-blue-50/30 to-purple-50/30">
+    <main className="min-h-screen flex flex-col bg-gradient-to-b from-white via-cyan-50/30 to-purple-50/30">
       <div className="flex-1 w-full flex flex-col">
         {/* Enhanced Navbar */}
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16 bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Stethoscope className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg">
+                  <Stethoscope className="h-5 w-5 text-cyan-600" />
                 </div>
-                <Link href={"/"} className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <Link href={"/"} className="text-xl font-bold gradient-text-vibrant">
                   medcAIr
                 </Link>
               </div>
@@ -34,9 +34,9 @@ export default function Home() {
                     <Button variant="ghost" className="hidden sm:inline-flex">Login</Button>
                   </Link>
                   <Link href="/auth/sign-up">
-                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                      Get Started
-                    </Button>
+                  <Button className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:opacity-90">
+                    Get Started
+                  </Button>
                   </Link>
                   <ThemeSwitcher />
                 </div>
@@ -49,14 +49,14 @@ export default function Home() {
           {/* Hero Section */}
           <section className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center mb-16 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full text-blue-700 text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-100 to-purple-100 rounded-full text-cyan-700 text-sm font-medium mb-6">
                 <Zap className="h-4 w-4" />
                 <span>AI-Powered Healthcare Management</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
                 Your Smart Healthcare
                 <br />
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <span className="gradient-text-vibrant">
                   Receptionist
                 </span>
               </h1>
@@ -65,7 +65,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link href="/auth/sign-up">
-                  <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all">
+                  <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 hover:opacity-90 shadow-lg hover:shadow-xl transition-all text-white">
                     Start Free Trial
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
@@ -82,19 +82,19 @@ export default function Home() {
             {/* Stats Section */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
               <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="text-3xl font-bold text-blue-600 mb-2">10K+</div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2">10K+</div>
                 <div className="text-sm text-gray-600">Active Patients</div>
               </div>
               <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="text-3xl font-bold text-purple-600 mb-2">500+</div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">500+</div>
                 <div className="text-sm text-gray-600">Partner Clinics</div>
               </div>
               <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="text-3xl font-bold text-pink-600 mb-2">50K+</div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">50K+</div>
                 <div className="text-sm text-gray-600">Appointments</div>
               </div>
               <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="text-3xl font-bold text-green-600 mb-2">99%</div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent mb-2">99%</div>
                 <div className="text-sm text-gray-600">Satisfaction</div>
               </div>
             </div>
@@ -286,17 +286,17 @@ export default function Home() {
                 © 2024 medcAIr. All rights reserved.
               </p>
               <p className="text-sm text-gray-600">
-                Powered by{" "}
-                <a
+            Powered by{" "}
+            <a
                   href="https://supabase.com"
-                  target="_blank"
+              target="_blank"
                   className="font-bold hover:underline text-blue-600"
-                  rel="noreferrer"
-                >
-                  Supabase
-                </a>
+              rel="noreferrer"
+            >
+              Supabase
+            </a>
                 {" "}and Next.js
-              </p>
+          </p>
             </div>
           </div>
         </footer>
