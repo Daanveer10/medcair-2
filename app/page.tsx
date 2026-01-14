@@ -101,8 +101,8 @@ export default function Home() {
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-300 border border-blue-200">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-cyan-50 to-blue-50 hover:shadow-xl transition-all duration-300 border border-cyan-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
                   <Search className="h-10 w-10 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">Smart Search</h3>
@@ -111,8 +111,8 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-300 border border-purple-200">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 hover:shadow-xl transition-all duration-300 border border-purple-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
                   <Calendar className="h-10 w-10 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">Instant Booking</h3>
@@ -121,8 +121,8 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all duration-300 border border-green-200">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
+              <div className="group text-center p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 hover:shadow-xl transition-all duration-300 border border-blue-200">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-6 group-hover:scale-110 transition-transform shadow-lg">
                   <Clock className="h-10 w-10 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-gray-900">Auto Reminders</h3>
