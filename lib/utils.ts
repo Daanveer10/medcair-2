@@ -35,13 +35,13 @@ export function handleError(error: unknown): ApiResponse {
 
   // Handle Zod validation errors
   if (error instanceof ZodError) {
-    const firstError = error.errors[0];
+    const firstError = error.issues[0];
     return {
       success: false,
       error: {
         message: firstError?.message || "Validation failed",
         code: "VALIDATION_ERROR",
-        details: error.errors,
+        details: error.issues,
       },
     };
   }
@@ -101,13 +101,13 @@ export function validateData<T>(
     return { success: true, data: validated };
   } catch (error) {
     if (error instanceof ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       return {
         success: false,
         error: {
           message: firstError?.message || "Validation failed",
           code: "VALIDATION_ERROR",
-          details: error.errors,
+          details: error.issues,
         },
       };
     }
