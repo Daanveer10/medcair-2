@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -294,10 +295,22 @@ export default function HospitalDashboard() {
 
   const handleAcceptAppointment = async (appointmentId: string) => {
     try {
+      const { AppointmentUpdateSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      const validation = validateData(AppointmentUpdateSchema, {
+        status: "accepted",
+      });
+
+      if (!validation.success) {
+        alert(validation.error?.message || "Invalid appointment status.");
+        return;
+      }
+
       const { error } = await supabase
         .from("appointments")
         .update({ 
-          status: "accepted",
+          status: validation.data.status,
           updated_at: new Date().toISOString()
         })
         .eq("id", appointmentId);
@@ -332,17 +345,30 @@ export default function HospitalDashboard() {
       alert("Appointment accepted successfully!");
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
+      const errorResponse = handleError(error);
       console.error("Error accepting appointment:", error);
-      alert(`Error: ${error.message || "Failed to accept appointment"}`);
+      alert(errorResponse.error?.message || "Failed to accept appointment.");
     }
   };
 
   const handleDeclineAppointment = async (appointmentId: string) => {
     try {
+      const { AppointmentUpdateSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      const validation = validateData(AppointmentUpdateSchema, {
+        status: "declined",
+      });
+
+      if (!validation.success) {
+        alert(validation.error?.message || "Invalid appointment status.");
+        return;
+      }
+
       const { error } = await supabase
         .from("appointments")
         .update({ 
-          status: "declined",
+          status: validation.data.status,
           updated_at: new Date().toISOString()
         })
         .eq("id", appointmentId);
@@ -369,8 +395,9 @@ export default function HospitalDashboard() {
       alert("Appointment declined.");
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
+      const errorResponse = handleError(error);
       console.error("Error declining appointment:", error);
-      alert(`Error: ${error.message || "Failed to decline appointment"}`);
+      alert(errorResponse.error?.message || "Failed to decline appointment.");
     }
   };
 

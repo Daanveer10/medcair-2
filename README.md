@@ -56,9 +56,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 4. Set up the database:
+   
+   **Option A: Using Supabase CLI (Recommended)**
+   ```bash
+   # If you have Supabase CLI installed
+   supabase db reset
+   # or
+   supabase migration up
+   ```
+   
+   **Option B: Using Supabase Dashboard**
    - Go to your Supabase project dashboard
    - Navigate to SQL Editor
-   - Run the SQL script from `supabase-schema.sql` to create all necessary tables, indexes, and RLS policies
+   - Run the migration file: `supabase/migrations/20240101000000_init_schema.sql`
+   
+   **Note:** The migration file includes all tables, indexes, RLS policies, and triggers needed for the application.
 
 5. Run the development server:
 ```bash
@@ -99,7 +111,9 @@ medcair-2/
 ├── lib/                   # Utilities and types
 │   ├── supabase/          # Supabase client setup
 │   └── types.ts           # TypeScript type definitions
-└── supabase-schema.sql    # Database schema
+└── supabase/
+    └── migrations/         # Database migrations
+        └── 20240101000000_init_schema.sql  # Initial schema migration
 ```
 
 ## User Roles

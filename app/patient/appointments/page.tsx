@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppointmentCardSkeleton } from "@/components/skeleton-loader";
+import { handleError } from "@/lib/utils";
 
 // Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
@@ -174,11 +175,24 @@ export default function PatientAppointments() {
     if (!selectedAppointment) return;
 
     try {
+      const { AppointmentUpdateSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      const validation = validateData(AppointmentUpdateSchema, {
+        status: "cancelled",
+        reason: cancelReason || "Cancelled by patient",
+      });
+
+      if (!validation.success) {
+        alert(validation.error?.message || "Invalid cancellation data.");
+        return;
+      }
+
       const { error } = await supabase
         .from("appointments")
         .update({ 
-          status: "cancelled",
-          reason: cancelReason || "Cancelled by patient"
+          status: validation.data.status,
+          reason: validation.data.reason || "Cancelled by patient"
         })
         .eq("id", selectedAppointment.id);
 
@@ -216,8 +230,9 @@ export default function PatientAppointments() {
       setSelectedAppointment(null);
       loadAppointments();
     } catch (error) {
+      const errorResponse = handleError(error);
       console.error("Error cancelling appointment:", error);
-      alert("Failed to cancel appointment.");
+      alert(errorResponse.error?.message || "Failed to cancel appointment.");
     }
   };
 
@@ -268,6 +283,36 @@ export default function PatientAppointments() {
 
     setRescheduling(true);
     try {
+      const { AppointmentRescheduleSchema, AppointmentUpdateSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      // Validate reschedule data
+      const rescheduleValidation = validateData(AppointmentRescheduleSchema, {
+        appointmentId: selectedAppointment.id,
+        newSlotId: selectedSlot,
+      });
+
+      if (!rescheduleValidation.success) {
+        alert(rescheduleValidation.error?.message || "Invalid reschedule data.");
+        setRescheduling(false);
+        return;
+      }
+
+      // Get new slot details
+      const newSlot = availableSlots.find(s => s.id === rescheduleValidation.data.newSlotId);
+      if (!newSlot) throw new Error("Slot not found");
+
+      // Validate status update
+      const statusValidation = validateData(AppointmentUpdateSchema, {
+        status: "pending",
+      });
+
+      if (!statusValidation.success) {
+        alert(statusValidation.error?.message || "Invalid appointment status.");
+        setRescheduling(false);
+        return;
+      }
+
       // Free up old slot
       if (selectedAppointment.slot_id) {
         await supabase
@@ -276,20 +321,16 @@ export default function PatientAppointments() {
           .eq("id", selectedAppointment.slot_id);
       }
 
-      // Get new slot details
-      const newSlot = availableSlots.find(s => s.id === selectedSlot);
-      if (!newSlot) throw new Error("Slot not found");
-
       // Update appointment with new slot
       const { error } = await supabase
         .from("appointments")
         .update({
-          slot_id: selectedSlot,
+          slot_id: rescheduleValidation.data.newSlotId,
           appointment_date: newSlot.date,
           appointment_time: newSlot.start_time,
-          status: "pending" // Reset to pending for hospital approval
+          status: statusValidation.data.status
         })
-        .eq("id", selectedAppointment.id);
+        .eq("id", rescheduleValidation.data.appointmentId);
 
       if (error) throw error;
 
@@ -323,8 +364,9 @@ export default function PatientAppointments() {
       setSelectedAppointment(null);
       loadAppointments();
     } catch (error) {
+      const errorResponse = handleError(error);
       console.error("Error rescheduling appointment:", error);
-      alert("Failed to reschedule appointment.");
+      alert(errorResponse.error?.message || "Failed to reschedule appointment.");
     } finally {
       setRescheduling(false);
     }

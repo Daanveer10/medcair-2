@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -99,16 +100,32 @@ export default function HospitalSettings() {
     if (!hospital) return;
 
     try {
+      // Validate clinic data
+      const { ClinicSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
       const specialties = clinicForm.specialties
         .split(",")
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0);
 
-      const { error } = await supabase.from("clinics").insert({
-        hospital_id: hospital.id,
+      const validation = validateData(ClinicSchema, {
         name: clinicForm.name,
         department: clinicForm.department,
         specialties,
+        hospitalId: hospital.id,
+      });
+
+      if (!validation.success) {
+        alert(validation.error?.message || "Invalid clinic data. Please check your inputs.");
+        return;
+      }
+
+      const { error } = await supabase.from("clinics").insert({
+        hospital_id: validation.data.hospitalId,
+        name: validation.data.name,
+        department: validation.data.department,
+        specialties: validation.data.specialties || [],
       });
 
       if (error) throw error;
@@ -118,8 +135,9 @@ export default function HospitalSettings() {
       setShowClinicForm(false);
       loadData();
     } catch (error) {
+      const errorResponse = handleError(error);
       console.error("Error creating clinic:", error);
-      alert("Failed to create clinic.");
+      alert(errorResponse.error?.message || "Failed to create clinic.");
     }
   };
 
@@ -128,39 +146,69 @@ export default function HospitalSettings() {
     if (!selectedClinic) return;
 
     try {
+      const { DoctorSchema, AppointmentSlotSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      // Validate doctor data
+      const doctorValidation = validateData(DoctorSchema, {
+        name: slotForm.doctor_name,
+        specialization: slotForm.specialization,
+        clinicId: selectedClinic,
+      });
+
+      if (!doctorValidation.success) {
+        alert(doctorValidation.error?.message || "Invalid doctor information.");
+        return;
+      }
+
       // First, get or create doctor
       const { data: existingDoctor } = await supabase
         .from("doctors")
         .select("id")
         .eq("clinic_id", selectedClinic)
-        .eq("name", slotForm.doctor_name)
+        .eq("name", doctorValidation.data.name)
         .single();
 
       let doctorId;
       if (existingDoctor) {
         doctorId = existingDoctor.id;
       } else {
-        const { data: newDoctor } = await supabase
+        const { data: newDoctor, error: doctorError } = await supabase
           .from("doctors")
           .insert({
-            clinic_id: selectedClinic,
-            name: slotForm.doctor_name,
-            specialization: slotForm.specialization,
+            clinic_id: doctorValidation.data.clinicId,
+            name: doctorValidation.data.name,
+            specialization: doctorValidation.data.specialization,
           })
           .select()
           .single();
 
+        if (doctorError) throw doctorError;
         if (!newDoctor) throw new Error("Failed to create doctor");
         doctorId = newDoctor.id;
       }
 
+      // Validate slot data
+      const slotValidation = validateData(AppointmentSlotSchema, {
+        clinicId: selectedClinic,
+        doctorId: doctorId,
+        date: slotForm.date,
+        startTime: slotForm.start_time,
+        endTime: slotForm.end_time,
+      });
+
+      if (!slotValidation.success) {
+        alert(slotValidation.error?.message || "Invalid slot information.");
+        return;
+      }
+
       // Create slot
       const { error } = await supabase.from("appointment_slots").insert({
-        clinic_id: selectedClinic,
-        doctor_id: doctorId,
-        date: slotForm.date,
-        start_time: slotForm.start_time,
-        end_time: slotForm.end_time,
+        clinic_id: slotValidation.data.clinicId,
+        doctor_id: slotValidation.data.doctorId,
+        date: slotValidation.data.date,
+        start_time: slotValidation.data.startTime,
+        end_time: slotValidation.data.endTime,
         is_available: true,
       });
 
@@ -176,8 +224,9 @@ export default function HospitalSettings() {
       });
       setShowSlotForm(false);
     } catch (error) {
+      const errorResponse = handleError(error);
       console.error("Error creating slot:", error);
-      alert("Failed to create time slot.");
+      alert(errorResponse.error?.message || "Failed to create time slot.");
     }
   };
 

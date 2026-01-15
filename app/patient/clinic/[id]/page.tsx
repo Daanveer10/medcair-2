@@ -268,14 +268,36 @@ export default function ClinicPage() {
     }
 
     try {
+      // Validate booking data
+      const clinicId = Array.isArray(params.id) ? params.id[0] : params.id;
+      if (!clinicId) {
+        alert("Invalid clinic information. Please try again.");
+        return;
+      }
+
+      const { BookingSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+      
+      const validation = validateData(BookingSchema, {
+        patientId: profile.id,
+        clinicId: clinicId,
+        doctorId: slot.doctor_id,
+        slotId: slotId,
+      });
+
+      if (!validation.success) {
+        alert(validation.error?.message || "Invalid booking data. Please try again.");
+        return;
+      }
+
       // Create appointment with pending status (waiting for hospital approval)
       const { data: appointment, error: appointmentError } = await supabase
         .from("appointments")
         .insert({
-          patient_id: profile.id,
-          clinic_id: params.id,
-          doctor_id: slot.doctor_id,
-          slot_id: slotId,
+          patient_id: validation.data.patientId,
+          clinic_id: validation.data.clinicId,
+          doctor_id: validation.data.doctorId,
+          slot_id: validation.data.slotId,
           appointment_date: slot.date,
           appointment_time: slot.start_time,
           status: "pending", // Start as pending, hospital will accept/decline
