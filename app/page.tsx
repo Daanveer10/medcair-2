@@ -146,7 +146,7 @@ export default function Home() {
                     <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                       {item.step}
                     </div>
-                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                    <h3 className="text-xl font-bold mb-2 text-black">{item.title}</h3>
                     <p className="text-gray-600">{item.desc}</p>
                   </div>
                 ))}
