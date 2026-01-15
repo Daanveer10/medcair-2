@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Calendar, Clock, MapPin, User, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Prevent static generation - requires authentication and dynamic params
 export const dynamic = 'force-dynamic';
@@ -244,7 +245,9 @@ export default function ClinicPage() {
 
     const slot = slots.find(s => s.id === slotId);
     if (!slot || !slot.is_available) {
-      alert("This slot is no longer available. Please select another slot.");
+      toast.error("Slot Unavailable", {
+        description: "This slot is no longer available. Please select another slot.",
+      });
       loadClinicData(); // Reload to refresh slot availability
       return;
     }
@@ -259,9 +262,13 @@ export default function ClinicPage() {
 
     if (existingAppointment) {
       if (existingAppointment.status === "pending") {
-        alert("This slot is currently pending approval. Please select another slot.");
+        toast.warning("Slot Pending", {
+          description: "This slot is currently pending approval. Please select another slot.",
+        });
       } else {
-        alert("This slot has already been booked. Please select another slot.");
+        toast.error("Slot Booked", {
+          description: "This slot has already been booked. Please select another slot.",
+        });
       }
       loadClinicData();
       return;
@@ -271,7 +278,9 @@ export default function ClinicPage() {
       // Validate booking data
       const clinicId = Array.isArray(params.id) ? params.id[0] : params.id;
       if (!clinicId) {
-        alert("Invalid clinic information. Please try again.");
+        toast.error("Invalid Clinic", {
+          description: "Invalid clinic information. Please try again.",
+        });
         return;
       }
 
@@ -286,7 +295,9 @@ export default function ClinicPage() {
       });
 
       if (!validation.success) {
-        alert(validation.error?.message || "Invalid booking data. Please try again.");
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid booking data. Please try again.",
+        });
         return;
       }
 
@@ -336,11 +347,15 @@ export default function ClinicPage() {
         // Non-critical, continue
       }
 
-      alert("Appointment request submitted! The hospital will review and respond shortly. You can check the status in 'My Appointments'.");
+      toast.success("Appointment Requested", {
+        description: "The hospital will review and respond shortly. You can check the status in 'My Appointments'.",
+      });
       loadClinicData(); // Reload to show updated status
     } catch (error) {
       console.error("Error booking appointment:", error);
-      alert("Failed to book appointment. This slot may have been booked by someone else. Please try another slot.");
+      toast.error("Booking Failed", {
+        description: "Failed to book appointment. This slot may have been booked by someone else. Please try another slot.",
+      });
       loadClinicData();
     }
   };

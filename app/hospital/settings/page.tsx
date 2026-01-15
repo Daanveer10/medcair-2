@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Plus, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
@@ -117,7 +118,9 @@ export default function HospitalSettings() {
       });
 
       if (!validation.success) {
-        alert(validation.error?.message || "Invalid clinic data. Please check your inputs.");
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid clinic data. Please check your inputs.",
+        });
         return;
       }
 
@@ -130,14 +133,18 @@ export default function HospitalSettings() {
 
       if (error) throw error;
 
-      alert("Clinic created successfully!");
+      toast.success("Clinic Created", {
+        description: "The clinic has been created successfully.",
+      });
       setClinicForm({ name: "", department: "", specialties: "" });
       setShowClinicForm(false);
       loadData();
     } catch (error) {
       const errorResponse = handleError(error);
       console.error("Error creating clinic:", error);
-      alert(errorResponse.error?.message || "Failed to create clinic.");
+      toast.error("Creation Failed", {
+        description: errorResponse.error?.message || "Failed to create clinic.",
+      });
     }
   };
 
@@ -157,7 +164,9 @@ export default function HospitalSettings() {
       });
 
       if (!doctorValidation.success) {
-        alert(doctorValidation.error?.message || "Invalid doctor information.");
+        toast.error("Validation Failed", {
+          description: doctorValidation.error?.message || "Invalid doctor information.",
+        });
         return;
       }
 
@@ -198,7 +207,9 @@ export default function HospitalSettings() {
       });
 
       if (!slotValidation.success) {
-        alert(slotValidation.error?.message || "Invalid slot information.");
+        toast.error("Validation Failed", {
+          description: slotValidation.error?.message || "Invalid slot information.",
+        });
         return;
       }
 
@@ -214,7 +225,9 @@ export default function HospitalSettings() {
 
       if (error) throw error;
 
-      alert("Time slot created successfully!");
+      toast.success("Time Slot Created", {
+        description: "The appointment slot has been created successfully.",
+      });
       setSlotForm({
         date: "",
         start_time: "",
@@ -226,7 +239,9 @@ export default function HospitalSettings() {
     } catch (error) {
       const errorResponse = handleError(error);
       console.error("Error creating slot:", error);
-      alert(errorResponse.error?.message || "Failed to create time slot.");
+      toast.error("Creation Failed", {
+        description: errorResponse.error?.message || "Failed to create time slot.",
+      });
     }
   };
 

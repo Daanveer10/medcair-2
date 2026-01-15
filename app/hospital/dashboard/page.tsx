@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
@@ -275,7 +276,9 @@ export default function HospitalDashboard() {
       // So we'll simplify: require patient to book themselves, or
       // Show a message that this feature requires patient registration
       
-      alert("Note: Patient appointment booking is best done by patients themselves through the patient portal. For now, please direct patients to sign up and book through their dashboard. Alternatively, you can manage appointment slots in Settings.");
+      toast.info("Appointment Booking", {
+        description: "Patient appointment booking is best done by patients themselves through the patient portal. Please direct patients to sign up and book through their dashboard.",
+      });
       setCreating(false);
       setShowCreateModal(false);
       return;
@@ -286,8 +289,11 @@ export default function HospitalDashboard() {
       // 3. Create appointment
       // This requires server-side code with service role key
     } catch (error: any) {
+      const errorResponse = handleError(error);
       console.error("Error creating appointment:", error);
-      alert(`Error: ${error.message || "Failed to create appointment"}`);
+      toast.error("Creation Failed", {
+        description: errorResponse.error?.message || "Failed to create appointment.",
+      });
     } finally {
       setCreating(false);
     }
@@ -303,7 +309,9 @@ export default function HospitalDashboard() {
       });
 
       if (!validation.success) {
-        alert(validation.error?.message || "Invalid appointment status.");
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid appointment status.",
+        });
         return;
       }
 
@@ -342,12 +350,16 @@ export default function HospitalDashboard() {
         }
       }
 
-      alert("Appointment accepted successfully!");
+      toast.success("Appointment Accepted", {
+        description: "The appointment has been accepted successfully.",
+      });
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
       const errorResponse = handleError(error);
       console.error("Error accepting appointment:", error);
-      alert(errorResponse.error?.message || "Failed to accept appointment.");
+      toast.error("Action Failed", {
+        description: errorResponse.error?.message || "Failed to accept appointment.",
+      });
     }
   };
 
@@ -361,7 +373,9 @@ export default function HospitalDashboard() {
       });
 
       if (!validation.success) {
-        alert(validation.error?.message || "Invalid appointment status.");
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid appointment status.",
+        });
         return;
       }
 
@@ -392,12 +406,16 @@ export default function HospitalDashboard() {
         }
       }
 
-      alert("Appointment declined.");
+      toast.success("Appointment Declined", {
+        description: "The appointment request has been declined.",
+      });
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
       const errorResponse = handleError(error);
       console.error("Error declining appointment:", error);
-      alert(errorResponse.error?.message || "Failed to decline appointment.");
+      toast.error("Action Failed", {
+        description: errorResponse.error?.message || "Failed to decline appointment.",
+      });
     }
   };
 

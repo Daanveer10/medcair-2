@@ -11,6 +11,7 @@ import { Search, Calendar, MapPin, Clock, Stethoscope, LogOut, Heart, TrendingUp
 import Link from "next/link";
 import { NotificationCenter } from "@/components/notification-center";
 import { ClinicCardSkeleton } from "@/components/skeleton-loader";
+import { toast } from "sonner";
 
 // Calculate distance between two coordinates (Haversine formula)
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -140,7 +141,9 @@ export default function PatientDashboard() {
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      alert("Failed to update favorites.");
+      toast.error("Failed to Update", {
+        description: "Failed to update favorites. Please try again.",
+      });
     }
   };
 

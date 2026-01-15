@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppointmentCardSkeleton } from "@/components/skeleton-loader";
 import { handleError } from "@/lib/utils";
+import { toast } from "sonner";
 
 // Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
@@ -184,7 +185,9 @@ export default function PatientAppointments() {
       });
 
       if (!validation.success) {
-        alert(validation.error?.message || "Invalid cancellation data.");
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid cancellation data.",
+        });
         return;
       }
 
@@ -224,7 +227,9 @@ export default function PatientAppointments() {
         });
       }
 
-      alert("Appointment cancelled successfully!");
+      toast.success("Appointment Cancelled", {
+        description: "Your appointment has been cancelled successfully.",
+      });
       setShowCancelModal(false);
       setCancelReason("");
       setSelectedAppointment(null);
@@ -232,7 +237,9 @@ export default function PatientAppointments() {
     } catch (error) {
       const errorResponse = handleError(error);
       console.error("Error cancelling appointment:", error);
-      alert(errorResponse.error?.message || "Failed to cancel appointment.");
+      toast.error("Cancellation Failed", {
+        description: errorResponse.error?.message || "Failed to cancel appointment.",
+      });
     }
   };
 
@@ -293,7 +300,9 @@ export default function PatientAppointments() {
       });
 
       if (!rescheduleValidation.success) {
-        alert(rescheduleValidation.error?.message || "Invalid reschedule data.");
+        toast.error("Validation Failed", {
+          description: rescheduleValidation.error?.message || "Invalid reschedule data.",
+        });
         setRescheduling(false);
         return;
       }
@@ -308,7 +317,9 @@ export default function PatientAppointments() {
       });
 
       if (!statusValidation.success) {
-        alert(statusValidation.error?.message || "Invalid appointment status.");
+        toast.error("Validation Failed", {
+          description: statusValidation.error?.message || "Invalid appointment status.",
+        });
         setRescheduling(false);
         return;
       }
@@ -358,7 +369,9 @@ export default function PatientAppointments() {
         });
       }
 
-      alert("Appointment rescheduled successfully! Waiting for hospital approval.");
+      toast.success("Appointment Rescheduled", {
+        description: "Your appointment has been rescheduled. Waiting for hospital approval.",
+      });
       setShowRescheduleModal(false);
       setSelectedSlot("");
       setSelectedAppointment(null);
@@ -366,7 +379,9 @@ export default function PatientAppointments() {
     } catch (error) {
       const errorResponse = handleError(error);
       console.error("Error rescheduling appointment:", error);
-      alert(errorResponse.error?.message || "Failed to reschedule appointment.");
+      toast.error("Reschedule Failed", {
+        description: errorResponse.error?.message || "Failed to reschedule appointment.",
+      });
     } finally {
       setRescheduling(false);
     }
