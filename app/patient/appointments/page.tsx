@@ -161,7 +161,8 @@ export default function PatientAppointments() {
 
       setAppointments(appointmentsWithFollowUps);
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadAppointments", resource: "appointments" });
     } finally {
       setLoading(false);
     }
@@ -235,8 +236,7 @@ export default function PatientAppointments() {
       setSelectedAppointment(null);
       loadAppointments();
     } catch (error) {
-      const errorResponse = handleError(error);
-      console.error("Error cancelling appointment:", error);
+      const errorResponse = handleError(error, { action: "cancelAppointment", resource: "appointments" });
       toast.error("Cancellation Failed", {
         description: errorResponse.error?.message || "Failed to cancel appointment.",
       });
@@ -280,7 +280,8 @@ export default function PatientAppointments() {
         
         setAvailableSlots(available);
       } catch (error) {
-        console.error("Error loading slots:", error);
+        const { handleError } = await import("@/lib/utils");
+        handleError(error, { action: "loadAvailableSlots", resource: "appointment_slots" });
       }
     }
   };
@@ -377,8 +378,7 @@ export default function PatientAppointments() {
       setSelectedAppointment(null);
       loadAppointments();
     } catch (error) {
-      const errorResponse = handleError(error);
-      console.error("Error rescheduling appointment:", error);
+      const errorResponse = handleError(error, { action: "rescheduleAppointment", resource: "appointments" });
       toast.error("Reschedule Failed", {
         description: errorResponse.error?.message || "Failed to reschedule appointment.",
       });

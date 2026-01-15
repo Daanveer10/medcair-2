@@ -253,7 +253,7 @@ export default function HospitalDashboard() {
 
       setAppointments(transformedAppointments);
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      handleError(error, { action: "loadAppointments", resource: "appointments" });
     } finally {
       setLoading(false);
     }
@@ -289,8 +289,7 @@ export default function HospitalDashboard() {
       // 3. Create appointment
       // This requires server-side code with service role key
     } catch (error: any) {
-      const errorResponse = handleError(error);
-      console.error("Error creating appointment:", error);
+      const errorResponse = handleError(error, { action: "createAppointment", resource: "appointments" });
       toast.error("Creation Failed", {
         description: errorResponse.error?.message || "Failed to create appointment.",
       });
@@ -346,7 +345,7 @@ export default function HospitalDashboard() {
             message: `Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been accepted.`
           });
         } catch (error) {
-          console.error("Error creating notification:", error);
+          handleError(error, { action: "createNotification", resource: "notifications" });
         }
       }
 
@@ -355,8 +354,7 @@ export default function HospitalDashboard() {
       });
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
-      const errorResponse = handleError(error);
-      console.error("Error accepting appointment:", error);
+      const errorResponse = handleError(error, { action: "acceptAppointment", resource: "appointments" });
       toast.error("Action Failed", {
         description: errorResponse.error?.message || "Failed to accept appointment.",
       });
@@ -402,7 +400,7 @@ export default function HospitalDashboard() {
             message: `Your appointment request for ${appointment.appointment_date} at ${appointment.appointment_time} has been declined. Please select another time slot.`
           });
         } catch (error) {
-          console.error("Error creating notification:", error);
+          handleError(error, { action: "createNotification", resource: "notifications" });
         }
       }
 
@@ -411,8 +409,7 @@ export default function HospitalDashboard() {
       });
       loadAppointments(); // Reload to refresh the list
     } catch (error: any) {
-      const errorResponse = handleError(error);
-      console.error("Error declining appointment:", error);
+      const errorResponse = handleError(error, { action: "declineAppointment", resource: "appointments" });
       toast.error("Action Failed", {
         description: errorResponse.error?.message || "Failed to decline appointment.",
       });

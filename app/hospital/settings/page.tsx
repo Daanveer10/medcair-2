@@ -140,8 +140,7 @@ export default function HospitalSettings() {
       setShowClinicForm(false);
       loadData();
     } catch (error) {
-      const errorResponse = handleError(error);
-      console.error("Error creating clinic:", error);
+      const errorResponse = handleError(error, { action: "createClinic", resource: "clinics" });
       toast.error("Creation Failed", {
         description: errorResponse.error?.message || "Failed to create clinic.",
       });
@@ -237,8 +236,7 @@ export default function HospitalSettings() {
       });
       setShowSlotForm(false);
     } catch (error) {
-      const errorResponse = handleError(error);
-      console.error("Error creating slot:", error);
+      const errorResponse = handleError(error, { action: "createSlot", resource: "appointment_slots" });
       toast.error("Creation Failed", {
         description: errorResponse.error?.message || "Failed to create time slot.",
       });

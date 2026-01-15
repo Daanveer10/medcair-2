@@ -189,7 +189,8 @@ export default function HospitalAnalytics() {
         appointmentsByClinic
       });
     } catch (error) {
-      console.error("Error loading analytics:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadAnalytics", resource: "appointments" });
     } finally {
       setLoading(false);
     }

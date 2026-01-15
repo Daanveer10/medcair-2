@@ -222,7 +222,8 @@ export default function ClinicPage() {
 
       setSlots(transformedSlots);
     } catch (error) {
-      console.error("Error loading clinic data:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadClinicData", resource: "clinics" });
     } finally {
       setLoading(false);
     }
@@ -343,7 +344,8 @@ export default function ClinicPage() {
           });
         }
       } catch (error) {
-        console.error("Error creating notification:", error);
+        const { handleError } = await import("@/lib/utils");
+        handleError(error, { action: "createNotification", resource: "notifications" });
         // Non-critical, continue
       }
 
@@ -352,9 +354,10 @@ export default function ClinicPage() {
       });
       loadClinicData(); // Reload to show updated status
     } catch (error) {
-      console.error("Error booking appointment:", error);
+      const { handleError } = await import("@/lib/utils");
+      const errorResponse = handleError(error, { action: "bookAppointment", resource: "appointments" });
       toast.error("Booking Failed", {
-        description: "Failed to book appointment. This slot may have been booked by someone else. Please try another slot.",
+        description: errorResponse.error?.message || "Failed to book appointment. This slot may have been booked by someone else. Please try another slot.",
       });
       loadClinicData();
     }

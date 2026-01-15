@@ -94,7 +94,8 @@ export default function PatientDashboard() {
         setFavoriteClinicIds(new Set(data.map(f => f.clinic_id)));
       }
     } catch (error) {
-      console.error("Error loading favorites:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadFavorites", resource: "favorite_clinics" });
     }
   };
 
@@ -140,9 +141,10 @@ export default function PatientDashboard() {
         setFavoriteClinicIds(prev => new Set(prev).add(clinicId));
       }
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      const { handleError } = await import("@/lib/utils");
+      const errorResponse = handleError(error, { action: "toggleFavorite", resource: "favorite_clinics" });
       toast.error("Failed to Update", {
-        description: "Failed to update favorites. Please try again.",
+        description: errorResponse.error?.message || "Failed to update favorites. Please try again.",
       });
     }
   };
@@ -190,7 +192,8 @@ export default function PatientDashboard() {
 
       setUpcomingAppointments(data?.length || 0);
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadUpcomingAppointments", resource: "appointments" });
     }
   };
 
@@ -263,7 +266,8 @@ export default function PatientDashboard() {
       
       setClinics(transformedClinics);
     } catch (error) {
-      console.error("Error loading clinics:", error);
+      const { handleError } = await import("@/lib/utils");
+      handleError(error, { action: "loadClinics", resource: "clinics" });
     } finally {
       setLoading(false);
     }
