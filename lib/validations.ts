@@ -13,9 +13,7 @@ export const BookingSchema = z.object({
 });
 
 export const AppointmentUpdateSchema = z.object({
-  status: z.enum(["pending", "accepted", "declined", "scheduled", "completed", "cancelled", "no_show"], {
-    errorMap: () => ({ message: "Invalid appointment status" }),
-  }),
+  status: z.enum(["pending", "accepted", "declined", "scheduled", "completed", "cancelled", "no_show"]),
   reason: z.string().optional(),
   notes: z.string().optional(),
 });
