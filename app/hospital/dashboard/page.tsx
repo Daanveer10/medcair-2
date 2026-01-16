@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3 } from "lucide-react";
+import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3, User, ChevronDown, ChevronUp, History } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -57,6 +57,30 @@ interface Slot {
   doctor_id: string;
 }
 
+interface DoctorAppointment {
+  id: string;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  patient: {
+    full_name: string;
+  };
+  clinic: {
+    name: string;
+  };
+  notes?: string;
+}
+
+interface DoctorWithSchedule {
+  id: string;
+  name: string;
+  specialization: string;
+  clinic_id: string;
+  clinic_name: string;
+  upcomingAppointments: DoctorAppointment[];
+  patientHistory: DoctorAppointment[];
+}
+
 export default function HospitalDashboard() {
   const router = useRouter();
   const supabase = createClient();
@@ -75,10 +99,14 @@ export default function HospitalDashboard() {
   const [patientEmail, setPatientEmail] = useState("");
   const [creating, setCreating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [doctorsWithSchedules, setDoctorsWithSchedules] = useState<DoctorWithSchedule[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     checkUser();
     loadAppointments();
+    loadDoctorsWithSchedules();
 
     // Set up real-time subscription for appointment changes
     const channel = supabase
@@ -259,6 +287,156 @@ export default function HospitalDashboard() {
     }
   };
 
+  const loadDoctorsWithSchedules = async () => {
+    try {
+      setLoadingDoctors(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: hospital } = await supabase
+        .from("hospitals")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!hospital) return;
+
+      // Get all clinics for this hospital
+      const { data: clinics } = await supabase
+        .from("clinics")
+        .select("id, name")
+        .eq("hospital_id", hospital.id);
+
+      if (!clinics || clinics.length === 0) {
+        setLoadingDoctors(false);
+        return;
+      }
+
+      const clinicIds = clinics.map(c => c.id);
+      const clinicMap = new Map(clinics.map(c => [c.id, c.name]));
+
+      // Get all doctors from these clinics
+      const { data: doctors } = await supabase
+        .from("doctors")
+        .select("id, name, specialization, clinic_id")
+        .in("clinic_id", clinicIds);
+
+      if (!doctors || doctors.length === 0) {
+        setDoctorsWithSchedules([]);
+        setLoadingDoctors(false);
+        return;
+      }
+
+      const doctorIds = doctors.map(d => d.id);
+      const today = new Date().toISOString().split("T")[0];
+
+      // Get upcoming appointments (scheduled, accepted, pending) - today and future
+      const { data: upcomingApts } = await supabase
+        .from("appointments")
+        .select(`
+          id,
+          doctor_id,
+          appointment_date,
+          appointment_time,
+          status,
+          notes,
+          patient:user_profiles!appointments_patient_id_fkey (
+            full_name
+          ),
+          clinic:clinics (
+            name
+          )
+        `)
+        .in("doctor_id", doctorIds)
+        .in("status", ["scheduled", "accepted", "pending"])
+        .gte("appointment_date", today)
+        .order("appointment_date", { ascending: true })
+        .order("appointment_time", { ascending: true });
+
+      // Get patient history (completed, cancelled, no_show) - past appointments
+      const { data: historyApts } = await supabase
+        .from("appointments")
+        .select(`
+          id,
+          doctor_id,
+          appointment_date,
+          appointment_time,
+          status,
+          notes,
+          patient:user_profiles!appointments_patient_id_fkey (
+            full_name
+          ),
+          clinic:clinics (
+            name
+          )
+        `)
+        .in("doctor_id", doctorIds)
+        .in("status", ["completed", "cancelled", "no_show"])
+        .order("appointment_date", { ascending: false })
+        .order("appointment_time", { ascending: false })
+        .limit(50); // Limit history to last 50 appointments per doctor
+
+      // Transform appointments
+      const transformAppointment = (apt: any): DoctorAppointment => ({
+        id: apt.id,
+        appointment_date: apt.appointment_date,
+        appointment_time: apt.appointment_time,
+        status: apt.status,
+        patient: {
+          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
+        },
+        clinic: {
+          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
+        },
+        notes: apt.notes,
+      });
+
+      const upcomingMap = new Map<string, DoctorAppointment[]>();
+      const historyMap = new Map<string, DoctorAppointment[]>();
+
+      (upcomingApts || []).forEach((apt: any) => {
+        const transformed = transformAppointment(apt);
+        const existing = upcomingMap.get(apt.doctor_id) || [];
+        existing.push(transformed);
+        upcomingMap.set(apt.doctor_id, existing);
+      });
+
+      (historyApts || []).forEach((apt: any) => {
+        const transformed = transformAppointment(apt);
+        const existing = historyMap.get(apt.doctor_id) || [];
+        existing.push(transformed);
+        historyMap.set(apt.doctor_id, existing);
+      });
+
+      // Combine doctors with their schedules
+      const doctorsWithData: DoctorWithSchedule[] = doctors.map(doctor => ({
+        id: doctor.id,
+        name: doctor.name,
+        specialization: doctor.specialization,
+        clinic_id: doctor.clinic_id,
+        clinic_name: clinicMap.get(doctor.clinic_id) || "Unknown",
+        upcomingAppointments: upcomingMap.get(doctor.id) || [],
+        patientHistory: historyMap.get(doctor.id) || [],
+      }));
+
+      setDoctorsWithSchedules(doctorsWithData);
+    } catch (error) {
+      handleError(error, { action: "loadDoctorsWithSchedules", resource: "doctors" });
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const toggleDoctorExpanded = (doctorId: string) => {
+    const newExpanded = new Set(expandedDoctors);
+    if (newExpanded.has(doctorId)) {
+      newExpanded.delete(doctorId);
+    } else {
+      newExpanded.add(doctorId);
+    }
+    setExpandedDoctors(newExpanded);
+  };
+
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSlot || !patientName || !patientEmail) return;
@@ -353,6 +531,7 @@ export default function HospitalDashboard() {
         description: "The appointment has been accepted successfully.",
       });
       loadAppointments(); // Reload to refresh the list
+      loadDoctorsWithSchedules(); // Reload doctor schedules
     } catch (error: any) {
       const errorResponse = handleError(error, { action: "acceptAppointment", resource: "appointments" });
       toast.error("Action Failed", {
@@ -408,6 +587,7 @@ export default function HospitalDashboard() {
         description: "The appointment request has been declined.",
       });
       loadAppointments(); // Reload to refresh the list
+      loadDoctorsWithSchedules(); // Reload doctor schedules
     } catch (error: any) {
       const errorResponse = handleError(error, { action: "declineAppointment", resource: "appointments" });
       toast.error("Action Failed", {
@@ -703,6 +883,225 @@ export default function HospitalDashboard() {
             )}
           </div>
         )}
+
+        {/* Doctors & Schedules Section */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-black mb-2">Doctors & Schedules</h2>
+            <p className="text-gray-600">View doctors, their upcoming schedules, and patient history</p>
+          </div>
+
+          {loadingDoctors ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="pt-6">
+                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+                    <div className="h-20 bg-gray-200 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : doctorsWithSchedules.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center py-12">
+                <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-xl font-bold text-black mb-2">No doctors found</p>
+                <p className="text-gray-600 mb-4">Add doctors in Settings to see their schedules</p>
+                <Link href="/hospital/settings">
+                  <Button className="bg-green-600 text-white hover:bg-green-700">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Go to Settings
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {doctorsWithSchedules.map((doctor) => {
+                const isExpanded = expandedDoctors.has(doctor.id);
+                const totalUpcoming = doctor.upcomingAppointments.length;
+                const totalHistory = doctor.patientHistory.length;
+
+                return (
+                  <Card
+                    key={doctor.id}
+                    className="border-0 shadow-lg bg-white hover:shadow-xl transition-all"
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <User className="h-5 w-5 text-green-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold text-black">{doctor.name}</h3>
+                              <p className="text-sm text-gray-600">{doctor.specialization}</p>
+                            </div>
+                          </div>
+                          <div className="ml-12 mt-2">
+                            <p className="text-sm text-gray-500">
+                              <span className="font-semibold">Clinic:</span> {doctor.clinic_name}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600">{totalUpcoming}</div>
+                            <div className="text-xs text-gray-500">Upcoming</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-600">{totalHistory}</div>
+                            <div className="text-xs text-gray-500">History</div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => toggleDoctorExpanded(doctor.id)}
+                            className="ml-2"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Upcoming Schedule */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <Calendar className="h-5 w-5 text-green-600" />
+                                <h4 className="text-lg font-bold text-black">Upcoming Schedule</h4>
+                                <span className="ml-auto px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                  {totalUpcoming}
+                                </span>
+                              </div>
+                              {totalUpcoming === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                  <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-500">No upcoming appointments</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                  {doctor.upcomingAppointments.map((apt) => (
+                                    <div
+                                      key={apt.id}
+                                      className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                                    >
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                          <p className="font-semibold text-black">{apt.patient.full_name}</p>
+                                          <p className="text-xs text-gray-500">{apt.clinic.name}</p>
+                                        </div>
+                                        <span
+                                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                                            apt.status === "pending"
+                                              ? "bg-yellow-100 text-yellow-700"
+                                              : apt.status === "accepted" || apt.status === "scheduled"
+                                              ? "bg-green-100 text-green-700"
+                                              : "bg-gray-100 text-gray-700"
+                                          }`}
+                                        >
+                                          {apt.status}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {new Date(apt.appointment_date).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          })}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {apt.appointment_time}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Patient History */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-4">
+                                <History className="h-5 w-5 text-gray-600" />
+                                <h4 className="text-lg font-bold text-black">Patient History</h4>
+                                <span className="ml-auto px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
+                                  {totalHistory}
+                                </span>
+                              </div>
+                              {totalHistory === 0 ? (
+                                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                  <History className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-500">No patient history</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                  {doctor.patientHistory.map((apt) => (
+                                    <div
+                                      key={apt.id}
+                                      className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                                    >
+                                      <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                          <p className="font-semibold text-black">{apt.patient.full_name}</p>
+                                          <p className="text-xs text-gray-500">{apt.clinic.name}</p>
+                                        </div>
+                                        <span
+                                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                                            apt.status === "completed"
+                                              ? "bg-green-100 text-green-700"
+                                              : apt.status === "cancelled"
+                                              ? "bg-red-100 text-red-700"
+                                              : "bg-gray-100 text-gray-700"
+                                          }`}
+                                        >
+                                          {apt.status}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="h-3 w-3" />
+                                          {new Date(apt.appointment_date).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          })}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {apt.appointment_time}
+                                        </div>
+                                      </div>
+                                      {apt.notes && (
+                                        <p className="text-xs text-gray-500 mt-2 italic">Note: {apt.notes}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </main>
 
       {/* Create Appointment Modal */}
