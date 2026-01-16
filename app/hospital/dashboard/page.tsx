@@ -120,8 +120,9 @@ export default function HospitalDashboard() {
         },
         (payload) => {
           console.log('Appointment change detected:', payload);
-          // Reload appointments when changes occur
+          // Reload appointments and doctor schedules when changes occur
           loadAppointments();
+          loadDoctorsWithSchedules();
         }
       )
       .subscribe();
