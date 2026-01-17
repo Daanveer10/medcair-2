@@ -1036,9 +1036,9 @@ export default function HospitalDashboard() {
                     )}
                   </CardContent>
                 </Card>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )
         )}
 
         {/* Doctors & Schedules Section */}
