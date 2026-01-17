@@ -64,13 +64,17 @@ export const DoctorUpdateSchema = DoctorSchema.partial().extend({
 // APPOINTMENT SLOT VALIDATIONS
 // ============================================================================
 
-export const AppointmentSlotSchema = z.object({
+// Base schema without refinements (for use with .partial())
+const AppointmentSlotBaseSchema = z.object({
   clinicId: z.string().uuid("Invalid clinic ID"),
   doctorId: z.string().uuid("Invalid doctor ID"),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
   startTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Time must be in HH:MM or HH:MM:SS format"),
   endTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Time must be in HH:MM or HH:MM:SS format"),
-}).refine(
+});
+
+// Full schema with refinements (for creating new slots)
+export const AppointmentSlotSchema = AppointmentSlotBaseSchema.refine(
   (data) => {
     // Validate that end time is after start time
     const start = new Date(`2000-01-01T${data.startTime}`);
@@ -95,7 +99,8 @@ export const AppointmentSlotSchema = z.object({
   }
 );
 
-export const AppointmentSlotUpdateSchema = AppointmentSlotSchema.partial().extend({
+// Update schema using base schema without refinements (allows .partial())
+export const AppointmentSlotUpdateSchema = AppointmentSlotBaseSchema.partial().extend({
   id: z.string().uuid("Invalid slot ID"),
   isAvailable: z.boolean().optional(),
 });
