@@ -125,7 +125,7 @@ export default function HospitalDashboard() {
       loadDoctorsWithSchedules();
 
       // Set up real-time subscription for appointment changes
-      const channel = supabase
+      const appointmentsChannel = supabase
         .channel('hospital-appointments')
         .on(
           'postgres_changes',
@@ -143,9 +143,47 @@ export default function HospitalDashboard() {
         )
         .subscribe();
 
-      // Cleanup subscription on unmount
+      // Set up real-time subscription for clinic changes
+      const clinicsChannel = supabase
+        .channel('hospital-clinics')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'clinics'
+          },
+          (payload) => {
+            console.log('Clinic change detected:', payload);
+            // Reload clinics when changes occur
+            loadClinics();
+          }
+        )
+        .subscribe();
+
+      // Set up real-time subscription for doctor changes
+      const doctorsChannel = supabase
+        .channel('hospital-doctors')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'doctors'
+          },
+          (payload) => {
+            console.log('Doctor change detected:', payload);
+            // Reload doctor schedules when changes occur
+            loadDoctorsWithSchedules();
+          }
+        )
+        .subscribe();
+
+      // Cleanup subscriptions on unmount
       return () => {
-        supabase.removeChannel(channel);
+        supabase.removeChannel(appointmentsChannel);
+        supabase.removeChannel(clinicsChannel);
+        supabase.removeChannel(doctorsChannel);
       };
     }
   }, [hospitalId]);
@@ -155,6 +193,12 @@ export default function HospitalDashboard() {
       loadClinics();
     }
   }, [showCreateModal, hospitalId]);
+
+  useEffect(() => {
+    if (showDoctorModal && hospitalId) {
+      loadClinics(); // Refresh clinics when doctor modal opens
+    }
+  }, [showDoctorModal, hospitalId]);
 
   useEffect(() => {
     if (selectedClinic) {
