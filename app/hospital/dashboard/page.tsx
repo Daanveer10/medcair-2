@@ -103,11 +103,28 @@ export default function HospitalDashboard() {
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"list" | "schedule">("list");
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [doctorForm, setDoctorForm] = useState({
+    name: "",
+    doctor_id: "",
+    specialization: "",
+    degree: "",
+    email: "",
+    phone: "",
+    clinic_id: "",
+  });
 
   useEffect(() => {
     checkUser();
-    loadAppointments();
-    loadDoctorsWithSchedules();
+  }, []);
+
+  useEffect(() => {
+    if (hospitalId) {
+      loadClinics();
+      loadAppointments();
+      loadDoctorsWithSchedules();
+    }
+  }, [hospitalId]);
 
     // Set up real-time subscription for appointment changes
     const channel = supabase
@@ -437,6 +454,84 @@ export default function HospitalDashboard() {
       newExpanded.add(doctorId);
     }
     setExpandedDoctors(newExpanded);
+  };
+
+  const handleCreateDoctor = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!doctorForm.clinic_id) {
+      toast.error("Validation Failed", {
+        description: "Please select a clinic.",
+      });
+      return;
+    }
+
+    try {
+      const { DoctorSchema } = await import("@/lib/validations");
+      const { validateData } = await import("@/lib/utils");
+
+      const validation = validateData(DoctorSchema, {
+        name: doctorForm.name,
+        specialization: doctorForm.specialization,
+        clinicId: doctorForm.clinic_id,
+      });
+
+      if (!validation.success) {
+        toast.error("Validation Failed", {
+          description: validation.error?.message || "Invalid doctor information.",
+        });
+        return;
+      }
+
+      // Check if doctor with same ID already exists
+      if (doctorForm.doctor_id) {
+        const { data: existingDoctor } = await supabase
+          .from("doctors")
+          .select("id")
+          .eq("doctor_id", doctorForm.doctor_id)
+          .single();
+
+        if (existingDoctor) {
+          toast.error("Doctor ID Exists", {
+            description: "A doctor with this license ID already exists.",
+          });
+          return;
+        }
+      }
+
+      // Create doctor
+      const { error } = await supabase.from("doctors").insert({
+        clinic_id: validation.data.clinicId,
+        name: validation.data.name,
+        specialization: validation.data.specialization,
+        doctor_id: doctorForm.doctor_id || null,
+        degree: doctorForm.degree || null,
+        email: doctorForm.email || null,
+        phone: doctorForm.phone || null,
+      });
+
+      if (error) throw error;
+
+      toast.success("Doctor Created", {
+        description: "The doctor has been added successfully.",
+      });
+      setDoctorForm({
+        name: "",
+        doctor_id: "",
+        specialization: "",
+        degree: "",
+        email: "",
+        phone: "",
+        clinic_id: "",
+      });
+      setShowDoctorModal(false);
+      loadDoctorsWithSchedules();
+      loadClinics();
+    } catch (error) {
+      const errorResponse = handleError(error, { action: "createDoctor", resource: "doctors" });
+      toast.error("Creation Failed", {
+        description: errorResponse.error?.message || "Failed to create doctor.",
+      });
+    }
   };
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
@@ -777,13 +872,22 @@ export default function HospitalDashboard() {
               </Button>
             </div>
           </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Create Appointment
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setShowDoctorModal(true)}
+              className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
+            >
+              <User className="h-5 w-5 mr-2" />
+              Add Doctor
+            </Button>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Create Appointment
+            </Button>
+          </div>
         </div>
 
         {/* Appointments List/Schedule */}
@@ -1316,6 +1420,162 @@ export default function HospitalDashboard() {
                   </Link>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Add Doctor Modal */}
+      {showDoctorModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-white">
+            <CardHeader className="bg-green-600 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-2xl font-bold">Add Doctor</CardTitle>
+                  <CardDescription className="text-white/90 mt-1">Add a new doctor to your clinic</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowDoctorModal(false);
+                    setDoctorForm({
+                      name: "",
+                      doctor_id: "",
+                      specialization: "",
+                      degree: "",
+                      email: "",
+                      phone: "",
+                      clinic_id: "",
+                    });
+                  }}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={handleCreateDoctor} className="space-y-4">
+                <div>
+                  <Label htmlFor="clinic_id" className="text-black font-semibold">Select Clinic</Label>
+                  <select
+                    id="clinic_id"
+                    value={doctorForm.clinic_id}
+                    onChange={(e) => setDoctorForm({ ...doctorForm, clinic_id: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black mt-1"
+                  >
+                    <option value="">Select a clinic</option>
+                    {clinics.map((clinic: Clinic) => (
+                      <option key={clinic.id} value={clinic.id}>
+                        {clinic.name} - {clinic.department}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="doctor_name" className="text-black font-semibold">Doctor Name *</Label>
+                  <Input
+                    id="doctor_name"
+                    value={doctorForm.name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, name: e.target.value })
+                    }
+                    required
+                    placeholder="Dr. John Doe"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="doctor_id" className="text-black font-semibold">License ID / Doctor ID</Label>
+                  <Input
+                    id="doctor_id"
+                    value={doctorForm.doctor_id}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, doctor_id: e.target.value })
+                    }
+                    placeholder="MD12345"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="specialization" className="text-black font-semibold">Specialization / Occupation *</Label>
+                  <Input
+                    id="specialization"
+                    value={doctorForm.specialization}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, specialization: e.target.value })
+                    }
+                    required
+                    placeholder="Cardiologist"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="degree" className="text-black font-semibold">Degree</Label>
+                  <Input
+                    id="degree"
+                    value={doctorForm.degree}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, degree: e.target.value })
+                    }
+                    placeholder="MD, MBBS, etc."
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="doctor_email" className="text-black font-semibold">Email</Label>
+                  <Input
+                    id="doctor_email"
+                    type="email"
+                    value={doctorForm.email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, email: e.target.value })
+                    }
+                    placeholder="doctor@example.com"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="doctor_phone" className="text-black font-semibold">Phone</Label>
+                  <Input
+                    id="doctor_phone"
+                    type="tel"
+                    value={doctorForm.phone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, phone: e.target.value })
+                    }
+                    placeholder="+1-555-0100"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowDoctorModal(false);
+                      setDoctorForm({
+                        name: "",
+                        doctor_id: "",
+                        specialization: "",
+                        degree: "",
+                        email: "",
+                        phone: "",
+                        clinic_id: "",
+                      });
+                    }}
+                    className="flex-1 border-2"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1 bg-green-600 text-white hover:bg-green-700">
+                    Add Doctor
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>
