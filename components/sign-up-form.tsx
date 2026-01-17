@@ -71,16 +71,16 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+      <Card className="border-0 shadow-lg bg-white">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-3xl font-bold text-black">Create Account</CardTitle>
+          <CardDescription className="text-gray-600">Sign up to get started with medcAIr</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName" className="text-black font-semibold">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -88,10 +88,11 @@ export function SignUpForm({
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-black font-semibold">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -99,11 +100,12 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="userRole">I am a</Label>
-                <div className="flex gap-4">
+                <Label htmlFor="userRole" className="text-black font-semibold">I am a</Label>
+                <div className="flex gap-6">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
@@ -111,9 +113,9 @@ export function SignUpForm({
                       value="patient"
                       checked={userRole === "patient"}
                       onChange={(e) => setUserRole(e.target.value as UserRole)}
-                      className="w-4 h-4"
+                      className="w-4 h-4 text-green-600 focus:ring-green-600"
                     />
-                    <span>Patient</span>
+                    <span className="text-black font-medium">Patient</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -122,15 +124,15 @@ export function SignUpForm({
                       value="hospital"
                       checked={userRole === "hospital"}
                       onChange={(e) => setUserRole(e.target.value as UserRole)}
-                      className="w-4 h-4"
+                      className="w-4 h-4 text-green-600 focus:ring-green-600"
                     />
-                    <span>Hospital</span>
+                    <span className="text-black font-medium">Hospital</span>
                   </label>
                 </div>
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-black font-semibold">Password</Label>
                 </div>
                 <Input
                   id="password"
@@ -138,11 +140,12 @@ export function SignUpForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="repeat-password" className="text-black font-semibold">Repeat Password</Label>
                 </div>
                 <Input
                   id="repeat-password"
@@ -150,16 +153,21 @@ export function SignUpForm({
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
                 />
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
+              {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold py-6 text-lg" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating account..." : "Sign up"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+            <div className="mt-6 text-center text-sm">
+              <span className="text-gray-600">Already have an account? </span>
+              <Link href="/auth/login" className="text-green-600 hover:text-green-700 font-semibold underline-offset-4 hover:underline">
                 Login
               </Link>
             </div>

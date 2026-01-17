@@ -43,6 +43,8 @@ export interface Doctor {
   clinic_id: string;
   name: string;
   specialization: string;
+  doctor_id?: string;
+  degree?: string;
   email?: string;
   phone?: string;
   created_at: string;
