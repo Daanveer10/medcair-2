@@ -102,6 +102,7 @@ export default function HospitalDashboard() {
   const [doctorsWithSchedules, setDoctorsWithSchedules] = useState<DoctorWithSchedule[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"list" | "schedule">("list");
 
   useEffect(() => {
     checkUser();
@@ -718,6 +719,24 @@ export default function HospitalDashboard() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h3 className="text-2xl font-bold text-gray-900">Appointments</h3>
+            <div className="flex gap-2 border-r border-gray-300 pr-3 mr-3">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className={viewMode === "list" ? "bg-green-600 text-white" : ""}
+              >
+                List View
+              </Button>
+              <Button
+                variant={viewMode === "schedule" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("schedule")}
+                className={viewMode === "schedule" ? "bg-green-600 text-white" : ""}
+              >
+                Schedule View
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant={statusFilter === "all" ? "default" : "outline"}
@@ -767,15 +786,13 @@ export default function HospitalDashboard() {
           </Button>
         </div>
 
-        {/* Appointments List */}
+        {/* Appointments List/Schedule */}
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
             <p className="text-gray-600 mt-4 font-medium">Loading appointments...</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredAppointments.length === 0 ? (
+        ) : filteredAppointments.length === 0 ? (
               <Card className="border border-gray-200 shadow-sm bg-white">
                 <CardContent className="pt-6 text-center py-12">
                   <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -790,8 +807,147 @@ export default function HospitalDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+            ) : viewMode === "schedule" ? (
+              // Schedule View - Group by date
+              (() => {
+                // Group appointments by date
+                const groupedByDate = filteredAppointments.reduce((acc, apt) => {
+                  const date = apt.appointment_date;
+                  if (!acc[date]) {
+                    acc[date] = [];
+                  }
+                  acc[date].push(apt);
+                  return acc;
+                }, {} as Record<string, typeof filteredAppointments>);
+
+                // Sort dates
+                const sortedDates = Object.keys(groupedByDate).sort();
+
+                return (
+                  <div className="space-y-6">
+                    {sortedDates.map((date) => {
+                      const dateAppointments = groupedByDate[date];
+                      // Sort appointments by time
+                      const sortedAppointments = [...dateAppointments].sort((a, b) => {
+                        return a.appointment_time.localeCompare(b.appointment_time);
+                      });
+
+                      // Calculate end time (15 minutes after start)
+                      const formatEndTime = (startTime: string) => {
+                        const [hours, minutes] = startTime.split(':').map(Number);
+                        const startDate = new Date();
+                        startDate.setHours(hours, minutes, 0, 0);
+                        const endDate = new Date(startDate.getTime() + 15 * 60 * 1000);
+                        return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+                      };
+
+                      return (
+                        <Card key={date} className="border-2 border-gray-200 shadow-md bg-white">
+                          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-gray-200">
+                            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                              <Calendar className="h-5 w-5 text-green-600" />
+                              {new Date(date).toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </CardTitle>
+                            <CardDescription className="text-gray-700 font-medium mt-1">
+                              {sortedAppointments.length} appointment{sortedAppointments.length !== 1 ? 's' : ''} scheduled
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {sortedAppointments.map((appointment) => {
+                                const statusColor = 
+                                  appointment.status === "pending" ? "border-yellow-500 bg-yellow-50" :
+                                  appointment.status === "accepted" || appointment.status === "scheduled" ? "border-green-500 bg-green-50" :
+                                  appointment.status === "completed" ? "border-blue-500 bg-blue-50" :
+                                  appointment.status === "declined" || appointment.status === "cancelled" ? "border-red-500 bg-red-50" :
+                                  "border-gray-300 bg-gray-50";
+
+                                return (
+                                  <div
+                                    key={appointment.id}
+                                    className={`p-4 rounded-lg border-2 ${statusColor} shadow-sm hover:shadow-md transition-all`}
+                                  >
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <Clock className="h-5 w-5 text-gray-700" />
+                                        <div>
+                                          <div className="font-bold text-lg text-gray-900">
+                                            {appointment.appointment_time}
+                                          </div>
+                                          <div className="text-xs text-gray-600">
+                                            - {formatEndTime(appointment.appointment_time)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span
+                                        className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                          appointment.status === "pending"
+                                            ? "bg-yellow-500 text-white"
+                                            : appointment.status === "accepted" || appointment.status === "scheduled"
+                                            ? "bg-green-600 text-white"
+                                            : appointment.status === "completed"
+                                            ? "bg-blue-600 text-white"
+                                            : appointment.status === "declined" || appointment.status === "cancelled"
+                                            ? "bg-red-500 text-white"
+                                            : "bg-gray-400 text-white"
+                                        }`}
+                                      >
+                                        {appointment.status.toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-600 mb-1">Patient</p>
+                                        <p className="font-semibold text-gray-900">{appointment.patient.full_name}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-600 mb-1">Doctor</p>
+                                        <p className="font-medium text-gray-900">{appointment.doctor.name}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-600 mb-1">Clinic</p>
+                                        <p className="text-sm text-gray-800">{appointment.clinic.name}</p>
+                                      </div>
+                                    </div>
+                                    {appointment.status === "pending" && (
+                                      <div className="mt-4 pt-3 border-t border-gray-300 flex gap-2">
+                                        <Button
+                                          size="sm"
+                                          className="flex-1 bg-green-600 text-white hover:bg-green-700 text-xs"
+                                          onClick={() => handleAcceptAppointment(appointment.id)}
+                                        >
+                                          Accept
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="flex-1 border-red-300 text-red-700 hover:bg-red-50 text-xs"
+                                          onClick={() => handleDeclineAppointment(appointment.id)}
+                                        >
+                                          Decline
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             ) : (
-              filteredAppointments.map((appointment) => (
+              // List View
+              <div className="space-y-4">
+                {filteredAppointments.map((appointment) => (
                 <Card
                   key={appointment.id}
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
