@@ -123,33 +123,32 @@ export default function HospitalDashboard() {
       loadClinics();
       loadAppointments();
       loadDoctorsWithSchedules();
+
+      // Set up real-time subscription for appointment changes
+      const channel = supabase
+        .channel('hospital-appointments')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'appointments'
+          },
+          (payload) => {
+            console.log('Appointment change detected:', payload);
+            // Reload appointments and doctor schedules when changes occur
+            loadAppointments();
+            loadDoctorsWithSchedules();
+          }
+        )
+        .subscribe();
+
+      // Cleanup subscription on unmount
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [hospitalId]);
-
-    // Set up real-time subscription for appointment changes
-    const channel = supabase
-      .channel('hospital-appointments')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointments'
-        },
-        (payload) => {
-          console.log('Appointment change detected:', payload);
-          // Reload appointments and doctor schedules when changes occur
-          loadAppointments();
-          loadDoctorsWithSchedules();
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   useEffect(() => {
     if (showCreateModal && hospitalId) {
