@@ -164,34 +164,41 @@ export default function HospitalDashboard() {
   }, [selectedClinic]);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
-    
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("full_name, role, id")
-      .eq("user_id", user.id)
-      .single();
-    
-    if (profile?.role !== "hospital") {
-      router.push("/patient/dashboard");
-      return;
-    }
-    
-    setUserName(profile.full_name || "Hospital Admin");
-    
-    // Get hospital ID
-    const { data: hospital } = await supabase
-      .from("hospitals")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
-    
-    if (hospital) {
-      setHospitalId(hospital.id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("full_name, role, id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profile?.role !== "hospital") {
+        router.push("/patient/dashboard");
+        return;
+      }
+      
+      setUserName(profile.full_name || "Hospital Admin");
+      
+      // Get hospital ID
+      const { data: hospital } = await supabase
+        .from("hospitals")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (hospital) {
+        setHospitalId(hospital.id);
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      handleError(error, { action: "checkUser", resource: "user_profiles" });
+      setLoading(false);
     }
   };
 
@@ -237,7 +244,10 @@ export default function HospitalDashboard() {
         .eq("user_id", user.id)
         .single();
 
-      if (!hospital) return;
+      if (!hospital) {
+        setLoading(false);
+        return;
+      }
 
       // Get all clinics for this hospital
       const { data: clinics } = await supabase
@@ -246,6 +256,7 @@ export default function HospitalDashboard() {
         .eq("hospital_id", hospital.id);
 
       if (!clinics || clinics.length === 0) {
+        setAppointments([]);
         setLoading(false);
         return;
       }
@@ -457,9 +468,19 @@ export default function HospitalDashboard() {
 
   const handleCreateDoctor = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!doctorForm.clinic_id) {
+    
+    // Validate clinic selection
+    if (!doctorForm.clinic_id || doctorForm.clinic_id === "") {
       toast.error("Validation Failed", {
-        description: "Please select a clinic.",
+        description: "Please select a clinic from the dropdown.",
+      });
+      return;
+    }
+    
+    // Validate required fields
+    if (!doctorForm.name || !doctorForm.specialization) {
+      toast.error("Validation Failed", {
+        description: "Doctor name and specialization are required.",
       });
       return;
     }
@@ -871,22 +892,6 @@ export default function HospitalDashboard() {
               </Button>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => setShowDoctorModal(true)}
-              className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
-            >
-              <User className="h-5 w-5 mr-2" />
-              Add Doctor
-            </Button>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Create Appointment
-            </Button>
-          </div>
         </div>
 
         {/* Appointments List/Schedule */}
@@ -1146,9 +1151,27 @@ export default function HospitalDashboard() {
 
         {/* Doctors & Schedules Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-6">
-            <h2 className="text-3xl font-bold text-black mb-2">Doctors & Schedules</h2>
-            <p className="text-gray-600">View doctors, their upcoming schedules, and patient history</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-black mb-2">Doctors & Schedules</h2>
+              <p className="text-gray-600">View doctors, their upcoming schedules, and patient history</p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowDoctorModal(true)}
+                className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
+              >
+                <User className="h-5 w-5 mr-2" />
+                Add Doctor
+              </Button>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create Appointment
+              </Button>
+            </div>
           </div>
 
           {loadingDoctors ? (
@@ -1164,17 +1187,18 @@ export default function HospitalDashboard() {
               ))}
             </div>
           ) : doctorsWithSchedules.length === 0 ? (
-            <Card>
+                  <Card>
               <CardContent className="pt-6 text-center py-12">
                 <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-xl font-bold text-black mb-2">No doctors found</p>
-                <p className="text-gray-600 mb-4">Add doctors in Settings to see their schedules</p>
-                <Link href="/hospital/settings">
-                  <Button className="bg-green-600 text-white hover:bg-green-700">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Go to Settings
-                  </Button>
-                </Link>
+                <p className="text-gray-600 mb-4">Add doctors to see their schedules and appointment history</p>
+                <Button 
+                  onClick={() => setShowDoctorModal(true)}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Add Doctor
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -1458,13 +1482,15 @@ export default function HospitalDashboard() {
             <CardContent className="pt-6">
               <form onSubmit={handleCreateDoctor} className="space-y-4">
                 <div>
-                  <Label htmlFor="clinic_id" className="text-black font-semibold">Select Clinic</Label>
+                  <Label htmlFor="clinic_id" className="text-black font-semibold">Select Clinic *</Label>
                   <select
                     id="clinic_id"
                     value={doctorForm.clinic_id}
                     onChange={(e) => setDoctorForm({ ...doctorForm, clinic_id: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black mt-1"
+                    className={`w-full px-3 py-2 border-2 rounded-md focus:outline-none text-black mt-1 ${
+                      doctorForm.clinic_id ? "border-gray-300 focus:border-green-600" : "border-gray-300 focus:border-green-600"
+                    }`}
                   >
                     <option value="">Select a clinic</option>
                     {clinics.map((clinic: Clinic) => (
@@ -1473,6 +1499,9 @@ export default function HospitalDashboard() {
                       </option>
                     ))}
                   </select>
+                  {clinics.length === 0 && (
+                    <p className="text-sm text-gray-500 mt-1">No clinics found. Please add clinics in Settings first.</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="doctor_name" className="text-black font-semibold">Doctor Name *</Label>
