@@ -1487,10 +1487,7 @@ export default function HospitalDashboard() {
                     id="clinic_id"
                     value={doctorForm.clinic_id}
                     onChange={(e) => setDoctorForm({ ...doctorForm, clinic_id: e.target.value })}
-                    required
-                    className={`w-full px-3 py-2 border-2 rounded-md focus:outline-none text-black mt-1 ${
-                      doctorForm.clinic_id ? "border-gray-300 focus:border-green-600" : "border-gray-300 focus:border-green-600"
-                    }`}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black mt-1"
                   >
                     <option value="">Select a clinic</option>
                     {clinics.map((clinic: Clinic) => (
