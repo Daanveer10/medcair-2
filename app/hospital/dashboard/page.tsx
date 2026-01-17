@@ -248,11 +248,22 @@ export default function HospitalDashboard() {
 
   const loadClinics = async () => {
     if (!hospitalId) return;
-    const { data } = await supabase
-      .from("clinics")
-      .select("id, name, department")
-      .eq("hospital_id", hospitalId);
-    setClinics(data || []);
+    try {
+      const { data, error } = await supabase
+        .from("clinics")
+        .select("id, name, department")
+        .eq("hospital_id", hospitalId)
+        .order("name", { ascending: true });
+      
+      if (error) {
+        console.error("Error loading clinics:", error);
+        return;
+      }
+      
+      setClinics(data || []);
+    } catch (error) {
+      handleError(error, { action: "loadClinics", resource: "clinics" });
+    }
   };
 
   const loadDoctors = async () => {
