@@ -143,7 +143,9 @@ export default function HospitalDashboard() {
         )
         .subscribe();
 
-      // Set up real-time subscription for clinic changes
+      // Set up real-time subscription for clinic changes (filtered by hospital_id if possible)
+      // Note: Supabase real-time doesn't support filtering by hospital_id directly in the subscription
+      // So we reload all clinics and let loadClinics filter by hospitalId
       const clinicsChannel = supabase
         .channel('hospital-clinics')
         .on(
@@ -155,8 +157,10 @@ export default function HospitalDashboard() {
           },
           (payload) => {
             console.log('Clinic change detected:', payload);
-            // Reload clinics when changes occur
-            loadClinics();
+            // Reload clinics when changes occur (loadClinics will filter by hospitalId)
+            if (hospitalId) {
+              loadClinics();
+            }
           }
         )
         .subscribe();
@@ -195,10 +199,30 @@ export default function HospitalDashboard() {
   }, [showCreateModal, hospitalId]);
 
   useEffect(() => {
-    if (showDoctorModal && hospitalId) {
-      loadClinics(); // Refresh clinics when doctor modal opens
+    if (showDoctorModal) {
+      // Always refresh clinics when modal opens, even if hospitalId isn't set yet
+      if (hospitalId) {
+        loadClinics();
+      } else {
+        // If hospitalId isn't set yet, try to get it first
+        const fetchHospitalId = async () => {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: hospital } = await supabase
+              .from("hospitals")
+              .select("id")
+              .eq("user_id", user.id)
+              .single();
+            if (hospital) {
+              setHospitalId(hospital.id);
+              loadClinics();
+            }
+          }
+        };
+        fetchHospitalId();
+      }
     }
-  }, [showDoctorModal, hospitalId]);
+  }, [showDoctorModal]);
 
   useEffect(() => {
     if (selectedClinic) {
@@ -247,8 +271,12 @@ export default function HospitalDashboard() {
   };
 
   const loadClinics = async () => {
-    if (!hospitalId) return;
+    if (!hospitalId) {
+      console.log("loadClinics: No hospitalId available");
+      return;
+    }
     try {
+      console.log("loadClinics: Fetching clinics for hospitalId:", hospitalId);
       const { data, error } = await supabase
         .from("clinics")
         .select("id, name, department")
@@ -257,9 +285,11 @@ export default function HospitalDashboard() {
       
       if (error) {
         console.error("Error loading clinics:", error);
+        handleError(error, { action: "loadClinics", resource: "clinics" });
         return;
       }
       
+      console.log("loadClinics: Found clinics:", data?.length || 0, data);
       setClinics(data || []);
     } catch (error) {
       handleError(error, { action: "loadClinics", resource: "clinics" });
