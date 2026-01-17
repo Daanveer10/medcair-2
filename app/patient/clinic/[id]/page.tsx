@@ -63,7 +63,7 @@ export default function ClinicPage() {
           table: 'appointments',
           filter: `clinic_id=eq.${params.id}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Appointment change detected:', payload);
           // Reload clinic data when appointments change
           loadClinicData();
@@ -145,7 +145,7 @@ export default function ClinicPage() {
       if (slotsError) throw slotsError;
 
       // Get all appointments for these slots to check which are booked/pending
-      const slotIds = (slotsData || []).map(s => s.id);
+      const slotIds = (slotsData || []).map((s: any) => s.id);
       const { data: appointmentsData } = await supabase
         .from("appointments")
         .select("slot_id, status, patient_id")
@@ -167,22 +167,22 @@ export default function ClinicPage() {
       // Separate booked (accepted/scheduled) and pending appointments
       const bookedSlotIds = new Set(
         (appointmentsData || [])
-          .filter(apt => apt.status === "accepted" || apt.status === "scheduled")
-          .map(apt => apt.slot_id)
+          .filter((apt: any) => apt.status === "accepted" || apt.status === "scheduled")
+          .map((apt: any) => apt.slot_id)
       );
 
       // Pending appointments by current user (waiting for response)
       const pendingByCurrentUser = new Set(
         (appointmentsData || [])
-          .filter(apt => apt.status === "pending" && apt.patient_id === currentPatientId)
-          .map(apt => apt.slot_id)
+          .filter((apt: any) => apt.status === "pending" && apt.patient_id === currentPatientId)
+          .map((apt: any) => apt.slot_id)
       );
 
       // Pending appointments by other users (unavailable)
       const pendingByOthers = new Set(
         (appointmentsData || [])
-          .filter(apt => apt.status === "pending" && apt.patient_id !== currentPatientId)
-          .map(apt => apt.slot_id)
+          .filter((apt: any) => apt.status === "pending" && apt.patient_id !== currentPatientId)
+          .map((apt: any) => apt.slot_id)
       );
 
       // Transform slots data - handle doctor relation (Supabase returns as array)
@@ -303,14 +303,22 @@ export default function ClinicPage() {
         return;
       }
 
+      // Type assertion - we know validation.success is true here
+      const validatedData = validation.data as {
+        patientId: string;
+        clinicId: string;
+        doctorId: string;
+        slotId: string;
+      };
+
       // Create appointment with pending status (waiting for hospital approval)
       const { data: appointment, error: appointmentError } = await supabase
         .from("appointments")
         .insert({
-          patient_id: validation.data.patientId,
-          clinic_id: validation.data.clinicId,
-          doctor_id: validation.data.doctorId,
-          slot_id: validation.data.slotId,
+          patient_id: validatedData.patientId,
+          clinic_id: validatedData.clinicId,
+          doctor_id: validatedData.doctorId,
+          slot_id: validatedData.slotId,
           appointment_date: slot.date,
           appointment_time: slot.start_time,
           status: "pending", // Start as pending, hospital will accept/decline
@@ -394,7 +402,7 @@ export default function ClinicPage() {
     if (!groupedSlots[date]) return [];
     const dateSlots = groupedSlots[date];
     const allTimes = new Set<string>();
-    dateSlots.forEach(slot => {
+    dateSlots.forEach((slot: Slot) => {
       allTimes.add(slot.start_time);
     });
     return Array.from(allTimes).sort();
@@ -452,7 +460,7 @@ export default function ClinicPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Specialties:</p>
                   <div className="flex flex-wrap gap-2">
-                    {clinic.specialties.map((specialty, idx) => (
+                    {clinic.specialties.map((specialty: string, idx: number) => (
                       <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
                         {specialty}
                       </span>
