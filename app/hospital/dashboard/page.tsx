@@ -200,12 +200,11 @@ export default function HospitalDashboard() {
 
   useEffect(() => {
     if (showDoctorModal) {
-      // Always refresh clinics when modal opens, even if hospitalId isn't set yet
-      if (hospitalId) {
-        loadClinics();
-      } else {
-        // If hospitalId isn't set yet, try to get it first
-        const fetchHospitalId = async () => {
+      // Always refresh clinics when modal opens
+      const refreshClinics = async () => {
+        // Get hospital ID if not already available
+        let currentHospitalId = hospitalId;
+        if (!currentHospitalId) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             const { data: hospital } = await supabase
@@ -214,13 +213,37 @@ export default function HospitalDashboard() {
               .eq("user_id", user.id)
               .single();
             if (hospital) {
+              currentHospitalId = hospital.id;
               setHospitalId(hospital.id);
-              loadClinics();
             }
           }
-        };
-        fetchHospitalId();
-      }
+        }
+        
+        // Load clinics with the current hospital ID
+        if (currentHospitalId) {
+          try {
+            console.log("Refreshing clinics for hospitalId:", currentHospitalId);
+            const { data, error } = await supabase
+              .from("clinics")
+              .select("id, name, department")
+              .eq("hospital_id", currentHospitalId)
+              .order("name", { ascending: true });
+            
+            if (error) {
+              console.error("Error refreshing clinics:", error);
+              handleError(error, { action: "loadClinics", resource: "clinics" });
+              return;
+            }
+            
+            console.log("Refreshed clinics:", data?.length || 0, data);
+            setClinics(data || []);
+          } catch (error) {
+            handleError(error, { action: "loadClinics", resource: "clinics" });
+          }
+        }
+      };
+      
+      refreshClinics();
     }
   }, [showDoctorModal]);
 
@@ -629,8 +652,9 @@ export default function HospitalDashboard() {
         clinic_id: "",
       });
       setShowDoctorModal(false);
-      loadDoctorsWithSchedules();
-      loadClinics();
+      // Refresh data
+      await loadDoctorsWithSchedules();
+      await loadClinics();
     } catch (error) {
       const errorResponse = handleError(error, { action: "createDoctor", resource: "doctors" });
       toast.error("Creation Failed", {
