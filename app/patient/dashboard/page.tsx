@@ -235,34 +235,51 @@ export default function PatientDashboard() {
       }
       
       // Transform data - handle hospital relation (Supabase returns as array)
-      const transformedClinics = (data || []).map((clinic: any) => {
-        const hospitalData = Array.isArray(clinic.hospital) 
-          ? clinic.hospital[0] 
-          : clinic.hospital;
-        
-        let distance: number | null = null;
-        if (userLat && userLng && hospitalData?.latitude && hospitalData?.longitude) {
-          distance = calculateDistance(
-            userLat,
-            userLng,
-            parseFloat(hospitalData.latitude),
-            parseFloat(hospitalData.longitude)
-          );
-        }
-        
-        return {
-          id: clinic.id,
-          name: clinic.name,
-          department: clinic.department,
-          specialties: clinic.specialties || [],
-          hospital: {
-            name: hospitalData?.name || "Unknown",
-            address: hospitalData?.address || "Unknown",
-            city: hospitalData?.city || "Unknown",
-            distance: distance ? parseFloat(distance.toFixed(1)) : undefined,
-          },
-        };
-      });
+      // Only include clinics with valid hospital location data
+      const transformedClinics = (data || [])
+        .map((clinic: any) => {
+          const hospitalData = Array.isArray(clinic.hospital) 
+            ? clinic.hospital[0] 
+            : clinic.hospital;
+          
+          // Skip clinics without valid location data
+          if (!hospitalData?.latitude || !hospitalData?.longitude) {
+            return null;
+          }
+          
+          let distance: number | null = null;
+          if (userLat && userLng && hospitalData.latitude && hospitalData.longitude) {
+            distance = calculateDistance(
+              userLat,
+              userLng,
+              parseFloat(hospitalData.latitude),
+              parseFloat(hospitalData.longitude)
+            );
+          }
+          
+          return {
+            id: clinic.id,
+            name: clinic.name,
+            department: clinic.department,
+            specialties: clinic.specialties || [],
+            hospital: {
+              name: hospitalData?.name || "Unknown",
+              address: hospitalData?.address || "Unknown",
+              city: hospitalData?.city || "Unknown",
+              distance: distance ? parseFloat(distance.toFixed(1)) : undefined,
+            },
+          };
+        })
+        .filter((clinic: any) => clinic !== null) // Remove clinics without location
+        .sort((a: any, b: any) => {
+          // Sort by distance if available, otherwise by name
+          if (a.hospital.distance !== undefined && b.hospital.distance !== undefined) {
+            return a.hospital.distance - b.hospital.distance;
+          }
+          if (a.hospital.distance !== undefined) return -1;
+          if (b.hospital.distance !== undefined) return 1;
+          return a.name.localeCompare(b.name);
+        });
       
       setClinics(transformedClinics);
     } catch (error) {
@@ -297,10 +314,9 @@ export default function PatientDashboard() {
     return matchesFavorites && matchesSearch && matchesDisease && matchesCity && matchesDistance;
   });
 
-  // Get recommended clinics (top 6 with most specialties or random)
+  // Get recommended clinics (top 6 closest or with most specialties)
   const recommendedClinics = clinics
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 6);
+    .slice(0, 6); // Already sorted by distance
 
   const quickStats: QuickStat[] = [
     {

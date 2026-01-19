@@ -59,6 +59,16 @@ export default function HospitalSettings() {
     languages_spoken: "",
   });
 
+  const [hospitalForm, setHospitalForm] = useState({
+    address: "",
+    city: "",
+    state: "",
+    zip_code: "",
+    phone: "",
+    description: "",
+  });
+  const [updatingHospital, setUpdatingHospital] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -78,6 +88,14 @@ export default function HospitalSettings() {
 
     if (hospitalData) {
       setHospital(hospitalData);
+      setHospitalForm({
+        address: hospitalData.address || "",
+        city: hospitalData.city || "",
+        state: hospitalData.state || "",
+        zip_code: hospitalData.zip_code || "",
+        phone: hospitalData.phone || "",
+        description: hospitalData.description || "",
+      });
       
       const { data: clinicsData } = await supabase
         .from("clinics")
@@ -114,6 +132,63 @@ export default function HospitalSettings() {
     }
 
     setLoading(false);
+  };
+
+  const handleUpdateHospital = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!hospital) return;
+
+    setUpdatingHospital(true);
+    try {
+      // Geocode the address
+      const { geocodeAddress } = await import("@/lib/geocoding");
+      const geocodeResult = await geocodeAddress(
+        hospitalForm.address,
+        hospitalForm.city,
+        hospitalForm.state,
+        hospitalForm.zip_code
+      );
+
+      if (!geocodeResult) {
+        toast.error("Geocoding Failed", {
+          description: "Could not find location for this address. Please check the address and try again.",
+        });
+        setUpdatingHospital(false);
+        return;
+      }
+
+      // Update hospital with address and coordinates
+      const { error } = await supabase
+        .from("hospitals")
+        .update({
+          address: hospitalForm.address,
+          city: hospitalForm.city,
+          state: hospitalForm.state,
+          zip_code: hospitalForm.zip_code,
+          phone: hospitalForm.phone,
+          description: hospitalForm.description || null,
+          latitude: geocodeResult.latitude,
+          longitude: geocodeResult.longitude,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", hospital.id);
+
+      if (error) throw error;
+
+      toast.success("Hospital Updated", {
+        description: "Your hospital information and location have been updated successfully. Patients can now find you in nearby searches!",
+      });
+
+      // Reload hospital data
+      loadData();
+    } catch (error) {
+      const errorResponse = handleError(error, { action: "updateHospital", resource: "hospitals" });
+      toast.error("Update Failed", {
+        description: errorResponse.error?.message || "Failed to update hospital information.",
+      });
+    } finally {
+      setUpdatingHospital(false);
+    }
   };
 
   const handleCreateClinic = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -409,10 +484,10 @@ export default function HospitalSettings() {
           <Card className="border-0 shadow-lg bg-white">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-black">Hospital Information</CardTitle>
-              <CardDescription className="text-gray-600">Update your hospital details</CardDescription>
+              <CardDescription className="text-gray-600">Update your hospital details and location</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <form onSubmit={handleUpdateHospital} className="space-y-4">
                 <div>
                   <Label className="text-black font-semibold">Hospital Name</Label>
                   <Input value={hospital?.name || ""} disabled className="border-2 border-gray-300 text-black" />
@@ -421,7 +496,95 @@ export default function HospitalSettings() {
                   <Label className="text-black font-semibold">Email</Label>
                   <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
                 </div>
-              </div>
+                <div>
+                  <Label className="text-black font-semibold">Address *</Label>
+                  <Input
+                    value={hospitalForm.address}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
+                    required
+                    placeholder="123 Medical Center Drive"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-black font-semibold">City *</Label>
+                    <Input
+                      value={hospitalForm.city}
+                      onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
+                      required
+                      placeholder="New York"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">State *</Label>
+                    <Input
+                      value={hospitalForm.state}
+                      onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
+                      required
+                      placeholder="NY"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Zip Code *</Label>
+                  <Input
+                    value={hospitalForm.zip_code}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, zip_code: e.target.value })}
+                    required
+                    placeholder="10001"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Phone *</Label>
+                  <Input
+                    value={hospitalForm.phone}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, phone: e.target.value })}
+                    required
+                    placeholder="+1-555-0100"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Description (Optional)</Label>
+                  <textarea
+                    value={hospitalForm.description}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, description: e.target.value })}
+                    placeholder="Brief description of your hospital..."
+                    rows={3}
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
+                  />
+                </div>
+                {hospital?.latitude && hospital?.longitude && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      <strong>Location verified:</strong> {hospital.latitude.toFixed(6)}, {hospital.longitude.toFixed(6)}
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Your hospital will appear in nearby clinic searches for patients.
+                    </p>
+                  </div>
+                )}
+                {(!hospital?.latitude || !hospital?.longitude) && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Location not set:</strong> Please update your address and click "Update & Geocode" to enable nearby clinic search.
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    disabled={updatingHospital}
+                    className="bg-green-600 text-white hover:bg-green-700"
+                  >
+                    {updatingHospital ? "Updating..." : "Update & Geocode Location"}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
 
