@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3, User, ChevronDown, ChevronUp, History } from "lucide-react";
+import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3, User, ChevronDown, ChevronUp, History, Bell } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -113,16 +113,35 @@ export default function HospitalDashboard() {
     phone: "",
     clinic_id: "",
   });
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showNotifications && !target.closest('.notification-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
 
   useEffect(() => {
     if (hospitalId) {
       loadClinics();
       loadAppointments();
       loadDoctorsWithSchedules();
+      loadNotifications();
 
       // Set up real-time subscription for appointment changes
       const appointmentsChannel = supabase
@@ -183,11 +202,28 @@ export default function HospitalDashboard() {
         )
         .subscribe();
 
+      // Set up real-time subscription for notifications
+      const notificationsChannel = supabase
+        .channel('hospital-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications'
+          },
+          () => {
+            loadNotifications();
+          }
+        )
+        .subscribe();
+
       // Cleanup subscriptions on unmount
       return () => {
         supabase.removeChannel(appointmentsChannel);
         supabase.removeChannel(clinicsChannel);
         supabase.removeChannel(doctorsChannel);
+        supabase.removeChannel(notificationsChannel);
       };
     }
   }, [hospitalId]);
@@ -421,6 +457,67 @@ export default function HospitalDashboard() {
       handleError(error, { action: "loadAppointments", resource: "appointments" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNotifications = async () => {
+    if (!hospitalId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("hospital_id", hospitalId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      setNotifications(data || []);
+      setUnreadNotificationCount((data || []).filter(n => !n.read).length);
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("id", notificationId);
+
+      if (error) throw error;
+      loadNotifications();
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    if (!hospitalId) return;
+    
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("hospital_id", hospitalId)
+        .eq("read", false);
+
+      if (error) throw error;
+      loadNotifications();
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    markNotificationAsRead(notification.id);
+    // Scroll to appointments section or filter by appointment
+    if (notification.appointment_id) {
+      setStatusFilter("pending");
+      // Optionally scroll to appointments
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -877,6 +974,83 @@ export default function HospitalDashboard() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
+              {/* Notifications */}
+              <div className="relative notification-dropdown">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative border-2 border-gray-400 bg-white hover:bg-gray-50"
+                >
+                  <Bell className="h-4 w-4 text-gray-900" />
+                  {unreadNotificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-green-600 text-white rounded-full text-xs font-bold flex items-center justify-center">
+                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                    </span>
+                  )}
+                </Button>
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white border-2 border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto notification-dropdown">
+                    <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+                      <span className="font-bold text-gray-900">Notifications</span>
+                      {unreadNotificationCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={markAllNotificationsAsRead}
+                          className="h-6 text-xs"
+                        >
+                          Mark all read
+                        </Button>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">No notifications</div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                              !notification.read ? 'bg-green-50' : ''
+                            }`}
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="text-lg">
+                                {notification.type === 'appointment_created' ? '📅' : 
+                                 notification.type === 'appointment_accepted' ? '✅' : 
+                                 notification.type === 'appointment_declined' ? '❌' : '🔔'}
+                              </span>
+                              <div className="flex-1">
+                                <p className={`text-sm ${!notification.read ? 'font-bold' : ''}`}>
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {new Date(notification.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              {!notification.read && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    markNotificationAsRead(notification.id);
+                                  }}
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <Link href="/hospital/analytics">
                 <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
                   <BarChart3 className="h-4 w-4 text-gray-900" />

@@ -340,10 +340,7 @@ export default function ClinicPage() {
         // Non-critical - appointment is created, slot will be checked on reload
       }
 
-      // Hospital is already notified via real-time subscription on appointments table
-      // The hospital dashboard will automatically refresh when new appointments are created
-
-      // Create in-app notification for patient
+      // Create in-app notifications for both patient and hospital
       try {
         const { createNotification } = await import("@/lib/notifications");
         const clinicId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -351,11 +348,12 @@ export default function ClinicPage() {
         
         const { data: clinicInfo } = await supabase
           .from("clinics")
-          .select("name")
+          .select("name, hospital_id")
           .eq("id", clinicId)
           .single();
 
         if (clinicInfo && appointment) {
+          // Create notification for patient
           await createNotification({
             type: 'appointment_created',
             appointmentId: appointment.id,
@@ -363,6 +361,26 @@ export default function ClinicPage() {
             clinicId: clinicId,
             message: `Your appointment request for ${slot.date} at ${slot.start_time} with ${slot.doctor.name} at ${clinicInfo.name} has been submitted. Waiting for hospital approval.`
           });
+
+          // Create notification for hospital
+          if (clinicInfo.hospital_id) {
+            // Get patient name for hospital notification
+            const { data: patientProfile } = await supabase
+              .from("user_profiles")
+              .select("full_name")
+              .eq("id", profile.id)
+              .single();
+
+            const patientName = patientProfile?.full_name || "A patient";
+            
+            await createNotification({
+              type: 'appointment_created',
+              appointmentId: appointment.id,
+              hospitalId: clinicInfo.hospital_id,
+              clinicId: clinicId,
+              message: `New appointment request from ${patientName} for ${slot.date} at ${slot.start_time} with ${slot.doctor.name} at ${clinicInfo.name}. Please review and accept/decline.`
+            });
+          }
         }
       } catch (error) {
         const { handleError } = await import("@/lib/utils");
