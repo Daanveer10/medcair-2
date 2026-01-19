@@ -130,6 +130,21 @@ export default function HospitalSettings() {
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0);
 
+      const services = clinicForm.services
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+
+      const insuranceProviders = clinicForm.insurance_providers
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+
+      const paymentMethods = clinicForm.payment_methods
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
+
       const validation = validateData(ClinicSchema, {
         name: clinicForm.name,
         department: clinicForm.department,
