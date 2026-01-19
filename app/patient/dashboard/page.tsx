@@ -237,15 +237,17 @@ export default function PatientDashboard() {
       // Transform data - handle hospital relation (Supabase returns as array)
       // Only include clinics with valid hospital location data
       const transformedClinics: Clinic[] = (data || [])
+        .filter((clinic: any) => {
+          // Filter out clinics without valid location data first
+          const hospitalData = Array.isArray(clinic.hospital) 
+            ? clinic.hospital[0] 
+            : clinic.hospital;
+          return hospitalData?.latitude && hospitalData?.longitude;
+        })
         .map((clinic: any) => {
           const hospitalData = Array.isArray(clinic.hospital) 
             ? clinic.hospital[0] 
             : clinic.hospital;
-          
-          // Skip clinics without valid location data
-          if (!hospitalData?.latitude || !hospitalData?.longitude) {
-            return null;
-          }
           
           let distance: number | null = null;
           if (userLat && userLng && hospitalData.latitude && hospitalData.longitude) {
@@ -270,7 +272,6 @@ export default function PatientDashboard() {
             },
           };
         })
-        .filter((clinic): clinic is Clinic => clinic !== null) // Type guard to remove nulls
         .sort((a, b) => {
           // Sort by distance if available, otherwise by name
           if (a.hospital.distance !== undefined && b.hospital.distance !== undefined) {
