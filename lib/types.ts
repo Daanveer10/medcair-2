@@ -23,6 +23,8 @@ export interface Hospital {
   phone: string;
   email: string;
   description?: string;
+  photo_url?: string; // Phase 1: Enhanced Profiles
+  website_url?: string; // Phase 1: Website URL
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,11 @@ export interface Clinic {
   department: string; // e.g., Cardiology, Neurology, etc.
   specialties: string[]; // Diseases/conditions treated
   description?: string;
+  photo_url?: string; // Phase 1: Enhanced Profiles
+  consultation_fee?: number; // Phase 1: Consultation fee
+  services?: string[]; // Phase 1: Services offered
+  insurance_providers?: string[]; // Phase 1: Insurance accepted
+  payment_methods?: string[]; // Phase 1: Payment methods accepted
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +54,10 @@ export interface Doctor {
   degree?: string;
   email?: string;
   phone?: string;
+  photo_url?: string; // Phase 1: Enhanced Profiles
+  credentials?: string[]; // Phase 1: e.g., ['MBBS', 'MD', 'FACP']
+  years_of_experience?: number; // Phase 1: Years of experience
+  languages_spoken?: string[]; // Phase 1: e.g., ['English', 'Hindi']
   created_at: string;
   updated_at: string;
 }
@@ -89,4 +100,64 @@ export interface FollowUp {
   notes?: string;
   created_at: string;
   updated_at: string;
+}
+
+// Phase 1: Reviews & Ratings
+export interface ClinicReview {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  rating: number; // 1-5
+  review_text?: string;
+  appointment_id?: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DoctorReview {
+  id: string;
+  doctor_id: string;
+  patient_id: string;
+  rating: number; // 1-5
+  review_text?: string;
+  appointment_id?: string;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewResponse {
+  id: string;
+  review_id: string;
+  review_type: 'clinic' | 'doctor';
+  hospital_user_id: string;
+  response_text: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Phase 1: Messaging
+export interface Message {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  appointment_id?: string;
+  clinic_id?: string;
+  subject?: string;
+  message_text: string;
+  is_read: boolean;
+  attachment_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessageThread {
+  id: string;
+  patient_id: string;
+  hospital_id: string;
+  appointment_id?: string;
+  clinic_id?: string;
+  last_message_at: string;
+  created_at: string;
 }
