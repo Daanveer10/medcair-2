@@ -65,8 +65,7 @@ CREATE TABLE IF NOT EXISTS review_responses (
   hospital_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   response_text TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  PRIMARY KEY (id)
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- ============================================================================
