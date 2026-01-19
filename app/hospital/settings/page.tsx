@@ -31,6 +31,11 @@ export default function HospitalSettings() {
     name: "",
     department: "",
     specialties: "",
+    photo_url: "",
+    consultation_fee: "",
+    services: "",
+    insurance_providers: "",
+    payment_methods: "",
   });
 
   const [slotForm, setSlotForm] = useState({
@@ -48,6 +53,10 @@ export default function HospitalSettings() {
     degree: "",
     email: "",
     phone: "",
+    photo_url: "",
+    credentials: "",
+    years_of_experience: "",
+    languages_spoken: "",
   });
 
   useEffect(() => {
@@ -140,6 +149,11 @@ export default function HospitalSettings() {
         name: validation.data.name,
         department: validation.data.department,
         specialties: validation.data.specialties || [],
+        photo_url: clinicForm.photo_url || null,
+        consultation_fee: clinicForm.consultation_fee ? parseFloat(clinicForm.consultation_fee) : null,
+        services: services.length > 0 ? services : null,
+        insurance_providers: insuranceProviders.length > 0 ? insuranceProviders : null,
+        payment_methods: paymentMethods.length > 0 ? paymentMethods : null,
       });
 
       if (error) throw error;
@@ -147,7 +161,16 @@ export default function HospitalSettings() {
       toast.success("Clinic Created", {
         description: "The clinic has been created successfully.",
       });
-      setClinicForm({ name: "", department: "", specialties: "" });
+      setClinicForm({ 
+        name: "", 
+        department: "", 
+        specialties: "",
+        photo_url: "",
+        consultation_fee: "",
+        services: "",
+        insurance_providers: "",
+        payment_methods: "",
+      });
       setShowClinicForm(false);
       loadData();
     } catch (error) {
@@ -319,6 +342,10 @@ export default function HospitalSettings() {
         degree: "",
         email: "",
         phone: "",
+        photo_url: "",
+        credentials: "",
+        years_of_experience: "",
+        languages_spoken: "",
       });
       setShowDoctorForm(false);
       setSelectedClinicForDoctor("");
@@ -432,6 +459,65 @@ export default function HospitalSettings() {
                         setClinicForm({ ...clinicForm, specialties: e.target.value })
                       }
                       placeholder="Cardiology, Heart Disease, Hypertension"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Photo URL (Optional)</Label>
+                    <Input
+                      type="url"
+                      value={clinicForm.photo_url}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setClinicForm({ ...clinicForm, photo_url: e.target.value })
+                      }
+                      placeholder="https://example.com/clinic-photo.jpg"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Consultation Fee (Optional)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={clinicForm.consultation_fee}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setClinicForm({ ...clinicForm, consultation_fee: e.target.value })
+                      }
+                      placeholder="500.00"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Services Offered (comma-separated, Optional)</Label>
+                    <Input
+                      value={clinicForm.services}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setClinicForm({ ...clinicForm, services: e.target.value })
+                      }
+                      placeholder="X-Ray, Ultrasound, Lab Tests"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Insurance Providers (comma-separated, Optional)</Label>
+                    <Input
+                      value={clinicForm.insurance_providers}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setClinicForm({ ...clinicForm, insurance_providers: e.target.value })
+                      }
+                      placeholder="Aetna, Blue Cross, Medicare"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Payment Methods (comma-separated, Optional)</Label>
+                    <Input
+                      value={clinicForm.payment_methods}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setClinicForm({ ...clinicForm, payment_methods: e.target.value })
+                      }
+                      placeholder="Cash, Credit Card, Insurance, UPI"
                       className="border-2 border-gray-300 focus:border-green-600 text-black"
                     />
                   </div>
@@ -584,6 +670,54 @@ export default function HospitalSettings() {
                       className="border-2 border-gray-300 focus:border-green-600 text-black"
                     />
                   </div>
+                  <div>
+                    <Label className="text-black font-semibold">Photo URL (Optional)</Label>
+                    <Input
+                      type="url"
+                      value={doctorForm.photo_url}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setDoctorForm({ ...doctorForm, photo_url: e.target.value })
+                      }
+                      placeholder="https://example.com/doctor-photo.jpg"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Credentials (comma-separated, Optional)</Label>
+                    <Input
+                      value={doctorForm.credentials}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setDoctorForm({ ...doctorForm, credentials: e.target.value })
+                      }
+                      placeholder="MBBS, MD, FACP"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Years of Experience (Optional)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={doctorForm.years_of_experience}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setDoctorForm({ ...doctorForm, years_of_experience: e.target.value })
+                      }
+                      placeholder="10"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black font-semibold">Languages Spoken (comma-separated, Optional)</Label>
+                    <Input
+                      value={doctorForm.languages_spoken}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setDoctorForm({ ...doctorForm, languages_spoken: e.target.value })
+                      }
+                      placeholder="English, Hindi, Spanish"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    />
+                  </div>
                   <div className="flex gap-2">
                     <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Add Doctor</Button>
                     <Button
@@ -599,6 +733,10 @@ export default function HospitalSettings() {
                           degree: "",
                           email: "",
                           phone: "",
+                          photo_url: "",
+                          credentials: "",
+                          years_of_experience: "",
+                          languages_spoken: "",
                         });
                       }}
                       className="border-2"
