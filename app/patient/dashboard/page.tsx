@@ -235,22 +235,15 @@ export default function PatientDashboard() {
       }
       
       // Transform data - handle hospital relation (Supabase returns as array)
-      // Only include clinics with valid hospital location data
+      // Show all clinics, but prioritize those with location data for sorting
       const transformedClinics: Clinic[] = (data || [])
-        .filter((clinic: any) => {
-          // Filter out clinics without valid location data first
-          const hospitalData = Array.isArray(clinic.hospital) 
-            ? clinic.hospital[0] 
-            : clinic.hospital;
-          return hospitalData?.latitude && hospitalData?.longitude;
-        })
         .map((clinic: any) => {
           const hospitalData = Array.isArray(clinic.hospital) 
             ? clinic.hospital[0] 
             : clinic.hospital;
           
           let distance: number | null = null;
-          if (userLat && userLng && hospitalData.latitude && hospitalData.longitude) {
+          if (userLat && userLng && hospitalData?.latitude && hospitalData?.longitude) {
             distance = calculateDistance(
               userLat,
               userLng,
@@ -282,10 +275,18 @@ export default function PatientDashboard() {
           return a.name.localeCompare(b.name);
         });
       
+      console.log(`Loaded ${transformedClinics.length} clinics from ${data?.length || 0} total`);
+      if (transformedClinics.length === 0 && (data?.length || 0) > 0) {
+        console.warn("No clinics displayed. Check if hospitals have location data.");
+      }
       setClinics(transformedClinics);
     } catch (error) {
+      console.error("Error loading clinics:", error);
       const { handleError } = await import("@/lib/utils");
       handleError(error, { action: "loadClinics", resource: "clinics" });
+      toast.error("Failed to Load Clinics", {
+        description: "Could not load clinics. Please refresh the page.",
+      });
     } finally {
       setLoading(false);
     }
@@ -298,9 +299,14 @@ export default function PatientDashboard() {
 
   const filteredClinics = clinics.filter((clinic) => {
     const matchesFavorites = !showFavoritesOnly || favoriteClinicIds.has(clinic.id);
+    
+    // Enhanced search - search in name, department, specialties, and hospital name
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      clinic.department.toLowerCase().includes(searchTerm.toLowerCase());
+      clinic.name.toLowerCase().includes(searchLower) ||
+      clinic.department.toLowerCase().includes(searchLower) ||
+      clinic.hospital.name.toLowerCase().includes(searchLower) ||
+      clinic.specialties.some(s => s.toLowerCase().includes(searchLower));
     
     const matchesDisease = !diseaseFilter ||
       clinic.specialties.some(s => s.toLowerCase().includes(diseaseFilter.toLowerCase()));
@@ -522,15 +528,22 @@ export default function PatientDashboard() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // Search is handled by filteredClinics state, this prevents form submission
+                }}
+                className="relative"
+              >
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 <Input
+                  type="search"
                   placeholder="Search clinics, departments, or specialties..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-12 h-14 text-lg border-2 border-gray-300 focus:border-green-600 focus:ring-green-600 text-black placeholder:text-gray-400"
                 />
-              </div>
+              </form>
               <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${showFilters ? "block" : "hidden sm:grid"}`}>
                 <div className="space-y-2">
                   <Label htmlFor="disease" className="text-sm font-bold text-gray-700">Disease/Condition</Label>
