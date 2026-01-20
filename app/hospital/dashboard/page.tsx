@@ -318,43 +318,46 @@ export default function HospitalDashboard() {
         .eq("user_id", user.id)
         .single();
       
-      if (hospital) {
-        setHospitalId(hospital.id);
-      } else {
-        setLoading(false);
-      }
+        if (hospital) {
+          setHospitalId(hospital.id);
+          await loadClinics(hospital.id); // force immediate clinic load
+        } else {
+          setLoading(false);
+        }        
     } catch (error) {
       handleError(error, { action: "checkUser", resource: "user_profiles" });
       setLoading(false);
     }
   };
 
-  const loadClinics = async () => {
-    if (!hospitalId) {
+  const loadClinics = async (hid?: string) => {
+    const id = hid || hospitalId;
+    if (!id) {
       console.log("loadClinics: No hospitalId available");
       return;
     }
+  
     try {
-      console.log("loadClinics: Fetching clinics for hospitalId:", hospitalId);
+      console.log("loadClinics: Fetching clinics for hospitalId:", id);
       const { data, error } = await supabase
         .from("clinics")
         .select("id, name, department")
-        .eq("hospital_id", hospitalId)
+        .eq("hospital_id", id)
         .order("name", { ascending: true });
-      
+  
       if (error) {
         console.error("Error loading clinics:", error);
         handleError(error, { action: "loadClinics", resource: "clinics" });
         return;
       }
-      
+  
       console.log("loadClinics: Found clinics:", data?.length || 0, data);
       setClinics(data || []);
     } catch (error) {
       handleError(error, { action: "loadClinics", resource: "clinics" });
     }
   };
-
+  
   const loadDoctors = async () => {
     if (!selectedClinic) return;
     const { data } = await supabase
@@ -762,42 +765,37 @@ export default function HospitalDashboard() {
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlot || !patientName || !patientEmail) return;
-
+    if (!selectedClinic || !selectedDoctor || !selectedSlot) return;
+  
     setCreating(true);
     try {
-      // Find patient profile by looking up user by email in auth.users
-      // Note: This requires the patient to already have an account
-      // First, try to get user email from auth (we'll use a workaround)
-      // Since we can't access admin API from client, we'll search user_profiles
-      // by checking if we can find the user through a different method
-      
-      // Alternative: Search in a way that works with RLS
-      // Actually, hospitals can't query all user_profiles due to RLS
-      // So we'll simplify: require patient to book themselves, or
-      // Show a message that this feature requires patient registration
-      
-      toast.info("Appointment Booking", {
-        description: "Patient appointment booking is best done by patients themselves through the patient portal. Please direct patients to sign up and book through their dashboard.",
+      const res = await fetch("/api/appointments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clinic_id: selectedClinic,
+          doctor_id: selectedDoctor,
+          slot_id: selectedSlot,
+        }),
       });
-      setCreating(false);
+  
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+  
+      toast.success("Appointment created successfully");
       setShowCreateModal(false);
-      return;
-
-      // TODO: For production, create a server-side API route that can:
-      // 1. Accept patient email/name
-      // 2. Use admin API to find/create user
-      // 3. Create appointment
-      // This requires server-side code with service role key
+  
+      await loadAppointments();
+      await loadDoctorsWithSchedules();
     } catch (error: any) {
-      const errorResponse = handleError(error, { action: "createAppointment", resource: "appointments" });
       toast.error("Creation Failed", {
-        description: errorResponse.error?.message || "Failed to create appointment.",
+        description: error.message || "Failed to create appointment.",
       });
     } finally {
       setCreating(false);
     }
   };
+  
 
   const handleAcceptAppointment = async (appointmentId: string) => {
     try {
