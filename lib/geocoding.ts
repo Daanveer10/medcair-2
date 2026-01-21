@@ -9,6 +9,29 @@ export interface GeocodeResult {
   display_name: string;
 }
 
+export interface ReverseGeocodeResult {
+  display_name: string;
+  lat?: number;
+  lon?: number;
+  address: {
+    road?: string;
+    pedestrian?: string;
+    house_number?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    residential?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string; // e.g. "Township of X"
+    county?: string;
+    district?: string; // e.g. "District X"
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
+}
+
 /**
  * Geocode an address to get latitude and longitude
  * Uses OpenStreetMap Nominatim API
@@ -54,27 +77,6 @@ export async function geocodeAddress(
   }
 }
 
-export interface ReverseGeocodeResult {
-  display_name: string;
-  address: {
-    road?: string;
-    pedestrian?: string;
-    house_number?: string;
-    suburb?: string;
-    neighbourhood?: string;
-    residential?: string;
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string; // e.g. "Township of X"
-    county?: string;
-    district?: string; // e.g. "District X"
-    state?: string;
-    postcode?: string;
-    country?: string;
-  };
-}
-
 /**
  * Reverse geocode coordinates to get address
  */
@@ -116,5 +118,35 @@ export async function reverseGeocodeStructured(
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     return null;
+  }
+}
+
+/**
+ * Search for an address
+ */
+export async function searchAddress(query: string): Promise<ReverseGeocodeResult[]> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'MedCair-App/1.0',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Search request failed');
+    }
+
+    const data = await response.json();
+    return data.map((item: any) => ({
+      display_name: item.display_name,
+      address: item.address || {},
+      lat: parseFloat(item.lat),
+      lon: parseFloat(item.lon),
+    }));
+  } catch (error) {
+    console.error('Search error:', error);
+    return [];
   }
 }

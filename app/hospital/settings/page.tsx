@@ -144,6 +144,72 @@ export default function HospitalSettings() {
   // Debug state
   const [locationDetails, setLocationDetails] = useState<{ lat: number, lng: number, accuracy: number } | null>(null);
 
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSearchAddress = async () => {
+    if (!searchQuery.trim()) return;
+
+    setSearching(true);
+    try {
+      const { searchAddress } = await import("@/lib/geocoding");
+      const results = await searchAddress(searchQuery);
+      setSearchResults(results);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Search failed:", error);
+      toast.error("Search Failed", { description: "Could not search for address." });
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSelectAddress = (result: any) => {
+    const { address, lat, lon, display_name } = result;
+
+    // Set map location (and debug info if needed)
+    setCurrentLocation({ lat, lng: lon });
+    setLocationDetails({ lat, lng: lon, accuracy: 0 }); // 0 accuracy serves as "manual/exact" flag
+
+    // Smart Address Parsing
+    let street = "";
+    if (address.road) {
+      street = `${address.house_number ? address.house_number + ' ' : ''}${address.road}`;
+    } else if (address.pedestrian) {
+      street = address.pedestrian;
+    } else if (address.residential) {
+      street = address.residential;
+    } else if (address.suburb) {
+      street = address.suburb;
+    } else if (address.neighbourhood) {
+      street = address.neighbourhood;
+    } else {
+      street = display_name.split(",")[0];
+    }
+
+    const city = address.city || address.town || address.village || address.municipality || address.county || "";
+    const state = address.state || "";
+    const zip = address.postcode || "";
+
+    setHospitalForm({
+      ...hospitalForm,
+      address: street,
+      city: city,
+      state: state,
+      zip_code: zip,
+    });
+
+    setShowResults(false);
+    setSearchQuery(""); // Optional: clear or keep query
+
+    toast.success("Location Selected", {
+      description: "Address fields updated from search result.",
+    });
+  };
+
   const handleUseCurrentLocation = async () => {
     setGettingLocation(true);
     setLocationDetails(null); // Reset previous details
@@ -607,6 +673,59 @@ export default function HospitalSettings() {
                   <Label className="text-black font-semibold">Email</Label>
                   <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
                 </div>
+                {/* Location Search Section */}
+                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <Label className="text-black font-semibold mb-2 block">Search Location (Manual Selection)</Label>
+                  <div className="flex gap-2 relative">
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="e.g. City Hospital, Main Street, Mumbai"
+                      className="border-2 border-gray-300 focus:border-green-600 text-black flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchAddress())}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSearchAddress}
+                      disabled={searching}
+                      className="bg-gray-800 text-white hover:bg-gray-700"
+                    >
+                      {searching ? "Searching..." : "Search"}
+                    </Button>
+
+                    {/* Search Results Dropdown */}
+                    {showResults && searchResults.length > 0 && (
+                      <div className="absolute top-12 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
+                        <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                          <span className="text-xs font-medium text-gray-500">Select the closest match:</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400"
+                            onClick={() => setShowResults(false)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                        {searchResults.map((result, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full text-left p-3 hover:bg-green-50 border-b border-gray-50 last:border-0 transition-colors"
+                            onClick={() => handleSelectAddress(result)}
+                          >
+                            <p className="font-medium text-sm text-gray-900 truncate">{result.display_name.split(",")[0]}</p>
+                            <p className="text-xs text-gray-500 truncate">{result.display_name}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Search for your hospital or a nearby landmark if GPS is inaccurate.
+                  </p>
+                </div>
+
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <Label className="text-black font-semibold">Address *</Label>
