@@ -101,7 +101,9 @@ export async function reverseGeocodeStructured(
       return null;
     }
 
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`;
+    const latStr = Number(latitude).toFixed(8);
+    const lonStr = Number(longitude).toFixed(8);
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latStr}&lon=${lonStr}&addressdetails=1`;
 
     console.log('Fetching reverse geocode:', url); // Debug log
 
