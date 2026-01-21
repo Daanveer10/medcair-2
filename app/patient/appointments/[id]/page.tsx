@@ -84,29 +84,32 @@ export default function ConsultationSummary() {
             if (error) throw error;
             if (!appointment) throw new Error("Appointment not found");
 
+            // Cast to any to handle joined tables without strict type definition
+            const appt = appointment as any;
+
             // Extract doctor and clinic info safely
-            const docName = Array.isArray(appointment.doctor)
-                ? appointment.doctor[0]?.name
-                : appointment.doctor?.name || "Unknown Doctor";
+            const docName = Array.isArray(appt.doctor)
+                ? appt.doctor[0]?.name
+                : appt.doctor?.name || "Unknown Doctor";
 
-            const docSpecialty = Array.isArray(appointment.doctor)
-                ? appointment.doctor[0]?.specialization
-                : appointment.doctor?.specialization || "General Specialist";
+            const docSpecialty = Array.isArray(appt.doctor)
+                ? appt.doctor[0]?.specialization
+                : appt.doctor?.specialization || "General Specialist";
 
-            const clinicName = Array.isArray(appointment.clinic)
-                ? appointment.clinic[0]?.name
-                : appointment.clinic?.name || "Unknown Clinic";
+            const clinicName = Array.isArray(appt.clinic)
+                ? appt.clinic[0]?.name
+                : appt.clinic?.name || "Unknown Clinic";
 
-            const clinicCity = Array.isArray(appointment.clinic)
-                ? appointment.clinic[0]?.city
-                : appointment.clinic?.city || "";
+            const clinicCity = Array.isArray(appt.clinic)
+                ? appt.clinic[0]?.city
+                : appt.clinic?.city || "";
 
             // Parse Notes / "AI Summary"
             // Since we don't have a prescriptions table, we use 'notes'
             // If notes contains JSON-like structure or specific delimiters, we could parse it
             // For now, we treat notes as the main advice.
 
-            const rawNotes = appointment.notes || "No notes provided by the doctor.";
+            const rawNotes = appt.notes || "No notes provided by the doctor.";
 
             // Mocking "AI" extraction from the raw notes for the sake of the UI
             // In a real functionality, this would call an LLM API
@@ -117,25 +120,25 @@ export default function ConsultationSummary() {
             ];
 
             // Determine type
-            const type = appointment.reason?.toLowerCase().includes("video") ? "Video" : "In-Person";
+            const type = appt.reason?.toLowerCase().includes("video") ? "Video" : "In-Person";
 
             const realData: AppointmentData = {
-                id: appointment.id,
+                id: appt.id,
                 doctor_name: docName,
                 doctor_specialty: docSpecialty,
                 clinic_name: clinicName,
                 clinic_address: clinicCity, // Just showing City for now as full address might be missing in select
-                date: appointment.appointment_date,
-                time: appointment.appointment_time,
+                date: appt.appointment_date,
+                time: appt.appointment_time,
                 type: type,
-                status: appointment.status,
-                notes: appointment.notes,
+                status: appt.status,
+                notes: appt.notes,
                 prescription: {
                     // Start with empty medicines for now or generic if notes present
-                    medicines: appointment.notes ? [
+                    medicines: appt.notes ? [
                         { name: "Refer to Doctor's Notes", dosage: "-", duration: "-", notes: "See below" }
                     ] : [],
-                    diagnosis: appointment.reason ? [appointment.reason] : ["General Checkup"],
+                    diagnosis: appt.reason ? [appt.reason] : ["General Checkup"],
                     advice: [rawNotes]
                 },
                 ai_summary: {
