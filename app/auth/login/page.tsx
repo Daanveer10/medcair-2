@@ -4,19 +4,17 @@ import Link from "next/link";
 
 export default function Page() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark flex flex-col font-display">
       {/* Navbar */}
-      <nav className="w-full flex justify-center border-b border-gray-200 h-16 bg-white sticky top-0 z-50 shadow-sm">
+      <nav className="w-full flex justify-center border-b border-[#e6f3f4] dark:border-gray-700 h-16 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
           <div className="flex gap-5 items-center font-semibold">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-green-600 rounded-lg">
-                <Stethoscope className="h-5 w-5 text-white" />
+            <Link href={"/"} className="flex items-center gap-2 group">
+              <div className="size-8 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+                <span className="material-symbols-outlined text-xl">health_metrics</span>
               </div>
-              <Link href={"/"} className="text-xl font-bold text-black">
-                medcAIr
-              </Link>
-            </div>
+              <span className="text-xl font-extrabold tracking-tight text-[#0c1b1d] dark:text-white">Healio<span className="text-primary">.doc</span></span>
+            </Link>
           </div>
         </div>
       </nav>

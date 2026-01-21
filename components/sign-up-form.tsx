@@ -55,12 +55,12 @@ export function SignUpForm({
         },
       });
       if (signUpError) throw signUpError;
-      
+
       // Profile will be automatically created by database trigger
       // The trigger reads role and full_name from raw_user_meta_data
       // It uses SECURITY DEFINER so it bypasses RLS and always works
       // No need for manual fallback - trigger handles it at database level
-      
+
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -70,17 +70,17 @@ export function SignUpForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="border-0 shadow-lg bg-white">
+    <div className={cn("flex flex-col gap-6 font-display", className)} {...props}>
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-3xl font-bold text-black">Create Account</CardTitle>
-          <CardDescription className="text-gray-600">Sign up to get started with medcAIr</CardDescription>
+          <CardTitle className="text-3xl font-bold text-[#0c1b1d] dark:text-white">Create Account</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">Sign up to get started with Healio</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="fullName" className="text-black font-semibold">Full Name</Label>
+                <Label htmlFor="fullName" className="text-[#0c1b1d] dark:text-white font-semibold">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -88,11 +88,11 @@ export function SignUpForm({
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email" className="text-black font-semibold">Email</Label>
+                <Label htmlFor="email" className="text-[#0c1b1d] dark:text-white font-semibold">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -100,11 +100,11 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="userRole" className="text-black font-semibold">I am a</Label>
+                <Label htmlFor="userRole" className="text-[#0c1b1d] dark:text-white font-semibold">I am a</Label>
                 <div className="flex gap-6">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -113,9 +113,9 @@ export function SignUpForm({
                       value="patient"
                       checked={userRole === "patient"}
                       onChange={(e) => setUserRole(e.target.value as UserRole)}
-                      className="w-4 h-4 text-green-600 focus:ring-green-600"
+                      className="w-4 h-4 text-primary focus:ring-primary"
                     />
-                    <span className="text-black font-medium">Patient</span>
+                    <span className="text-[#0c1b1d] dark:text-white font-medium">Patient</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -124,15 +124,15 @@ export function SignUpForm({
                       value="hospital"
                       checked={userRole === "hospital"}
                       onChange={(e) => setUserRole(e.target.value as UserRole)}
-                      className="w-4 h-4 text-green-600 focus:ring-green-600"
+                      className="w-4 h-4 text-primary focus:ring-primary"
                     />
-                    <span className="text-black font-medium">Hospital</span>
+                    <span className="text-[#0c1b1d] dark:text-white font-medium">Hospital</span>
                   </label>
                 </div>
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password" className="text-black font-semibold">Password</Label>
+                  <Label htmlFor="password" className="text-[#0c1b1d] dark:text-white font-semibold">Password</Label>
                 </div>
                 <Input
                   id="password"
@@ -140,12 +140,12 @@ export function SignUpForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password" className="text-black font-semibold">Repeat Password</Label>
+                  <Label htmlFor="repeat-password" className="text-[#0c1b1d] dark:text-white font-semibold">Repeat Password</Label>
                 </div>
                 <Input
                   id="repeat-password"
@@ -153,21 +153,21 @@ export function SignUpForm({
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-              <Button 
-                type="submit" 
-                className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold py-6 text-lg" 
+              <Button
+                type="submit"
+                className="w-full bg-primary text-white hover:bg-primary/90 font-semibold py-6 text-lg shadow-lg shadow-primary/20"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating account..." : "Sign up"}
               </Button>
             </div>
             <div className="mt-6 text-center text-sm">
-              <span className="text-gray-600">Already have an account? </span>
-              <Link href="/auth/login" className="text-green-600 hover:text-green-700 font-semibold underline-offset-4 hover:underline">
+              <span className="text-gray-600 dark:text-gray-400">Already have an account? </span>
+              <Link href="/auth/login" className="text-primary hover:text-primary/80 font-semibold underline-offset-4 hover:underline">
                 Login
               </Link>
             </div>

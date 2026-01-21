@@ -46,7 +46,7 @@ export function LoginForm({
           .select("role")
           .eq("user_id", user.id)
           .single();
-        
+
         if (profile?.role === "hospital") {
           router.push("/hospital/dashboard");
         } else {
@@ -63,11 +63,11 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="border-0 shadow-lg bg-white">
+    <div className={cn("flex flex-col gap-6 font-display", className)} {...props}>
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-3xl font-bold text-black">Welcome Back</CardTitle>
-          <CardDescription className="text-gray-600">
+          <CardTitle className="text-3xl font-bold text-[#0c1b1d] dark:text-white">Welcome Back</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
             Enter your email below to login to your account
           </CardDescription>
         </CardHeader>
@@ -75,7 +75,7 @@ export function LoginForm({
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email" className="text-black font-semibold">Email</Label>
+                <Label htmlFor="email" className="text-[#0c1b1d] dark:text-white font-semibold">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -83,15 +83,15 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password" className="text-black font-semibold">Password</Label>
+                  <Label htmlFor="password" className="text-[#0c1b1d] dark:text-white font-semibold">Password</Label>
                   <Link
                     href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm text-green-600 hover:text-green-700 underline-offset-4 hover:underline font-medium"
+                    className="ml-auto inline-block text-sm text-primary hover:text-primary/80 underline-offset-4 hover:underline font-medium"
                   >
                     Forgot password?
                   </Link>
@@ -102,23 +102,23 @@ export function LoginForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                 />
               </div>
               {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
-              <Button 
-                type="submit" 
-                className="w-full bg-green-600 text-white hover:bg-green-700 font-semibold py-6 text-lg" 
+              <Button
+                type="submit"
+                className="w-full bg-primary text-white hover:bg-primary/90 font-semibold py-6 text-lg shadow-lg shadow-primary/20"
                 disabled={isLoading}
               >
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
             <div className="mt-6 text-center text-sm">
-              <span className="text-gray-600">Don&apos;t have an account? </span>
+              <span className="text-gray-600 dark:text-gray-400">Don&apos;t have an account? </span>
               <Link
                 href="/auth/sign-up"
-                className="text-green-600 hover:text-green-700 font-semibold underline-offset-4 hover:underline"
+                className="text-primary hover:text-primary/80 font-semibold underline-offset-4 hover:underline"
               >
                 Sign up
               </Link>
