@@ -167,14 +167,8 @@ export default function HospitalSettings() {
     }
   };
 
-  const handleSelectAddress = (result: any) => {
-    const { address, lat, lon, display_name } = result;
-
-    // Set map location (and debug info if needed)
-    setCurrentLocation({ lat, lng: lon });
-    setLocationDetails({ lat, lng: lon, accuracy: 0 }); // 0 accuracy serves as "manual/exact" flag
-
-    // Smart Address Parsing
+  /* Helper to normalize address */
+  const normalizeAddress = (address: any, displayName: string) => {
     let street = "";
     if (address.road) {
       street = `${address.house_number ? address.house_number + ' ' : ''}${address.road}`;
@@ -182,25 +176,38 @@ export default function HospitalSettings() {
       street = address.pedestrian;
     } else if (address.residential) {
       street = address.residential;
+    } else if (address.hamlet) {
+      street = address.hamlet;
     } else if (address.suburb) {
       street = address.suburb;
     } else if (address.neighbourhood) {
       street = address.neighbourhood;
     } else {
-      street = display_name.split(",")[0];
+      street = displayName.split(",")[0];
     }
 
-    const city = address.city || address.town || address.village || address.municipality || address.county || "";
-    const state = address.state || "";
+    const city = address.city || address.town || address.village || address.municipality || address.locality || address.county || "";
+    const state = address.state || address.region || "";
     const zip = address.postcode || "";
+    return { street, city, state, zip };
+  };
 
-    setHospitalForm({
-      ...hospitalForm,
+  const handleSelectAddress = (result: any) => {
+    const { address, lat, lon, display_name } = result;
+
+    // Set map location (and debug info if needed)
+    setCurrentLocation({ lat, lng: lon });
+    setLocationDetails({ lat, lng: lon, accuracy: 0 }); // 0 accuracy serves as "manual/exact" flag
+
+    const { street, city, state, zip } = normalizeAddress(address, display_name);
+
+    setHospitalForm(prev => ({
+      ...prev,
       address: street,
       city: city,
       state: state,
       zip_code: zip,
-    });
+    }));
 
     setShowResults(false);
     setSearchQuery(""); // Optional: clear or keep query
@@ -223,7 +230,7 @@ export default function HospitalSettings() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords; // Accuracy is in meters
-        console.log("Geolocation accuracy:", accuracy, "meters");
+        console.log("Geolocation got coords:", { latitude, longitude, accuracy });
 
         // Set debug details
         setLocationDetails({ lat: latitude, lng: longitude, accuracy });
@@ -241,31 +248,9 @@ export default function HospitalSettings() {
           const result = await reverseGeocodeStructured(latitude, longitude);
 
           if (result && result.address) {
-            const { address } = result;
-            console.log("Structured Address:", address);
+            console.log("Structured Address:", result.address);
 
-            // Smarter Street Logic
-            let street = "";
-            if (address.road) {
-              street = `${address.house_number ? address.house_number + ' ' : ''}${address.road}`;
-            } else if (address.pedestrian) {
-              street = address.pedestrian;
-            } else if (address.residential) {
-              street = address.residential;
-            } else if (address.suburb) {
-              // If no street, use suburb as address line
-              street = address.suburb;
-            } else if (address.neighbourhood) {
-              street = address.neighbourhood;
-            } else {
-              // Fallback to simpler part of display name if possible, or just empty
-              street = result.display_name.split(",")[0];
-            }
-
-            // Smarter City Logic
-            const city = address.city || address.town || address.village || address.municipality || address.county || "";
-            const state = address.state || "";
-            const zip = address.postcode || "";
+            const { street, city, state, zip } = normalizeAddress(result.address, result.display_name);
 
             setHospitalForm(prev => ({
               ...prev,

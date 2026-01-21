@@ -96,7 +96,14 @@ export async function reverseGeocodeStructured(
   longitude: number
 ): Promise<ReverseGeocodeResult | null> {
   try {
+    if (typeof latitude !== 'number' || typeof longitude !== 'number' || isNaN(latitude) || isNaN(longitude)) {
+      console.error('Invalid coordinates for reverse geocoding:', { latitude, longitude });
+      return null;
+    }
+
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`;
+
+    console.log('Fetching reverse geocode:', url); // Debug log
 
     const response = await fetch(url, {
       headers: {
@@ -105,11 +112,17 @@ export async function reverseGeocodeStructured(
     });
 
     if (!response.ok) {
-      throw new Error('Reverse geocoding request failed');
+      // Try to read error body
+      const errorText = await response.text();
+      console.error('Reverse geocoding request failed:', response.status, errorText);
+      throw new Error(`Reverse geocoding request failed: ${response.status}`);
     }
 
     const data = await response.json();
-    if (!data) return null;
+    if (!data || data.error) {
+      console.error('Reverse geocoding API error:', data.error);
+      return null;
+    }
 
     return {
       display_name: data.display_name,
