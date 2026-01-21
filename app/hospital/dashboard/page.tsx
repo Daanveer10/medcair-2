@@ -46,6 +46,7 @@ export default function HospitalDashboard() {
   const supabase = createClient();
   const [userName, setUserName] = useState("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [waitingRoom, setWaitingRoom] = useState<any[]>([]);
   const [stats, setStats] = useState({
     patientsToday: 0,
     appointmentsPending: 0,
@@ -74,28 +75,45 @@ export default function HospitalDashboard() {
     try {
       const today = new Date().toISOString().split("T")[0];
 
-      // Fetch stats
+      // 1. Fetch Appointments Today (Count)
       const { count: patientsToday } = await supabase
         .from("appointments")
         .select("*", { count: "exact", head: true })
         .eq("appointment_date", today);
 
+      // 2. Fetch Pending Appointments (Count)
       const { count: appointmentsPending } = await supabase
         .from("appointments")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending");
 
-      const totalPatients = 1250; // Mocked
-      const revenue = 4520; // Mocked
+      // 3. Fetch Total Unique Patients
+      // Note: Supabase doesn't support COUNT(DISTINCT column) directly in JS client easily without a stored procedure or raw SQL.
+      // We will approximate by counting all appointments for now or fetching unique patient_ids if dataset is small.
+      // For scalability, this should be a stored procedure.
+      const { data: allAppointments } = await supabase
+        .from("appointments")
+        .select("patient_id, clinic:clinics(consultation_fee)")
+        .not("status", "eq", "cancelled"); // Filter out cancelled
+
+      const uniquePatients = new Set(allAppointments?.map(a => a.patient_id)).size;
+      const totalPatients = uniquePatients || 0;
+
+      // 4. Calculate Revenue
+      // Sum (consultation_fee) for all non-cancelled appointments
+      const totalRevenue = allAppointments?.reduce((sum, apt: any) => {
+        const fee = apt.clinic?.consultation_fee || 50; // Default $50 if not set
+        return sum + fee;
+      }, 0) || 0;
 
       setStats({
         patientsToday: patientsToday || 0,
         appointmentsPending: appointmentsPending || 0,
         totalPatients,
-        revenue
+        revenue: totalRevenue
       });
 
-      // Fetch upcoming appointments
+      // 5. Fetch Upcoming Appointments (Schedule)
       const { data: appointmentsData, error } = await supabase
         .from("appointments")
         .select(`
@@ -106,7 +124,7 @@ export default function HospitalDashboard() {
           type,
           patient:patient_id (full_name, phone_number)
         `)
-        .eq("status", "scheduled")
+        .in("status", ["scheduled", "pending", "accepted"])
         .gte("appointment_date", today)
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true })
@@ -123,10 +141,34 @@ export default function HospitalDashboard() {
         appointment_date: app.appointment_date,
         appointment_time: app.appointment_time,
         status: app.status,
-        type: app.type || "In-Person",
+        type: app.reason?.toLowerCase().includes("video") ? "Video Call" : "In-Person", // Simple heuristic for type
       }));
 
       setAppointments(transformedAppointments);
+
+      // 6. Fetch Waiting Room
+      // For now, we'll consider any appointment scheduled for TODAY that isn't completed/cancelled as "Waiting"
+      // Ideally this would use a specific status like 'checked_in'
+      const { data: waitingData } = await supabase
+        .from("appointments")
+        .select(`
+             id,
+             appointment_time,
+             status,
+             patient:patient_id (full_name)
+         `)
+        .eq("appointment_date", today)
+        .in("status", ["scheduled", "accepted"])
+        .order("appointment_time", { ascending: true })
+        .limit(5);
+
+      const transformedWaiting = (waitingData || []).map((app: any) => ({
+        name: app.patient?.full_name || "Unknown",
+        time: app.appointment_time,
+        status: app.status === 'accepted' ? 'Checked In' : 'Arriving'
+      }));
+      setWaitingRoom(transformedWaiting);
+
 
     } catch (error) {
       console.error("Error loading dashboard:", error);
@@ -212,7 +254,7 @@ export default function HospitalDashboard() {
               { label: "Total Patients", value: stats.totalPatients, icon: "group", color: "text-blue-500", bg: "bg-blue-500/10", trend: "+12%" },
               { label: "Appointments", value: stats.appointmentsPending + appointments.length, icon: "calendar_month", color: "text-purple-500", bg: "bg-purple-500/10", trend: "+5%" },
               { label: "New Consults", value: stats.patientsToday, icon: "person_add", color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+18%" },
-              { label: "Earnings", value: `$${stats.revenue}`, icon: "payments", color: "text-amber-500", bg: "bg-amber-500/10", trend: "+8%" },
+              { label: "Earnings", value: `$${stats.revenue.toLocaleString()}`, icon: "payments", color: "text-amber-500", bg: "bg-amber-500/10", trend: "+8%" },
             ].map((stat, idx) => (
               <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
                 <div className="flex items-start justify-between mb-4">
@@ -238,7 +280,7 @@ export default function HospitalDashboard() {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-lg font-bold">Today's Appointments</h2>
-                  <p className="text-xs text-gray-500 font-medium">Monday, 14 Oct 2023</p>
+                  <p className="text-xs text-gray-500 font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
                 <div className="flex gap-2">
                   <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
@@ -313,14 +355,10 @@ export default function HospitalDashboard() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold">Waiting Room</h3>
-                  <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-md">3 Active</span>
+                  <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-md">{waitingRoom.length} Active</span>
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { name: "John Doe", time: "10 mins", status: "In Lobby" },
-                    { name: "Sarah Connor", time: "5 mins", status: "Checked In" },
-                    { name: "Mike Ross", time: "2 mins", status: "Arriving" }
-                  ].map((patient, idx) => (
+                  {waitingRoom.length > 0 ? waitingRoom.map((patient, idx) => (
                     <div key={idx} className="flex items-center gap-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
                       <div className="relative">
                         <div className="size-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-400">{patient.name[0]}</div>
@@ -328,11 +366,13 @@ export default function HospitalDashboard() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-bold">{patient.name}</p>
-                        <p className="text-xs text-gray-500">Waiting for {patient.time}</p>
+                        <p className="text-xs text-gray-500">Waiting since {patient.time.slice(0, 5)}</p>
                       </div>
                       <button className="text-xs font-bold text-primary hover:underline">Call</button>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-gray-500 text-sm">No patients waiting currently.</p>
+                  )}
                 </div>
               </div>
 

@@ -63,55 +63,95 @@ export default function ConsultationSummary() {
 
     const loadAppointmentDetails = async (id: string) => {
         try {
-            // Mock data for design purposes - in real app, fetch from Supabase
-            // const { data, error } = await supabase.from('appointments').select(...).eq('id', id).single();
+            // Fetch real data from Supabase
+            // Select appointment + joined doctor + joined clinic
+            // Note: Syntax assumes standard Supabase foreign key relationships
+            const { data: appointment, error } = await supabase
+                .from('appointments')
+                .select(`
+                    id,
+                    appointment_date,
+                    appointment_time,
+                    status,
+                    reason,
+                    notes,
+                    doctor:doctors(name, specialization),
+                    clinic:clinics(name, address, city, state)
+                `)
+                .eq('id', id)
+                .single();
 
-            // Simulating network delay
-            await new Promise(resolve => setTimeout(resolve, 800));
+            if (error) throw error;
+            if (!appointment) throw new Error("Appointment not found");
 
-            const mockData: AppointmentData = {
-                id: id,
-                doctor_name: "Dr. Sarah Johnson",
-                doctor_specialty: "Cardiologist",
-                clinic_name: "Heart Care Center",
-                clinic_address: "123 Medical Drive, New York, NY",
-                date: "October 14, 2023",
-                time: "10:30 AM",
-                type: "In-Person",
-                status: "Completed",
-                notes: "Patient reported mild chest pain. ECG normal. BP slightly elevated.",
+            // Extract doctor and clinic info safely
+            const docName = Array.isArray(appointment.doctor)
+                ? appointment.doctor[0]?.name
+                : appointment.doctor?.name || "Unknown Doctor";
+
+            const docSpecialty = Array.isArray(appointment.doctor)
+                ? appointment.doctor[0]?.specialization
+                : appointment.doctor?.specialization || "General Specialist";
+
+            const clinicName = Array.isArray(appointment.clinic)
+                ? appointment.clinic[0]?.name
+                : appointment.clinic?.name || "Unknown Clinic";
+
+            const clinicCity = Array.isArray(appointment.clinic)
+                ? appointment.clinic[0]?.city
+                : appointment.clinic?.city || "";
+
+            // Parse Notes / "AI Summary"
+            // Since we don't have a prescriptions table, we use 'notes'
+            // If notes contains JSON-like structure or specific delimiters, we could parse it
+            // For now, we treat notes as the main advice.
+
+            const rawNotes = appointment.notes || "No notes provided by the doctor.";
+
+            // Mocking "AI" extraction from the raw notes for the sake of the UI
+            // In a real functionality, this would call an LLM API
+            const aiKeyPoints = [
+                "Consultation completed successfully.",
+                "Follow doctor's advice carefully.",
+                "Review the notes below for more details."
+            ];
+
+            // Determine type
+            const type = appointment.reason?.toLowerCase().includes("video") ? "Video" : "In-Person";
+
+            const realData: AppointmentData = {
+                id: appointment.id,
+                doctor_name: docName,
+                doctor_specialty: docSpecialty,
+                clinic_name: clinicName,
+                clinic_address: clinicCity, // Just showing City for now as full address might be missing in select
+                date: appointment.appointment_date,
+                time: appointment.appointment_time,
+                type: type,
+                status: appointment.status,
+                notes: appointment.notes,
                 prescription: {
-                    medicines: [
-                        { name: "Atorvastatin", dosage: "10mg - Once daily at night", duration: "30 days", notes: "After food" },
-                        { name: "Aspirin", dosage: "75mg - Once daily", duration: "30 days", notes: "After food" }
-                    ],
-                    diagnosis: ["Mild Hypertension", "Hyperlipidemia"],
-                    advice: ["Reduce salt intake", "Daily 30 min walk", "Monitor BP weekly"]
+                    // Start with empty medicines for now or generic if notes present
+                    medicines: appointment.notes ? [
+                        { name: "Refer to Doctor's Notes", dosage: "-", duration: "-", notes: "See below" }
+                    ] : [],
+                    diagnosis: appointment.reason ? [appointment.reason] : ["General Checkup"],
+                    advice: [rawNotes]
                 },
                 ai_summary: {
-                    key_points: [
-                        "Blood pressure is slightly above normal range (130/85)",
-                        "ECG shows normal sinus rhythm - no immediate concern",
-                        "Cholesterol levels need management through diet and medication",
-                        "Patient's BMI is within healthy range"
-                    ],
-                    next_steps: [
-                        "Start prescribed medication immediately",
-                        "Schedule follow-up in 30 days for BP check",
-                        "Blood work (Lipid Profile) required before next visit"
-                    ],
-                    lifestyle_tips: [
-                        "Limit sodium intake to < 2300mg/day",
-                        "Increase potassium-rich foods (bananas, spinach)",
-                        "Practice stress-management techniques"
-                    ]
+                    key_points: aiKeyPoints,
+                    next_steps: ["Adhere to the plan outlined in notes."],
+                    lifestyle_tips: ["Stay hydrated", "Monitor symptoms"]
                 }
             };
 
-            setData(mockData);
+            setData(realData);
+
         } catch (error) {
             console.error("Error loading appointment:", error);
+            // Don't show toast on 404 immediately/user might be navigating
             toast.error("Failed to load details");
+            setData(null);
         } finally {
             setLoading(false);
         }
@@ -179,7 +219,7 @@ export default function ConsultationSummary() {
                                 <h2 className="text-xl font-bold">{data.doctor_name}</h2>
                                 <p className="text-primary font-medium mb-1">{data.doctor_specialty}</p>
                                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                                    <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {data.clinic_name}</span>
+                                    <span className="flex items-center gap-1.5"><MapPin className="size-4" /> {data.clinic_name} {data.clinic_address ? `- ${data.clinic_address}` : ''}</span>
                                     <span className="flex items-center gap-1.5"><Calendar className="size-4" /> {data.date}</span>
                                     <span className="flex items-center gap-1.5"><Clock className="size-4" /> {data.time}</span>
                                 </div>
@@ -271,23 +311,26 @@ export default function ConsultationSummary() {
                                 <div>
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Medications</p>
                                     <div className="space-y-3">
-                                        {data.prescription?.medicines.map((med, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-4 bg-[#e6f3f4]/30 dark:bg-gray-700/30 rounded-xl border border-[#e6f3f4] dark:border-gray-700">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="size-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center text-primary shadow-sm">
-                                                        <Pill className="size-5" />
+                                        {data.prescription?.medicines.length === 0 ? (
+                                            <p className="text-sm text-gray-500 italic">No medications prescribed yet.</p>
+                                        ) : (
+                                            data.prescription?.medicines.map((med, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-4 bg-[#e6f3f4]/30 dark:bg-gray-700/30 rounded-xl border border-[#e6f3f4] dark:border-gray-700">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="size-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center text-primary shadow-sm">
+                                                            <Pill className="size-5" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold">{med.name}</p>
+                                                            <p className="text-sm text-gray-500">{med.dosage}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold">{med.name}</p>
-                                                        <p className="text-sm text-gray-500">{med.dosage}</p>
+                                                    <div className="text-right text-sm">
+                                                        <p className="font-bold text-gray-700 dark:text-gray-300">{med.duration}</p>
+                                                        <p className="text-xs text-gray-500">{med.notes}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-right text-sm">
-                                                    <p className="font-bold text-gray-700 dark:text-gray-300">{med.duration}</p>
-                                                    <p className="text-xs text-gray-500">{med.notes}</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )))}
                                     </div>
                                 </div>
 
