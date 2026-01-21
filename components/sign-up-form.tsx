@@ -74,7 +74,7 @@ export function SignUpForm({
       <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-3xl font-bold text-[#0c1b1d] dark:text-white">Create Account</CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">Sign up to get started with Healio</CardDescription>
+          <CardDescription className="text-gray-600 dark:text-gray-400">Sign up to get started with medcAIr</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>

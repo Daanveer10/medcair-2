@@ -13,7 +13,7 @@ export default function Page() {
               <div className="size-8 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
                 <span className="material-symbols-outlined text-xl">health_metrics</span>
               </div>
-              <span className="text-xl font-extrabold tracking-tight text-[#0c1b1d] dark:text-white">Healio<span className="text-primary">.doc</span></span>
+              <span className="text-xl font-extrabold tracking-tight text-[#0c1b1d] dark:text-white">medcAIr</span>
             </Link>
           </div>
         </div>

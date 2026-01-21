@@ -13,7 +13,7 @@ export default function Home() {
               <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
                 <span className="material-symbols-outlined">health_metrics</span>
               </div>
-              <span className="text-xl font-extrabold tracking-tight text-primary">Healio</span>
+              <span className="text-xl font-extrabold tracking-tight text-primary">medcAIr</span>
             </div>
             <nav className="hidden md:flex items-center gap-8">
               <Link href="/patient/dashboard" className="text-sm font-semibold hover:text-primary transition-colors">Find Doctors</Link>
@@ -198,7 +198,7 @@ export default function Home() {
                 <div className="p-12 lg:p-20 text-white space-y-8">
                   <h2 className="text-4xl font-extrabold leading-tight">Your Medical Records, <br />Secure and Portable.</h2>
                   <p className="text-primary/10 bg-white/10 p-4 rounded-xl text-lg backdrop-blur-sm">
-                    "Healio has completely changed how I manage my family's health. Having all prescriptions and reports in one place is a lifesaver."
+                    "medcAIr has completely changed how I manage my family's health. Having all prescriptions and reports in one place is a lifesaver."
                   </p>
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -264,7 +264,7 @@ export default function Home() {
                 <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
                   <span className="material-symbols-outlined">health_metrics</span>
                 </div>
-                <span className="text-xl font-extrabold tracking-tight text-primary">Healio</span>
+                <span className="text-xl font-extrabold tracking-tight text-primary">medcAIr</span>
               </div>
               <p className="text-slate-500 dark:text-slate-400 max-w-sm text-sm leading-relaxed">
                 A comprehensive healthcare platform dedicated to simplifying medical access and management for patients and professionals worldwide.
@@ -293,7 +293,7 @@ export default function Home() {
             <div>
               <h4 className="font-bold text-slate-900 dark:text-white mb-6">For Doctors</h4>
               <ul className="space-y-4 text-sm text-slate-500 dark:text-slate-400">
-                <li><a href="#" className="hover:text-primary">Join Healio</a></li>
+                <li><a href="#" className="hover:text-primary">Join medcAIr</a></li>
                 <li><a href="#" className="hover:text-primary">Practice Management</a></li>
                 <li><a href="#" className="hover:text-primary">Doctor Profile</a></li>
                 <li><a href="#" className="hover:text-primary">Resources</a></li>
@@ -310,7 +310,7 @@ export default function Home() {
             </div>
           </div>
           <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">© 2024 Healio Healthcare Platform. All rights reserved.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">© 2024 medcAIr Healthcare Platform. All rights reserved.</p>
             <div className="flex gap-6">
               <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTWa_noFzpB2LkCtJ59nDquejA1xnuz4KFGpoZ-QFGPiS59hkntt2U8_95tEyChvDkb8-oBhZcv_7CsTvc2eiaUp88hbpdUiNABaNkJu_IHFsMuwTYg7Pp1cvmehpraKumeELW-lH2hjyXEP2iReTOSK5gyy9UboZd9yLRshKP4bAlVqZzLIOQF-7LZbSt1_uW32ciGwo0UUwbgII8IxeUPp_iq_ekxbD9-SIxZtPiGRdGLED3_iVkV9RwrixpXoOCBzX2atL7vg" alt="App Store" />
               <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBa8SwT8OpGRA2I1J5rXjkMt9akhM4dKtS4lc8AC8Mw3wXJNp7rQ_e9NzHBjwhcM_skEuPS9yP8PmAtMX7aw40OWjtNYo6FkOOFnDpyf_lGKkIbO_EKc5XSTxS7ACegv2NYL63rsZ1AMo7blhb2n2LqpnS25_E4tFNZhH1lGfzlb5XkRBRzVOLKEnpGCRDcb0UVsvhSZkbgOTd9jPirtx1t8MvNjzx3gTQS_fr1wUnMut5iGQBORYYZ_7S3DPHYnbcx7IO8KAXajA" alt="Play Store" />

@@ -161,7 +161,7 @@ export default function PatientDashboard() {
               <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
                 <span className="material-symbols-outlined">health_metrics</span>
               </div>
-              <h2 className="text-xl font-bold leading-tight tracking-tight">Healio</h2>
+              <h2 className="text-xl font-bold leading-tight tracking-tight">medcAIr</h2>
             </Link>
             <label className="hidden md:flex flex-1 max-w-md">
               <div className="flex w-full items-stretch rounded-xl h-10 bg-[#e6f3f4] dark:bg-gray-800">

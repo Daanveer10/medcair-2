@@ -207,7 +207,7 @@ export default function HospitalDashboard() {
             <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
               <span className="material-symbols-outlined text-2xl">health_metrics</span>
             </div>
-            <span className="hidden lg:block text-xl font-extrabold tracking-tight">Healio<span className="text-primary">.doc</span></span>
+            <span className="hidden lg:block text-xl font-extrabold tracking-tight">medcAIr</span>
           </div>
           <nav className="space-y-2 px-3">
             {[

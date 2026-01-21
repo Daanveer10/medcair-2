@@ -10,7 +10,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Healio | Your Health, Simplified",
+  title: "medcAIr | Your Health, Simplified",
   description: "AI-powered healthcare management platform",
 };
 
