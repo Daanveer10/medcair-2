@@ -141,8 +141,13 @@ export default function HospitalSettings() {
     setLoading(false);
   };
 
+  // Debug state
+  const [locationDetails, setLocationDetails] = useState<{ lat: number, lng: number, accuracy: number } | null>(null);
+
   const handleUseCurrentLocation = async () => {
     setGettingLocation(true);
+    setLocationDetails(null); // Reset previous details
+
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
       setGettingLocation(false);
@@ -153,6 +158,9 @@ export default function HospitalSettings() {
       async (position) => {
         const { latitude, longitude, accuracy } = position.coords; // Accuracy is in meters
         console.log("Geolocation accuracy:", accuracy, "meters");
+
+        // Set debug details
+        setLocationDetails({ lat: latitude, lng: longitude, accuracy });
 
         if (accuracy > 1000) {
           toast.warning("Low GPS Accuracy", {
@@ -613,6 +621,24 @@ export default function HospitalSettings() {
                       {gettingLocation ? "Locating..." : "📍 Use Current Location"}
                     </Button>
                   </div>
+
+                  {/* Debug Info for Location Issues */}
+                  {locationDetails && (
+                    <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                      <p><strong>Debug Info:</strong></p>
+                      <p>Lat: {locationDetails.lat.toFixed(6)}, Lng: {locationDetails.lng.toFixed(6)}</p>
+                      <p>Accuracy: ±{Math.round(locationDetails.accuracy)} meters</p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${locationDetails.lat},${locationDetails.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline hover:text-blue-800 mt-1 inline-block"
+                      >
+                        View detected location on Google Maps
+                      </a>
+                    </div>
+                  )}
+
                   <Input
                     value={hospitalForm.address}
                     onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
