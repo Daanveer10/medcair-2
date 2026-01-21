@@ -22,10 +22,10 @@ export async function geocodeAddress(
   try {
     // Construct full address
     const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
-    
+
     // Use Nominatim API (free, no API key required)
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`;
-    
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'MedCair-App/1.0', // Required by Nominatim
@@ -54,6 +54,20 @@ export async function geocodeAddress(
   }
 }
 
+export interface ReverseGeocodeResult {
+  display_name: string;
+  address: {
+    road?: string;
+    house_number?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    postcode?: string;
+    country?: string;
+  };
+}
+
 /**
  * Reverse geocode coordinates to get address
  */
@@ -61,9 +75,20 @@ export async function reverseGeocode(
   latitude: number,
   longitude: number
 ): Promise<string | null> {
+  const result = await reverseGeocodeStructured(latitude, longitude);
+  return result?.display_name || null;
+}
+
+/**
+ * Reverse geocode coordinates to get structured address data
+ */
+export async function reverseGeocodeStructured(
+  latitude: number,
+  longitude: number
+): Promise<ReverseGeocodeResult | null> {
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
-    
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`;
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'MedCair-App/1.0',
@@ -75,7 +100,12 @@ export async function reverseGeocode(
     }
 
     const data = await response.json();
-    return data.display_name || null;
+    if (!data) return null;
+
+    return {
+      display_name: data.display_name,
+      address: data.address || {},
+    };
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     return null;

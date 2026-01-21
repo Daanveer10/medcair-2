@@ -69,6 +69,9 @@ export default function HospitalSettings() {
   });
   const [updatingHospital, setUpdatingHospital] = useState(false);
 
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
   useEffect(() => {
     loadData();
   }, []);
@@ -96,12 +99,16 @@ export default function HospitalSettings() {
         phone: hospitalData.phone || "",
         description: hospitalData.description || "",
       });
-      
+      // Set initial location from DB if available
+      if (hospitalData.latitude && hospitalData.longitude) {
+        setCurrentLocation({ lat: hospitalData.latitude, lng: hospitalData.longitude });
+      }
+
       const { data: clinicsData } = await supabase
         .from("clinics")
         .select("*")
         .eq("hospital_id", hospitalData.id);
-      
+
       setClinics(clinicsData || []);
     } else {
       // Create hospital if doesn't exist
@@ -134,27 +141,95 @@ export default function HospitalSettings() {
     setLoading(false);
   };
 
+  const handleUseCurrentLocation = async () => {
+    setGettingLocation(true);
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation({ lat: latitude, lng: longitude });
+
+        try {
+          const { reverseGeocodeStructured } = await import("@/lib/geocoding");
+          const result = await reverseGeocodeStructured(latitude, longitude);
+
+          if (result && result.address) {
+            const { address } = result;
+            const street = address.road ? `${address.house_number ? address.house_number + ' ' : ''}${address.road}` : '';
+            const city = address.city || address.town || address.village || "";
+            const state = address.state || "";
+            const zip = address.postcode || "";
+
+            setHospitalForm(prev => ({
+              ...prev,
+              address: street || prev.address, // Keep existing if reverse geocode missing
+              city: city || prev.city,
+              state: state || prev.state,
+              zip_code: zip || prev.zip_code,
+            }));
+
+            toast.success("Location found!", {
+              description: "Address fields have been autofilled.",
+            });
+          }
+        } catch (error) {
+          console.error("Reverse geocoding failed:", error);
+          toast.error("Could not fetch address details", {
+            description: "Coordinates saved, but address autofill failed.",
+          });
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast.error("Location access denied", {
+          description: "Please enable location access to use this feature.",
+        });
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
+
   const handleUpdateHospital = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hospital) return;
 
     setUpdatingHospital(true);
     try {
-      // Geocode the address
-      const { geocodeAddress } = await import("@/lib/geocoding");
-      const geocodeResult = await geocodeAddress(
-        hospitalForm.address,
-        hospitalForm.city,
-        hospitalForm.state,
-        hospitalForm.zip_code
-      );
+      let lat = currentLocation?.lat;
+      let lng = currentLocation?.lng;
 
-      if (!geocodeResult) {
-        toast.error("Geocoding Failed", {
-          description: "Could not find location for this address. Please check the address and try again.",
-        });
-        setUpdatingHospital(false);
-        return;
+      // Only geocode if we don't have precise current location or if user changed address
+      // But for simplicity, if we have currentLocation (from GPS), we utilize it primarily
+      // If we don't have GPS location set in this session or DB, we try to geocode the address string
+
+      if (!lat || !lng) {
+        // Geocode the address
+        const { geocodeAddress } = await import("@/lib/geocoding");
+        const geocodeResult = await geocodeAddress(
+          hospitalForm.address,
+          hospitalForm.city,
+          hospitalForm.state,
+          hospitalForm.zip_code
+        );
+
+        if (geocodeResult) {
+          lat = geocodeResult.latitude;
+          lng = geocodeResult.longitude;
+        } else {
+          // If geocoding fails, we can either block or just save without location
+          // Let's warn but save
+          toast.warning("Location not found for this address", {
+            description: "Saving without map coordinates.",
+          });
+        }
       }
 
       // Update hospital with address and coordinates
@@ -167,8 +242,8 @@ export default function HospitalSettings() {
           zip_code: hospitalForm.zip_code,
           phone: hospitalForm.phone,
           description: hospitalForm.description || null,
-          latitude: geocodeResult.latitude,
-          longitude: geocodeResult.longitude,
+          latitude: lat || null,
+          longitude: lng || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", hospital.id);
@@ -176,7 +251,7 @@ export default function HospitalSettings() {
       if (error) throw error;
 
       toast.success("Hospital Updated", {
-        description: "Your hospital information and location have been updated successfully. Patients can now find you in nearby searches!",
+        description: "Your hospital information and location have been updated successfully.",
       });
 
       // Reload hospital data
@@ -251,9 +326,9 @@ export default function HospitalSettings() {
       toast.success("Clinic Created", {
         description: "The clinic has been created successfully.",
       });
-      setClinicForm({ 
-        name: "", 
-        department: "", 
+      setClinicForm({
+        name: "",
+        department: "",
         specialties: "",
         photo_url: "",
         consultation_fee: "",
@@ -497,7 +572,19 @@ export default function HospitalSettings() {
                   <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
                 </div>
                 <div>
-                  <Label className="text-black font-semibold">Address *</Label>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label className="text-black font-semibold">Address *</Label>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={handleUseCurrentLocation}
+                      disabled={gettingLocation}
+                      className="text-green-600 p-0 h-auto font-semibold"
+                    >
+                      {gettingLocation ? "Locating..." : "📍 Use Current Location"}
+                    </Button>
+                  </div>
                   <Input
                     value={hospitalForm.address}
                     onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
@@ -595,7 +682,7 @@ export default function HospitalSettings() {
                   <CardTitle className="text-2xl font-bold text-black">Clinics</CardTitle>
                   <CardDescription className="text-gray-600">Manage your clinics and departments</CardDescription>
                 </div>
-                <Button 
+                <Button
                   onClick={() => setShowClinicForm(!showClinicForm)}
                   className="bg-green-600 text-white hover:bg-green-700"
                 >
