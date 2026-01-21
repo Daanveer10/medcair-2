@@ -17,7 +17,8 @@ import {
     Stethoscope,
     Pill,
     Activity,
-    ArrowLeft
+    ArrowLeft,
+    Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
