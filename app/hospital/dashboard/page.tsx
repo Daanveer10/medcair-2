@@ -553,10 +553,15 @@ export default function HospitalDashboard() {
       const clinicMap = new Map(clinics.map(c => [c.id, c.name]));
 
       // Get all doctors from these clinics
-      const { data: doctors } = await supabase
+      const { data: doctors, error: doctorsError } = await supabase
         .from("doctors")
         .select("id, name, specialization, clinic_id")
         .in("clinic_id", clinicIds);
+
+      if (doctorsError) {
+        console.error("Error fetching doctors:", doctorsError);
+        throw doctorsError;
+      }
 
       if (!doctors || doctors.length === 0) {
         setDoctorsWithSchedules([]);
@@ -564,11 +569,13 @@ export default function HospitalDashboard() {
         return;
       }
 
+      console.log("Loaded doctors:", doctors.length);
+
       const doctorIds = doctors.map(d => d.id);
       const today = new Date().toISOString().split("T")[0];
 
-      // Get upcoming appointments (scheduled, accepted, pending) - today and future
-      const { data: upcomingApts } = await supabase
+      // Get upcoming appointments
+      const { data: upcomingApts, error: upcomingError } = await supabase
         .from("appointments")
         .select(`
           id,
@@ -590,8 +597,12 @@ export default function HospitalDashboard() {
         .order("appointment_date", { ascending: true })
         .order("appointment_time", { ascending: true });
 
-      // Get patient history (completed, cancelled, no_show) - past appointments
-      const { data: historyApts } = await supabase
+      if (upcomingError) {
+        console.error("Error fetching upcoming appointments:", upcomingError);
+      }
+
+      // Get patient history
+      const { data: historyApts, error: historyError } = await supabase
         .from("appointments")
         .select(`
           id,
@@ -611,7 +622,11 @@ export default function HospitalDashboard() {
         .in("status", ["completed", "cancelled", "no_show"])
         .order("appointment_date", { ascending: false })
         .order("appointment_time", { ascending: false })
-        .limit(50); // Limit history to last 50 appointments per doctor
+        .limit(50);
+
+      if (historyError) {
+        console.error("Error fetching history appointments:", historyError);
+      }
 
       // Transform appointments
       const transformAppointment = (apt: any): DoctorAppointment => ({
@@ -620,10 +635,10 @@ export default function HospitalDashboard() {
         appointment_time: apt.appointment_time,
         status: apt.status,
         patient: {
-          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
+          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown Patient",
         },
         clinic: {
-          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
+          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown Clinic",
         },
         notes: apt.notes,
       });
@@ -633,31 +648,37 @@ export default function HospitalDashboard() {
 
       (upcomingApts || []).forEach((apt: any) => {
         const transformed = transformAppointment(apt);
-        const existing = upcomingMap.get(apt.doctor_id) || [];
-        existing.push(transformed);
-        upcomingMap.set(apt.doctor_id, existing);
+        // Ensure doctor_id exists in appointment
+        if (apt.doctor_id) {
+          const existing = upcomingMap.get(apt.doctor_id) || [];
+          existing.push(transformed);
+          upcomingMap.set(apt.doctor_id, existing);
+        }
       });
 
       (historyApts || []).forEach((apt: any) => {
         const transformed = transformAppointment(apt);
-        const existing = historyMap.get(apt.doctor_id) || [];
-        existing.push(transformed);
-        historyMap.set(apt.doctor_id, existing);
+        if (apt.doctor_id) {
+          const existing = historyMap.get(apt.doctor_id) || [];
+          existing.push(transformed);
+          historyMap.set(apt.doctor_id, existing);
+        }
       });
 
       // Combine doctors with their schedules
       const doctorsWithData: DoctorWithSchedule[] = doctors.map(doctor => ({
         id: doctor.id,
-        name: doctor.name,
-        specialization: doctor.specialization,
+        name: doctor.name || "Unknown Doctor", // Fallback for name
+        specialization: doctor.specialization || "General", // Fallback
         clinic_id: doctor.clinic_id,
-        clinic_name: clinicMap.get(doctor.clinic_id) || "Unknown",
+        clinic_name: clinicMap.get(doctor.clinic_id) || "Unknown Clinic",
         upcomingAppointments: upcomingMap.get(doctor.id) || [],
         patientHistory: historyMap.get(doctor.id) || [],
       }));
 
       setDoctorsWithSchedules(doctorsWithData);
     } catch (error) {
+      console.error("Fatal error in loadDoctorsWithSchedules:", error);
       handleError(error, { action: "loadDoctorsWithSchedules", resource: "doctors" });
     } finally {
       setLoadingDoctors(false);

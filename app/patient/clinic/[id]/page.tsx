@@ -100,8 +100,8 @@ export default function ClinicPage() {
       if (clinicError) throw clinicError;
 
       // Transform hospital relation (Supabase returns as array)
-      const hospitalData = Array.isArray(clinicData.hospital) 
-        ? clinicData.hospital[0] 
+      const hospitalData = Array.isArray(clinicData.hospital)
+        ? clinicData.hospital[0]
         : clinicData.hospital;
 
       setClinic({
@@ -187,14 +187,14 @@ export default function ClinicPage() {
 
       // Transform slots data - handle doctor relation (Supabase returns as array)
       const transformedSlots = (slotsData || []).map((slot: any) => {
-        const doctorData = Array.isArray(slot.doctor) 
-          ? slot.doctor[0] 
+        const doctorData = Array.isArray(slot.doctor)
+          ? slot.doctor[0]
           : slot.doctor;
-        
+
         const isBooked = bookedSlotIds.has(slot.id);
         const isPendingByMe = pendingByCurrentUser.has(slot.id);
         const isPendingByOthers = pendingByOthers.has(slot.id);
-        
+
         // Determine slot status
         let slotStatus: 'available' | 'booked' | 'pending' | 'unavailable' = 'available';
         if (isBooked) {
@@ -204,7 +204,7 @@ export default function ClinicPage() {
         } else if (isPendingByOthers) {
           slotStatus = 'unavailable';
         }
-        
+
         return {
           id: slot.id,
           doctor_id: slot.doctor_id,
@@ -215,8 +215,8 @@ export default function ClinicPage() {
           slot_status: slotStatus, // Track status for UI display
           doctor: {
             id: doctorData?.id || "",
-            name: doctorData?.name || "Unknown",
-            specialization: doctorData?.specialization || "Unknown",
+            name: doctorData?.name || "Unknown Doctor",
+            specialization: doctorData?.specialization || "General",
           },
         };
       });
@@ -288,7 +288,7 @@ export default function ClinicPage() {
 
       const { BookingSchema } = await import("@/lib/validations");
       const { validateData } = await import("@/lib/utils");
-      
+
       const validation = validateData(BookingSchema, {
         patientId: profile.id,
         clinicId: clinicId,
@@ -345,7 +345,7 @@ export default function ClinicPage() {
         const { createNotification } = await import("@/lib/notifications");
         const clinicId = Array.isArray(params.id) ? params.id[0] : params.id;
         if (!clinicId) return;
-        
+
         const { data: clinicInfo } = await supabase
           .from("clinics")
           .select("name, hospital_id")
@@ -372,7 +372,7 @@ export default function ClinicPage() {
               .single();
 
             const patientName = patientProfile?.full_name || "A patient";
-            
+
             await createNotification({
               type: 'appointment_created',
               appointmentId: appointment.id,
@@ -411,10 +411,10 @@ export default function ClinicPage() {
   }, {} as Record<string, Slot[]>);
 
   const availableDates = Object.keys(groupedSlots).sort();
-  
+
   // Filter slots by selected date
   const slotsForSelectedDate = selectedDate ? (groupedSlots[selectedDate] || []) : [];
-  
+
   // Generate time slots (15 minutes apart) for the selected date
   const generateTimeSlots = (date: string) => {
     if (!groupedSlots[date]) return [];
@@ -473,7 +473,7 @@ export default function ClinicPage() {
                   <p className="text-sm text-gray-600">{clinic.hospital.address}, {clinic.hospital.city}</p>
                 </div>
               </div>
-              
+
               {clinic.specialties.length > 0 && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">Specialties:</p>
@@ -520,35 +520,30 @@ export default function ClinicPage() {
                         const dateSlots = groupedSlots[date];
                         const availableCount = dateSlots.filter(s => s.slot_status === 'available' || (s.is_available && !s.slot_status)).length;
                         const isSelected = selectedDate === date;
-                        
+
                         return (
                           <button
                             key={date}
                             onClick={() => setSelectedDate(date)}
-                            className={`p-4 rounded-lg border-2 transition-all text-left ${
-                              isSelected
+                            className={`p-4 rounded-lg border-2 transition-all text-left ${isSelected
                                 ? "border-green-600 bg-green-50 shadow-md"
                                 : "border-gray-300 bg-white hover:border-green-400 hover:bg-green-50/50"
-                            }`}
+                              }`}
                           >
-                            <div className={`font-bold text-sm mb-1 ${
-                              isSelected ? "text-green-700" : "text-gray-700"
-                            }`}>
+                            <div className={`font-bold text-sm mb-1 ${isSelected ? "text-green-700" : "text-gray-700"
+                              }`}>
                               {new Date(date).toLocaleDateString("en-US", { weekday: "short" })}
                             </div>
-                            <div className={`font-semibold text-lg ${
-                              isSelected ? "text-green-900" : "text-gray-900"
-                            }`}>
+                            <div className={`font-semibold text-lg ${isSelected ? "text-green-900" : "text-gray-900"
+                              }`}>
                               {new Date(date).toLocaleDateString("en-US", { day: "numeric" })}
                             </div>
-                            <div className={`text-xs mt-1 ${
-                              isSelected ? "text-green-700" : "text-gray-600"
-                            }`}>
+                            <div className={`text-xs mt-1 ${isSelected ? "text-green-700" : "text-gray-600"
+                              }`}>
                               {new Date(date).toLocaleDateString("en-US", { month: "short" })}
                             </div>
-                            <div className={`text-xs mt-2 font-medium ${
-                              isSelected ? "text-green-700" : "text-gray-500"
-                            }`}>
+                            <div className={`text-xs mt-2 font-medium ${isSelected ? "text-green-700" : "text-gray-500"
+                              }`}>
                               {availableCount} available
                             </div>
                           </button>
@@ -561,17 +556,17 @@ export default function ClinicPage() {
                   {selectedDate && slotsForSelectedDate.length > 0 && (
                     <div className="border-t-2 border-gray-200 pt-6">
                       <Label className="text-base font-semibold text-gray-900 mb-3 block">
-                        Available Time Slots for {new Date(selectedDate).toLocaleDateString("en-US", { 
-                          weekday: "long", 
-                          year: "numeric", 
-                          month: "long", 
-                          day: "numeric" 
+                        Available Time Slots for {new Date(selectedDate).toLocaleDateString("en-US", {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric"
                         })}:
                       </Label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         {slotsForSelectedDate.map((slot: any) => {
                           const slotStatus = slot.slot_status || (slot.is_available ? 'available' : 'booked');
-                          
+
                           // Determine styling based on status - improved contrast
                           let borderColor = "border-green-500";
                           let bgColor = "bg-white";
@@ -582,7 +577,7 @@ export default function ClinicPage() {
                           let statusIcon = null;
                           let buttonContent = null;
                           let isDisabled = false;
-                          
+
                           if (slotStatus === 'booked') {
                             borderColor = "border-red-400";
                             bgColor = "bg-red-50";
@@ -592,10 +587,10 @@ export default function ClinicPage() {
                             iconColor = "text-red-600";
                             statusIcon = <XCircle className="h-5 w-5 text-red-600" />;
                             buttonContent = (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-full border-red-400 text-red-900 bg-red-50 hover:bg-red-50 cursor-not-allowed font-semibold" 
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full border-red-400 text-red-900 bg-red-50 hover:bg-red-50 cursor-not-allowed font-semibold"
                                 disabled
                               >
                                 Booked
@@ -611,10 +606,10 @@ export default function ClinicPage() {
                             iconColor = "text-yellow-600";
                             statusIcon = <Clock className="h-5 w-5 text-yellow-600" />;
                             buttonContent = (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-full border-yellow-500 text-yellow-900 bg-yellow-50 hover:bg-yellow-50 cursor-not-allowed font-semibold" 
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full border-yellow-500 text-yellow-900 bg-yellow-50 hover:bg-yellow-50 cursor-not-allowed font-semibold"
                                 disabled
                               >
                                 Pending
@@ -630,10 +625,10 @@ export default function ClinicPage() {
                             iconColor = "text-gray-600";
                             statusIcon = <XCircle className="h-5 w-5 text-gray-600" />;
                             buttonContent = (
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="w-full border-gray-400 text-gray-700 bg-gray-100 hover:bg-gray-100 cursor-not-allowed font-semibold" 
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full border-gray-400 text-gray-700 bg-gray-100 hover:bg-gray-100 cursor-not-allowed font-semibold"
                                 disabled
                               >
                                 Unavailable
@@ -652,14 +647,14 @@ export default function ClinicPage() {
                               </Button>
                             );
                           }
-                          
+
                           // Calculate end time (15 minutes after start time)
                           const [hours, minutes] = slot.start_time.split(':').map(Number);
                           const startDate = new Date();
                           startDate.setHours(hours, minutes, 0, 0);
                           const endDate = new Date(startDate.getTime() + 15 * 60 * 1000);
                           const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-                          
+
                           return (
                             <div
                               key={slot.id}
