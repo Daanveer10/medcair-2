@@ -151,7 +151,15 @@ export default function HospitalSettings() {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords; // Accuracy is in meters
+        console.log("Geolocation accuracy:", accuracy, "meters");
+
+        if (accuracy > 1000) {
+          toast.warning("Low GPS Accuracy", {
+            description: `Location is approximate (accurate to ${Math.round(accuracy)} meters). Please verify the address.`,
+          });
+        }
+
         setCurrentLocation({ lat: latitude, lng: longitude });
 
         try {
@@ -160,21 +168,41 @@ export default function HospitalSettings() {
 
           if (result && result.address) {
             const { address } = result;
-            const street = address.road ? `${address.house_number ? address.house_number + ' ' : ''}${address.road}` : '';
-            const city = address.city || address.town || address.village || "";
+            console.log("Structured Address:", address);
+
+            // Smarter Street Logic
+            let street = "";
+            if (address.road) {
+              street = `${address.house_number ? address.house_number + ' ' : ''}${address.road}`;
+            } else if (address.pedestrian) {
+              street = address.pedestrian;
+            } else if (address.residential) {
+              street = address.residential;
+            } else if (address.suburb) {
+              // If no street, use suburb as address line
+              street = address.suburb;
+            } else if (address.neighbourhood) {
+              street = address.neighbourhood;
+            } else {
+              // Fallback to simpler part of display name if possible, or just empty
+              street = result.display_name.split(",")[0];
+            }
+
+            // Smarter City Logic
+            const city = address.city || address.town || address.village || address.municipality || address.county || "";
             const state = address.state || "";
             const zip = address.postcode || "";
 
             setHospitalForm(prev => ({
               ...prev,
-              address: street || prev.address, // Keep existing if reverse geocode missing
+              address: street || prev.address,
               city: city || prev.city,
               state: state || prev.state,
               zip_code: zip || prev.zip_code,
             }));
 
             toast.success("Location found!", {
-              description: "Address fields have been autofilled.",
+              description: accuracy < 100 ? "Precise location found." : "Location found (approximate).",
             });
           }
         } catch (error) {
@@ -193,7 +221,7 @@ export default function HospitalSettings() {
         });
         setGettingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 

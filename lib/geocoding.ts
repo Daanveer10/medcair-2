@@ -58,10 +58,17 @@ export interface ReverseGeocodeResult {
   display_name: string;
   address: {
     road?: string;
+    pedestrian?: string;
     house_number?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    residential?: string;
     city?: string;
     town?: string;
     village?: string;
+    municipality?: string; // e.g. "Township of X"
+    county?: string;
+    district?: string; // e.g. "District X"
     state?: string;
     postcode?: string;
     country?: string;
