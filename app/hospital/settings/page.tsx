@@ -619,649 +619,627 @@ export default function HospitalSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-green-600 rounded-lg">
-                <Stethoscope className="h-6 w-6 text-white" />
+    <div className="p-8 space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <Card className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-[#e6f3f4] dark:border-gray-700 pb-4">
+            <CardTitle className="text-xl font-bold text-[#0c1b1d] dark:text-white">Hospital Information</CardTitle>
+            <CardDescription className="text-gray-500">Update your hospital details and location</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateHospital} className="space-y-4">
+              <div>
+                <Label className="text-black font-semibold">Hospital Name</Label>
+                <Input value={hospital?.name || ""} disabled className="border-2 border-gray-300 text-black" />
               </div>
-              <h1 className="text-2xl font-bold text-black">Hospital Settings</h1>
-            </div>
-            <Link href="/hospital/dashboard">
-              <Button variant="outline" className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+              <div>
+                <Label className="text-black font-semibold">Email</Label>
+                <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
+              </div>
+              {/* Location Search Section */}
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <Label className="text-black font-semibold mb-2 block">Search Location (Manual Selection)</Label>
+                <div className="flex gap-2 relative">
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="e.g. City Hospital, Main Street, Mumbai"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchAddress())}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSearchAddress}
+                    disabled={searching}
+                    className="bg-gray-800 text-white hover:bg-gray-700"
+                  >
+                    {searching ? "Searching..." : "Search"}
+                  </Button>
+
+                  {/* Search Results Dropdown */}
+                  {showResults && searchResults.length > 0 && (
+                    <div className="absolute top-12 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
+                      <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <span className="text-xs font-medium text-gray-500">Select the closest match:</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-gray-400"
+                          onClick={() => setShowResults(false)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                      {searchResults.map((result, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="w-full text-left p-3 hover:bg-green-50 border-b border-gray-50 last:border-0 transition-colors"
+                          onClick={() => handleSelectAddress(result)}
+                        >
+                          <p className="font-medium text-sm text-gray-900 truncate">{result.display_name.split(",")[0]}</p>
+                          <p className="text-xs text-gray-500 truncate">{result.display_name}</p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Search for your hospital or a nearby landmark if GPS is inaccurate.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <Label className="text-black font-semibold">Address *</Label>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={handleUseCurrentLocation}
+                    disabled={gettingLocation}
+                    className="text-green-600 p-0 h-auto font-semibold"
+                  >
+                    {gettingLocation ? "Locating..." : "📍 Use Current Location"}
+                  </Button>
+                </div>
+
+                {/* Debug Info for Location Issues */}
+                {locationDetails && (
+                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                    <p><strong>Debug Info:</strong></p>
+                    <p>Lat: {locationDetails.lat.toFixed(6)}, Lng: {locationDetails.lng.toFixed(6)}</p>
+                    <p>Accuracy: ±{Math.round(locationDetails.accuracy)} meters</p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${locationDetails.lat},${locationDetails.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline hover:text-blue-800 mt-1 inline-block"
+                    >
+                      View detected location on Google Maps
+                    </a>
+                  </div>
+                )}
+
+                <Input
+                  value={hospitalForm.address}
+                  onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
+                  required
+                  placeholder="123 Medical Center Drive"
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-black font-semibold">City *</Label>
+                  <Input
+                    value={hospitalForm.city}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
+                    required
+                    placeholder="New York"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">State *</Label>
+                  <Input
+                    value={hospitalForm.state}
+                    onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
+                    required
+                    placeholder="NY"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-black font-semibold">Zip Code *</Label>
+                <Input
+                  value={hospitalForm.zip_code}
+                  onChange={(e) => setHospitalForm({ ...hospitalForm, zip_code: e.target.value })}
+                  required
+                  placeholder="10001"
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                />
+              </div>
+              <div>
+                <Label className="text-black font-semibold">Phone *</Label>
+                <Input
+                  value={hospitalForm.phone}
+                  onChange={(e) => setHospitalForm({ ...hospitalForm, phone: e.target.value })}
+                  required
+                  placeholder="+1-555-0100"
+                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                />
+              </div>
+              <div>
+                <Label className="text-black font-semibold">Description (Optional)</Label>
+                <textarea
+                  value={hospitalForm.description}
+                  onChange={(e) => setHospitalForm({ ...hospitalForm, description: e.target.value })}
+                  placeholder="Brief description of your hospital..."
+                  rows={3}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
+                />
+              </div>
+              {hospital?.latitude && hospital?.longitude && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Location verified:</strong> {hospital.latitude.toFixed(6)}, {hospital.longitude.toFixed(6)}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Your hospital will appear in nearby clinic searches for patients.
+                  </p>
+                </div>
+              )}
+              {(!hospital?.latitude || !hospital?.longitude) && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Location not set:</strong> Please update your address and click "Update & Geocode" to enable nearby clinic search.
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={updatingHospital}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  {updatingHospital ? "Updating..." : "Update & Geocode Location"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg bg-white">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-2xl font-bold text-black">Clinics</CardTitle>
+                <CardDescription className="text-gray-600">Manage your clinics and departments</CardDescription>
+              </div>
+              <Button
+                onClick={() => setShowClinicForm(!showClinicForm)}
+                className="bg-green-600 text-white hover:bg-green-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Clinic
               </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {showClinicForm && (
+              <form onSubmit={handleCreateClinic} className="mb-6 p-6 border-2 border-gray-200 rounded-lg space-y-4 bg-gray-50">
+                <div>
+                  <Label className="text-black font-semibold">Clinic Name</Label>
+                  <Input
+                    value={clinicForm.name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, name: e.target.value })
+                    }
+                    required
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Department</Label>
+                  <Input
+                    value={clinicForm.department}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, department: e.target.value })
+                    }
+                    required
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Specialties (comma-separated)</Label>
+                  <Input
+                    value={clinicForm.specialties}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, specialties: e.target.value })
+                    }
+                    placeholder="Cardiology, Heart Disease, Hypertension"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Photo URL (Optional)</Label>
+                  <Input
+                    type="url"
+                    value={clinicForm.photo_url}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, photo_url: e.target.value })
+                    }
+                    placeholder="https://example.com/clinic-photo.jpg"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Consultation Fee (Optional)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={clinicForm.consultation_fee}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, consultation_fee: e.target.value })
+                    }
+                    placeholder="500.00"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Services Offered (comma-separated, Optional)</Label>
+                  <Input
+                    value={clinicForm.services}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, services: e.target.value })
+                    }
+                    placeholder="X-Ray, Ultrasound, Lab Tests"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Insurance Providers (comma-separated, Optional)</Label>
+                  <Input
+                    value={clinicForm.insurance_providers}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, insurance_providers: e.target.value })
+                    }
+                    placeholder="Aetna, Blue Cross, Medicare"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Payment Methods (comma-separated, Optional)</Label>
+                  <Input
+                    value={clinicForm.payment_methods}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setClinicForm({ ...clinicForm, payment_methods: e.target.value })
+                    }
+                    placeholder="Cash, Credit Card, Insurance, UPI"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Create Clinic</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowClinicForm(false)}
+                    className="border-2"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="space-y-3">
+              {clinics.map((clinic: any) => (
+                <div
+                  key={clinic.id}
+                  className="p-4 border-2 border-gray-200 rounded-lg flex justify-between items-center bg-white hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    <p className="font-bold text-black">{clinic.name}</p>
+                    <p className="text-sm text-gray-600">{clinic.department}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedClinicForDoctor(clinic.id);
+                        setShowDoctorForm(true);
+                      }}
+                      className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Add Doctor
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedClinic(clinic.id);
+                        setShowSlotForm(true);
+                      }}
+                      className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Add Time Slot
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="space-y-6">
+        {/* Add Doctor Form */}
+        {showDoctorForm && (
           <Card className="border-0 shadow-lg bg-white">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-black">Hospital Information</CardTitle>
-              <CardDescription className="text-gray-600">Update your hospital details and location</CardDescription>
+              <CardTitle className="text-2xl font-bold text-black">Add Doctor</CardTitle>
+              <CardDescription className="text-gray-600">Add a new doctor to your clinic</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleUpdateHospital} className="space-y-4">
+              <form onSubmit={handleCreateDoctor} className="space-y-4">
                 <div>
-                  <Label className="text-black font-semibold">Hospital Name</Label>
-                  <Input value={hospital?.name || ""} disabled className="border-2 border-gray-300 text-black" />
+                  <Label className="text-black font-semibold">Select Clinic</Label>
+                  <select
+                    value={selectedClinicForDoctor}
+                    onChange={(e) => setSelectedClinicForDoctor(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
+                  >
+                    <option value="">Select a clinic</option>
+                    {clinics.map((clinic: any) => (
+                      <option key={clinic.id} value={clinic.id}>
+                        {clinic.name} - {clinic.department}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Doctor Name</Label>
+                  <Input
+                    value={doctorForm.name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, name: e.target.value })
+                    }
+                    required
+                    placeholder="Dr. John Doe"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">License ID / Doctor ID</Label>
+                  <Input
+                    value={doctorForm.doctor_id}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, doctor_id: e.target.value })
+                    }
+                    placeholder="MD12345"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Specialization / Occupation</Label>
+                  <Input
+                    value={doctorForm.specialization}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, specialization: e.target.value })
+                    }
+                    required
+                    placeholder="Cardiologist"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Degree</Label>
+                  <Input
+                    value={doctorForm.degree}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, degree: e.target.value })
+                    }
+                    placeholder="MD, MBBS, etc."
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
                 </div>
                 <div>
                   <Label className="text-black font-semibold">Email</Label>
-                  <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
-                </div>
-                {/* Location Search Section */}
-                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <Label className="text-black font-semibold mb-2 block">Search Location (Manual Selection)</Label>
-                  <div className="flex gap-2 relative">
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="e.g. City Hospital, Main Street, Mumbai"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black flex-1"
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchAddress())}
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleSearchAddress}
-                      disabled={searching}
-                      className="bg-gray-800 text-white hover:bg-gray-700"
-                    >
-                      {searching ? "Searching..." : "Search"}
-                    </Button>
-
-                    {/* Search Results Dropdown */}
-                    {showResults && searchResults.length > 0 && (
-                      <div className="absolute top-12 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
-                        <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                          <span className="text-xs font-medium text-gray-500">Select the closest match:</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-gray-400"
-                            onClick={() => setShowResults(false)}
-                          >
-                            ×
-                          </Button>
-                        </div>
-                        {searchResults.map((result, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            className="w-full text-left p-3 hover:bg-green-50 border-b border-gray-50 last:border-0 transition-colors"
-                            onClick={() => handleSelectAddress(result)}
-                          >
-                            <p className="font-medium text-sm text-gray-900 truncate">{result.display_name.split(",")[0]}</p>
-                            <p className="text-xs text-gray-500 truncate">{result.display_name}</p>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Search for your hospital or a nearby landmark if GPS is inaccurate.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <Label className="text-black font-semibold">Address *</Label>
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      onClick={handleUseCurrentLocation}
-                      disabled={gettingLocation}
-                      className="text-green-600 p-0 h-auto font-semibold"
-                    >
-                      {gettingLocation ? "Locating..." : "📍 Use Current Location"}
-                    </Button>
-                  </div>
-
-                  {/* Debug Info for Location Issues */}
-                  {locationDetails && (
-                    <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                      <p><strong>Debug Info:</strong></p>
-                      <p>Lat: {locationDetails.lat.toFixed(6)}, Lng: {locationDetails.lng.toFixed(6)}</p>
-                      <p>Accuracy: ±{Math.round(locationDetails.accuracy)} meters</p>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${locationDetails.lat},${locationDetails.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline hover:text-blue-800 mt-1 inline-block"
-                      >
-                        View detected location on Google Maps
-                      </a>
-                    </div>
-                  )}
-
                   <Input
-                    value={hospitalForm.address}
-                    onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
-                    required
-                    placeholder="123 Medical Center Drive"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-black font-semibold">City *</Label>
-                    <Input
-                      value={hospitalForm.city}
-                      onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
-                      required
-                      placeholder="New York"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">State *</Label>
-                    <Input
-                      value={hospitalForm.state}
-                      onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
-                      required
-                      placeholder="NY"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Zip Code *</Label>
-                  <Input
-                    value={hospitalForm.zip_code}
-                    onChange={(e) => setHospitalForm({ ...hospitalForm, zip_code: e.target.value })}
-                    required
-                    placeholder="10001"
+                    type="email"
+                    value={doctorForm.email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, email: e.target.value })
+                    }
+                    placeholder="doctor@example.com"
                     className="border-2 border-gray-300 focus:border-green-600 text-black"
                   />
                 </div>
                 <div>
-                  <Label className="text-black font-semibold">Phone *</Label>
+                  <Label className="text-black font-semibold">Phone</Label>
                   <Input
-                    value={hospitalForm.phone}
-                    onChange={(e) => setHospitalForm({ ...hospitalForm, phone: e.target.value })}
-                    required
+                    type="tel"
+                    value={doctorForm.phone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, phone: e.target.value })
+                    }
                     placeholder="+1-555-0100"
                     className="border-2 border-gray-300 focus:border-green-600 text-black"
                   />
                 </div>
                 <div>
-                  <Label className="text-black font-semibold">Description (Optional)</Label>
-                  <textarea
-                    value={hospitalForm.description}
-                    onChange={(e) => setHospitalForm({ ...hospitalForm, description: e.target.value })}
-                    placeholder="Brief description of your hospital..."
-                    rows={3}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
+                  <Label className="text-black font-semibold">Photo URL (Optional)</Label>
+                  <Input
+                    type="url"
+                    value={doctorForm.photo_url}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, photo_url: e.target.value })
+                    }
+                    placeholder="https://example.com/doctor-photo.jpg"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
                   />
                 </div>
-                {hospital?.latitude && hospital?.longitude && (
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Location verified:</strong> {hospital.latitude.toFixed(6)}, {hospital.longitude.toFixed(6)}
-                    </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      Your hospital will appear in nearby clinic searches for patients.
-                    </p>
-                  </div>
-                )}
-                {(!hospital?.latitude || !hospital?.longitude) && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Location not set:</strong> Please update your address and click "Update & Geocode" to enable nearby clinic search.
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-black font-semibold">Credentials (comma-separated, Optional)</Label>
+                  <Input
+                    value={doctorForm.credentials}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, credentials: e.target.value })
+                    }
+                    placeholder="MBBS, MD, FACP"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Years of Experience (Optional)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={doctorForm.years_of_experience}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, years_of_experience: e.target.value })
+                    }
+                    placeholder="10"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Languages Spoken (comma-separated, Optional)</Label>
+                  <Input
+                    value={doctorForm.languages_spoken}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setDoctorForm({ ...doctorForm, languages_spoken: e.target.value })
+                    }
+                    placeholder="English, Hindi, Spanish"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
                 <div className="flex gap-2">
+                  <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Add Doctor</Button>
                   <Button
-                    type="submit"
-                    disabled={updatingHospital}
-                    className="bg-green-600 text-white hover:bg-green-700"
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowDoctorForm(false);
+                      setSelectedClinicForDoctor("");
+                      setDoctorForm({
+                        name: "",
+                        doctor_id: "",
+                        specialization: "",
+                        degree: "",
+                        email: "",
+                        phone: "",
+                        photo_url: "",
+                        credentials: "",
+                        years_of_experience: "",
+                        languages_spoken: "",
+                      });
+                    }}
+                    className="border-2"
                   >
-                    {updatingHospital ? "Updating..." : "Update & Geocode Location"}
+                    Cancel
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
+        )}
 
+        {showSlotForm && (
           <Card className="border-0 shadow-lg bg-white">
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-2xl font-bold text-black">Clinics</CardTitle>
-                  <CardDescription className="text-gray-600">Manage your clinics and departments</CardDescription>
-                </div>
-                <Button
-                  onClick={() => setShowClinicForm(!showClinicForm)}
-                  className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Clinic
-                </Button>
-              </div>
+              <CardTitle className="text-2xl font-bold text-black">Create Time Slot</CardTitle>
+              <CardDescription className="text-gray-600">Add available appointment slots</CardDescription>
             </CardHeader>
             <CardContent>
-              {showClinicForm && (
-                <form onSubmit={handleCreateClinic} className="mb-6 p-6 border-2 border-gray-200 rounded-lg space-y-4 bg-gray-50">
+              <form onSubmit={handleCreateSlot} className="space-y-4">
+                <div>
+                  <Label className="text-black font-semibold">Date</Label>
+                  <Input
+                    type="date"
+                    value={slotForm.date}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSlotForm({ ...slotForm, date: e.target.value })
+                    }
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-black font-semibold">Clinic Name</Label>
+                    <Label className="text-black font-semibold">Start Time</Label>
                     <Input
-                      value={clinicForm.name}
+                      type="time"
+                      value={slotForm.start_time}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, name: e.target.value })
+                        setSlotForm({ ...slotForm, start_time: e.target.value })
                       }
                       required
                       className="border-2 border-gray-300 focus:border-green-600 text-black"
                     />
                   </div>
                   <div>
-                    <Label className="text-black font-semibold">Department</Label>
+                    <Label className="text-black font-semibold">End Time</Label>
                     <Input
-                      value={clinicForm.department}
+                      type="time"
+                      value={slotForm.end_time}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, department: e.target.value })
+                        setSlotForm({ ...slotForm, end_time: e.target.value })
                       }
                       required
                       className="border-2 border-gray-300 focus:border-green-600 text-black"
                     />
                   </div>
-                  <div>
-                    <Label className="text-black font-semibold">Specialties (comma-separated)</Label>
-                    <Input
-                      value={clinicForm.specialties}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, specialties: e.target.value })
-                      }
-                      placeholder="Cardiology, Heart Disease, Hypertension"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Photo URL (Optional)</Label>
-                    <Input
-                      type="url"
-                      value={clinicForm.photo_url}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, photo_url: e.target.value })
-                      }
-                      placeholder="https://example.com/clinic-photo.jpg"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Consultation Fee (Optional)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={clinicForm.consultation_fee}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, consultation_fee: e.target.value })
-                      }
-                      placeholder="500.00"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Services Offered (comma-separated, Optional)</Label>
-                    <Input
-                      value={clinicForm.services}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, services: e.target.value })
-                      }
-                      placeholder="X-Ray, Ultrasound, Lab Tests"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Insurance Providers (comma-separated, Optional)</Label>
-                    <Input
-                      value={clinicForm.insurance_providers}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, insurance_providers: e.target.value })
-                      }
-                      placeholder="Aetna, Blue Cross, Medicare"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Payment Methods (comma-separated, Optional)</Label>
-                    <Input
-                      value={clinicForm.payment_methods}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setClinicForm({ ...clinicForm, payment_methods: e.target.value })
-                      }
-                      placeholder="Cash, Credit Card, Insurance, UPI"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Create Clinic</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowClinicForm(false)}
-                      className="border-2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              )}
-
-              <div className="space-y-3">
-                {clinics.map((clinic: any) => (
-                  <div
-                    key={clinic.id}
-                    className="p-4 border-2 border-gray-200 rounded-lg flex justify-between items-center bg-white hover:shadow-md transition-shadow"
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Doctor Name</Label>
+                  <Input
+                    value={slotForm.doctor_name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSlotForm({ ...slotForm, doctor_name: e.target.value })
+                    }
+                    required
+                    placeholder="Select existing doctor or enter name"
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div>
+                  <Label className="text-black font-semibold">Specialization</Label>
+                  <Input
+                    value={slotForm.specialization}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSlotForm({ ...slotForm, specialization: e.target.value })
+                    }
+                    required
+                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Create Slot</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowSlotForm(false);
+                      setSelectedClinic("");
+                    }}
+                    className="border-2"
                   >
-                    <div>
-                      <p className="font-bold text-black">{clinic.name}</p>
-                      <p className="text-sm text-gray-600">{clinic.department}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedClinicForDoctor(clinic.id);
-                          setShowDoctorForm(true);
-                        }}
-                        className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium"
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        Add Doctor
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedClinic(clinic.id);
-                          setShowSlotForm(true);
-                        }}
-                        className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium"
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        Add Time Slot
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
-
-          {/* Add Doctor Form */}
-          {showDoctorForm && (
-            <Card className="border-0 shadow-lg bg-white">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-black">Add Doctor</CardTitle>
-                <CardDescription className="text-gray-600">Add a new doctor to your clinic</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateDoctor} className="space-y-4">
-                  <div>
-                    <Label className="text-black font-semibold">Select Clinic</Label>
-                    <select
-                      value={selectedClinicForDoctor}
-                      onChange={(e) => setSelectedClinicForDoctor(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
-                    >
-                      <option value="">Select a clinic</option>
-                      {clinics.map((clinic: any) => (
-                        <option key={clinic.id} value={clinic.id}>
-                          {clinic.name} - {clinic.department}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Doctor Name</Label>
-                    <Input
-                      value={doctorForm.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, name: e.target.value })
-                      }
-                      required
-                      placeholder="Dr. John Doe"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">License ID / Doctor ID</Label>
-                    <Input
-                      value={doctorForm.doctor_id}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, doctor_id: e.target.value })
-                      }
-                      placeholder="MD12345"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Specialization / Occupation</Label>
-                    <Input
-                      value={doctorForm.specialization}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, specialization: e.target.value })
-                      }
-                      required
-                      placeholder="Cardiologist"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Degree</Label>
-                    <Input
-                      value={doctorForm.degree}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, degree: e.target.value })
-                      }
-                      placeholder="MD, MBBS, etc."
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Email</Label>
-                    <Input
-                      type="email"
-                      value={doctorForm.email}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, email: e.target.value })
-                      }
-                      placeholder="doctor@example.com"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Phone</Label>
-                    <Input
-                      type="tel"
-                      value={doctorForm.phone}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, phone: e.target.value })
-                      }
-                      placeholder="+1-555-0100"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Photo URL (Optional)</Label>
-                    <Input
-                      type="url"
-                      value={doctorForm.photo_url}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, photo_url: e.target.value })
-                      }
-                      placeholder="https://example.com/doctor-photo.jpg"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Credentials (comma-separated, Optional)</Label>
-                    <Input
-                      value={doctorForm.credentials}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, credentials: e.target.value })
-                      }
-                      placeholder="MBBS, MD, FACP"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Years of Experience (Optional)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={doctorForm.years_of_experience}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, years_of_experience: e.target.value })
-                      }
-                      placeholder="10"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Languages Spoken (comma-separated, Optional)</Label>
-                    <Input
-                      value={doctorForm.languages_spoken}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDoctorForm({ ...doctorForm, languages_spoken: e.target.value })
-                      }
-                      placeholder="English, Hindi, Spanish"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Add Doctor</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowDoctorForm(false);
-                        setSelectedClinicForDoctor("");
-                        setDoctorForm({
-                          name: "",
-                          doctor_id: "",
-                          specialization: "",
-                          degree: "",
-                          email: "",
-                          phone: "",
-                          photo_url: "",
-                          credentials: "",
-                          years_of_experience: "",
-                          languages_spoken: "",
-                        });
-                      }}
-                      className="border-2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {showSlotForm && (
-            <Card className="border-0 shadow-lg bg-white">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-black">Create Time Slot</CardTitle>
-                <CardDescription className="text-gray-600">Add available appointment slots</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateSlot} className="space-y-4">
-                  <div>
-                    <Label className="text-black font-semibold">Date</Label>
-                    <Input
-                      type="date"
-                      value={slotForm.date}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setSlotForm({ ...slotForm, date: e.target.value })
-                      }
-                      required
-                      min={new Date().toISOString().split("T")[0]}
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-black font-semibold">Start Time</Label>
-                      <Input
-                        type="time"
-                        value={slotForm.start_time}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setSlotForm({ ...slotForm, start_time: e.target.value })
-                        }
-                        required
-                        className="border-2 border-gray-300 focus:border-green-600 text-black"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-black font-semibold">End Time</Label>
-                      <Input
-                        type="time"
-                        value={slotForm.end_time}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setSlotForm({ ...slotForm, end_time: e.target.value })
-                        }
-                        required
-                        className="border-2 border-gray-300 focus:border-green-600 text-black"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Doctor Name</Label>
-                    <Input
-                      value={slotForm.doctor_name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setSlotForm({ ...slotForm, doctor_name: e.target.value })
-                      }
-                      required
-                      placeholder="Select existing doctor or enter name"
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-black font-semibold">Specialization</Label>
-                    <Input
-                      value={slotForm.specialization}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setSlotForm({ ...slotForm, specialization: e.target.value })
-                      }
-                      required
-                      className="border-2 border-gray-300 focus:border-green-600 text-black"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Create Slot</Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowSlotForm(false);
-                        setSelectedClinic("");
-                      }}
-                      className="border-2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        )}
       </div>
     </div>
+
   );
 }

@@ -55,7 +55,7 @@ export default function HospitalAnalytics() {
       return;
     }
 
-    setUserName(profile.full_name || "Hospital");
+
   };
 
   const loadAnalytics = async () => {
@@ -122,8 +122,8 @@ export default function HospitalAnalytics() {
       const today = new Date().toISOString().split("T")[0];
       const totalAppointments = appointments?.length || 0;
       const todayAppointments = appointments?.filter(a => a.appointment_date === today).length || 0;
-      const upcomingAppointments = appointments?.filter(a => 
-        a.appointment_date >= today && 
+      const upcomingAppointments = appointments?.filter(a =>
+        a.appointment_date >= today &&
         (a.status === "scheduled" || a.status === "accepted" || a.status === "pending")
       ).length || 0;
       const completedAppointments = appointments?.filter(a => a.status === "completed").length || 0;
@@ -166,7 +166,7 @@ export default function HospitalAnalytics() {
       const clinicCounts: Record<string, number> = {};
       appointments?.forEach((apt: any) => {
         const clinicData = apt.clinic;
-        const clinicName = Array.isArray(clinicData) 
+        const clinicName = Array.isArray(clinicData)
           ? clinicData[0]?.name || "Unknown"
           : (clinicData?.name || "Unknown");
         clinicCounts[clinicName] = (clinicCounts[clinicName] || 0) + 1;
@@ -213,47 +213,9 @@ export default function HospitalAnalytics() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-green-600 rounded-lg">
-                <Stethoscope className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-black">
-                medcAIr - Analytics
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/hospital/dashboard">
-                <Button variant="outline" size="sm" className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-              <Link href="/hospital/settings">
-                <Button variant="outline" size="sm" className="border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </Link>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="p-8 space-y-8">
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -449,7 +411,7 @@ export default function HospitalAnalytics() {
             </Card>
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }
