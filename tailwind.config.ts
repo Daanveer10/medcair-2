@@ -22,9 +22,11 @@ export default {
           foreground: "hsl(var(--popover-foreground))",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#008c9e",
           foreground: "hsl(var(--primary-foreground))",
         },
+        "background-light": "#f5f8fa",
+        "background-dark": "#1e2529",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -52,12 +54,17 @@ export default {
           "5": "hsl(var(--chart-5))",
         },
       },
+      fontFamily: {
+        display: ["var(--font-manrope)", "sans-serif"],
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "1rem",
+        md: "calc(1rem - 2px)",
+        sm: "calc(1rem - 4px)",
+        xl: "1.5rem",
+        "full": "9999px"
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/forms"), require("@tailwindcss/container-queries")],
 } satisfies Config;

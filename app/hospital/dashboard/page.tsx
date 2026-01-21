@@ -3,1910 +3,366 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { handleError } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, Plus, LogOut, Stethoscope, Settings, Sparkles, X, CheckCircle2, AlertCircle, BarChart3, User, ChevronDown, ChevronUp, History, Bell } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  Clock,
+  TrendingUp,
+  Search,
+  Bell,
+  MoreVertical,
+  MapPin,
+  Phone,
+  Video,
+  ChevronRight,
+  Filter
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-// Prevent static generation - requires authentication
 export const dynamic = 'force-dynamic';
 
 interface Appointment {
   id: string;
+  patient: {
+    full_name: string;
+    phone_number: string;
+  };
   appointment_date: string;
   appointment_time: string;
   status: string;
-  slot_id?: string;
-  patient_id?: string | null;
-  clinic_id?: string | null;
-  patient: {
-    full_name: string;
-  };
-  clinic: {
-    name: string;
-  };
-  doctor: {
-    name: string;
-  };
-}
-
-interface Clinic {
-  id: string;
-  name: string;
-  department: string;
+  type: string;
 }
 
 interface Doctor {
   id: string;
   name: string;
-  specialization: string;
-  clinic_id: string;
-}
-
-interface Slot {
-  id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
-  is_available: boolean;
-  clinic_id: string;
-  doctor_id: string;
-}
-
-interface DoctorAppointment {
-  id: string;
-  appointment_date: string;
-  appointment_time: string;
-  status: string;
-  patient: {
-    full_name: string;
-  };
-  clinic: {
-    name: string;
-  };
-  notes?: string;
-}
-
-interface DoctorWithSchedule {
-  id: string;
-  name: string;
-  specialization: string;
-  clinic_id: string;
-  clinic_name: string;
-  upcomingAppointments: DoctorAppointment[];
-  patientHistory: DoctorAppointment[];
+  department: string;
+  specialties: string[];
 }
 
 export default function HospitalDashboard() {
   const router = useRouter();
   const supabase = createClient();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const [hospitalId, setHospitalId] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [selectedClinic, setSelectedClinic] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState("");
-  const [selectedSlot, setSelectedSlot] = useState("");
-  const [patientName, setPatientName] = useState("");
-  const [patientEmail, setPatientEmail] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [doctorsWithSchedules, setDoctorsWithSchedules] = useState<DoctorWithSchedule[]>([]);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
-  const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"list" | "schedule">("list");
-  const [showDoctorModal, setShowDoctorModal] = useState(false);
-  const [doctorForm, setDoctorForm] = useState({
-    name: "",
-    doctor_id: "",
-    specialization: "",
-    degree: "",
-    email: "",
-    phone: "",
-    clinic_id: "",
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [stats, setStats] = useState({
+    patientsToday: 0,
+    appointmentsPending: 0,
+    totalPatients: 0,
+    revenue: 0,
   });
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkUser();
+    loadDashboardData();
   }, []);
 
-  // Close notifications dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showNotifications && !target.closest('.notification-dropdown')) {
-        setShowNotifications(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showNotifications]);
-
-  useEffect(() => {
-    if (hospitalId) {
-      loadClinics();
-      loadAppointments();
-      loadDoctorsWithSchedules();
-      loadNotifications();
-
-      // Set up real-time subscription for appointment changes
-      const appointmentsChannel = supabase
-        .channel('hospital-appointments')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'appointments'
-          },
-          (payload) => {
-            console.log('Appointment change detected:', payload);
-            // Reload appointments and doctor schedules when changes occur
-            loadAppointments();
-            loadDoctorsWithSchedules();
-          }
-        )
-        .subscribe();
-
-      // Set up real-time subscription for clinic changes (filtered by hospital_id if possible)
-      // Note: Supabase real-time doesn't support filtering by hospital_id directly in the subscription
-      // So we reload all clinics and let loadClinics filter by hospitalId
-      const clinicsChannel = supabase
-        .channel('hospital-clinics')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'clinics'
-          },
-          (payload) => {
-            console.log('Clinic change detected:', payload);
-            // Reload clinics when changes occur (loadClinics will filter by hospitalId)
-            if (hospitalId) {
-              loadClinics();
-            }
-          }
-        )
-        .subscribe();
-
-      // Set up real-time subscription for doctor changes
-      const doctorsChannel = supabase
-        .channel('hospital-doctors')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'doctors'
-          },
-          (payload) => {
-            console.log('Doctor change detected:', payload);
-            // Reload doctor schedules when changes occur
-            loadDoctorsWithSchedules();
-          }
-        )
-        .subscribe();
-
-      // Set up real-time subscription for notifications
-      const notificationsChannel = supabase
-        .channel('hospital-notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'notifications'
-          },
-          () => {
-            loadNotifications();
-          }
-        )
-        .subscribe();
-
-      // Cleanup subscriptions on unmount
-      return () => {
-        supabase.removeChannel(appointmentsChannel);
-        supabase.removeChannel(clinicsChannel);
-        supabase.removeChannel(doctorsChannel);
-        supabase.removeChannel(notificationsChannel);
-      };
-    }
-  }, [hospitalId]);
-
-  useEffect(() => {
-    if (showCreateModal && hospitalId) {
-      loadClinics();
-    }
-  }, [showCreateModal, hospitalId]);
-
-  useEffect(() => {
-    if (showDoctorModal) {
-      // Always refresh clinics when modal opens
-      const refreshClinics = async () => {
-        // Get hospital ID if not already available
-        let currentHospitalId = hospitalId;
-        if (!currentHospitalId) {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data: hospital } = await supabase
-              .from("hospitals")
-              .select("id")
-              .eq("user_id", user.id)
-              .single();
-            if (hospital) {
-              currentHospitalId = hospital.id;
-              setHospitalId(hospital.id);
-            }
-          }
-        }
-        
-        // Load clinics with the current hospital ID
-        if (currentHospitalId) {
-          try {
-            console.log("Refreshing clinics for hospitalId:", currentHospitalId);
-            const { data, error } = await supabase
-              .from("clinics")
-              .select("id, name, department")
-              .eq("hospital_id", currentHospitalId)
-              .order("name", { ascending: true });
-            
-            if (error) {
-              console.error("Error refreshing clinics:", error);
-              handleError(error, { action: "loadClinics", resource: "clinics" });
-              return;
-            }
-            
-            console.log("Refreshed clinics:", data?.length || 0, data);
-            setClinics(data || []);
-          } catch (error) {
-            handleError(error, { action: "loadClinics", resource: "clinics" });
-          }
-        }
-      };
-      
-      refreshClinics();
-    }
-  }, [showDoctorModal]);
-
-  useEffect(() => {
-    if (selectedClinic) {
-      loadDoctors();
-      loadSlots();
-    }
-  }, [selectedClinic]);
-
   const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push("/auth/login"); return; }
+
+    // Check if user is hospital/doctor
+    const { data: profile } = await supabase.from("user_profiles").select("full_name, role").eq("user_id", user.id).single();
+    if (profile?.role !== "hospital") { router.push("/patient/dashboard"); return; }
+
+    setUserName(profile.full_name || "Doctor");
+  };
+
+  const loadDashboardData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/auth/login");
-        return;
-      }
-      
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("full_name, role, id")
-        .eq("user_id", user.id)
-        .single();
-      
-      if (profile?.role !== "hospital") {
-        router.push("/patient/dashboard");
-        return;
-      }
-      
-      setUserName(profile.full_name || "Hospital Admin");
-      
-      // Get hospital ID
-      const { data: hospital } = await supabase
-        .from("hospitals")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-      
-        if (hospital) {
-          setHospitalId(hospital.id);
-          await loadClinics(hospital.id); // force immediate clinic load
-        } else {
-          setLoading(false);
-        }        
-    } catch (error) {
-      handleError(error, { action: "checkUser", resource: "user_profiles" });
-      setLoading(false);
-    }
-  };
+      const today = new Date().toISOString().split("T")[0];
 
-  const loadClinics = async (hid?: string) => {
-    const id = hid || hospitalId;
-    if (!id) {
-      console.log("loadClinics: No hospitalId available");
-      return;
-    }
-  
-    try {
-      console.log("loadClinics: Fetching clinics for hospitalId:", id);
-      const { data, error } = await supabase
-        .from("clinics")
-        .select("id, name, department")
-        .eq("hospital_id", id)
-        .order("name", { ascending: true });
-  
-      if (error) {
-        console.error("Error loading clinics:", error);
-        handleError(error, { action: "loadClinics", resource: "clinics" });
-        return;
-      }
-  
-      console.log("loadClinics: Found clinics:", data?.length || 0, data);
-      setClinics(data || []);
-    } catch (error) {
-      handleError(error, { action: "loadClinics", resource: "clinics" });
-    }
-  };
-  
-  const loadDoctors = async () => {
-    if (!selectedClinic) return;
-    const { data } = await supabase
-      .from("doctors")
-      .select("id, name, specialization, clinic_id")
-      .eq("clinic_id", selectedClinic);
-    setDoctors(data || []);
-  };
+      // Fetch stats
+      const { count: patientsToday } = await supabase
+        .from("appointments")
+        .select("*", { count: "exact", head: true })
+        .eq("appointment_date", today);
 
-  const loadSlots = async () => {
-    if (!selectedClinic) return;
-    const { data } = await supabase
-      .from("appointment_slots")
-      .select("id, date, start_time, end_time, is_available, clinic_id, doctor_id")
-      .eq("clinic_id", selectedClinic)
-      .eq("is_available", true)
-      .gte("date", new Date().toISOString().split("T")[0])
-      .order("date", { ascending: true })
-      .order("start_time", { ascending: true });
-    setSlots(data || []);
-  };
+      const { count: appointmentsPending } = await supabase
+        .from("appointments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
 
-  const loadAppointments = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const totalPatients = 1250; // Mocked
+      const revenue = 4520; // Mocked
 
-      const { data: hospital } = await supabase
-        .from("hospitals")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
+      setStats({
+        patientsToday: patientsToday || 0,
+        appointmentsPending: appointmentsPending || 0,
+        totalPatients,
+        revenue
+      });
 
-      if (!hospital) {
-        setLoading(false);
-        return;
-      }
-
-      // Get all clinics for this hospital
-      const { data: clinics } = await supabase
-        .from("clinics")
-        .select("id")
-        .eq("hospital_id", hospital.id);
-
-      if (!clinics || clinics.length === 0) {
-        setAppointments([]);
-        setLoading(false);
-        return;
-      }
-
-      const clinicIds = clinics.map(c => c.id);
-
-      // Get appointments for these clinics (including pending ones)
-      const { data, error } = await supabase
+      // Fetch upcoming appointments
+      const { data: appointmentsData, error } = await supabase
         .from("appointments")
         .select(`
           id,
           appointment_date,
           appointment_time,
           status,
-          slot_id,
-          patient:user_profiles!appointments_patient_id_fkey (
-            full_name
-          ),
-          clinic:clinics (
-            name
-          ),
-          doctor:doctors (
-            name
-          )
+          type,
+          patient:patient_id (full_name, phone_number)
         `)
-        .in("clinic_id", clinicIds)
+        .eq("status", "scheduled")
+        .gte("appointment_date", today)
         .order("appointment_date", { ascending: true })
-        .order("appointment_time", { ascending: true });
+        .order("appointment_time", { ascending: true })
+        .limit(10);
 
       if (error) throw error;
 
-      // Transform the data to match the interface
-      const transformedAppointments = (data || []).map((apt: any) => ({
-        id: apt.id,
-        appointment_date: apt.appointment_date,
-        appointment_time: apt.appointment_time,
-        status: apt.status,
-        slot_id: apt.slot_id,
-        patient_id: apt.patient_id || null,
-        clinic_id: apt.clinic_id || null,
+      const transformedAppointments = (appointmentsData || []).map((app: any) => ({
+        id: app.id,
         patient: {
-          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown",
+          full_name: app.patient?.full_name || "Unknown Patient",
+          phone_number: app.patient?.phone_number || "N/A"
         },
-        clinic: {
-          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
-        },
-        doctor: {
-          name: Array.isArray(apt.doctor) ? apt.doctor[0]?.name : apt.doctor?.name || "Unknown",
-        },
+        appointment_date: app.appointment_date,
+        appointment_time: app.appointment_time,
+        status: app.status,
+        type: app.type || "In-Person",
       }));
 
       setAppointments(transformedAppointments);
+
     } catch (error) {
-      handleError(error, { action: "loadAppointments", resource: "appointments" });
+      console.error("Error loading dashboard:", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
-  const loadNotifications = async () => {
-    if (!hospitalId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("hospital_id", hospitalId)
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      setNotifications(data || []);
-      setUnreadNotificationCount((data || []).filter(n => !n.read).length);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-    }
-  };
-
-  const markNotificationAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("id", notificationId);
-
-      if (error) throw error;
-      loadNotifications();
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
-
-  const markAllNotificationsAsRead = async () => {
-    if (!hospitalId) return;
-    
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("hospital_id", hospitalId)
-        .eq("read", false);
-
-      if (error) throw error;
-      loadNotifications();
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  };
-
-  const handleNotificationClick = (notification: any) => {
-    markNotificationAsRead(notification.id);
-    // Scroll to appointments section or filter by appointment
-    if (notification.appointment_id) {
-      setStatusFilter("pending");
-      // Optionally scroll to appointments
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const loadDoctorsWithSchedules = async () => {
-    try {
-      setLoadingDoctors(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: hospital } = await supabase
-        .from("hospitals")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!hospital) return;
-
-      // Get all clinics for this hospital
-      const { data: clinics } = await supabase
-        .from("clinics")
-        .select("id, name")
-        .eq("hospital_id", hospital.id);
-
-      if (!clinics || clinics.length === 0) {
-        setLoadingDoctors(false);
-        return;
-      }
-
-      const clinicIds = clinics.map(c => c.id);
-      const clinicMap = new Map(clinics.map(c => [c.id, c.name]));
-
-      // Get all doctors from these clinics
-      const { data: doctors, error: doctorsError } = await supabase
-        .from("doctors")
-        .select("id, name, specialization, clinic_id")
-        .in("clinic_id", clinicIds);
-
-      if (doctorsError) {
-        console.error("Error fetching doctors:", doctorsError);
-        throw doctorsError;
-      }
-
-      if (!doctors || doctors.length === 0) {
-        setDoctorsWithSchedules([]);
-        setLoadingDoctors(false);
-        return;
-      }
-
-      console.log("Loaded doctors:", doctors.length);
-
-      const doctorIds = doctors.map(d => d.id);
-      const today = new Date().toISOString().split("T")[0];
-
-      // Get upcoming appointments
-      const { data: upcomingApts, error: upcomingError } = await supabase
-        .from("appointments")
-        .select(`
-          id,
-          doctor_id,
-          appointment_date,
-          appointment_time,
-          status,
-          notes,
-          patient:user_profiles!appointments_patient_id_fkey (
-            full_name
-          ),
-          clinic:clinics (
-            name
-          )
-        `)
-        .in("doctor_id", doctorIds)
-        .in("status", ["scheduled", "accepted", "pending"])
-        .gte("appointment_date", today)
-        .order("appointment_date", { ascending: true })
-        .order("appointment_time", { ascending: true });
-
-      if (upcomingError) {
-        console.error("Error fetching upcoming appointments:", upcomingError);
-      }
-
-      // Get patient history
-      const { data: historyApts, error: historyError } = await supabase
-        .from("appointments")
-        .select(`
-          id,
-          doctor_id,
-          appointment_date,
-          appointment_time,
-          status,
-          notes,
-          patient:user_profiles!appointments_patient_id_fkey (
-            full_name
-          ),
-          clinic:clinics (
-            name
-          )
-        `)
-        .in("doctor_id", doctorIds)
-        .in("status", ["completed", "cancelled", "no_show"])
-        .order("appointment_date", { ascending: false })
-        .order("appointment_time", { ascending: false })
-        .limit(50);
-
-      if (historyError) {
-        console.error("Error fetching history appointments:", historyError);
-      }
-
-      // Transform appointments
-      const transformAppointment = (apt: any): DoctorAppointment => ({
-        id: apt.id,
-        appointment_date: apt.appointment_date,
-        appointment_time: apt.appointment_time,
-        status: apt.status,
-        patient: {
-          full_name: Array.isArray(apt.patient) ? apt.patient[0]?.full_name : apt.patient?.full_name || "Unknown Patient",
-        },
-        clinic: {
-          name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown Clinic",
-        },
-        notes: apt.notes,
-      });
-
-      const upcomingMap = new Map<string, DoctorAppointment[]>();
-      const historyMap = new Map<string, DoctorAppointment[]>();
-
-      (upcomingApts || []).forEach((apt: any) => {
-        const transformed = transformAppointment(apt);
-        // Ensure doctor_id exists in appointment
-        if (apt.doctor_id) {
-          const existing = upcomingMap.get(apt.doctor_id) || [];
-          existing.push(transformed);
-          upcomingMap.set(apt.doctor_id, existing);
-        }
-      });
-
-      (historyApts || []).forEach((apt: any) => {
-        const transformed = transformAppointment(apt);
-        if (apt.doctor_id) {
-          const existing = historyMap.get(apt.doctor_id) || [];
-          existing.push(transformed);
-          historyMap.set(apt.doctor_id, existing);
-        }
-      });
-
-      // Combine doctors with their schedules
-      const doctorsWithData: DoctorWithSchedule[] = doctors.map(doctor => ({
-        id: doctor.id,
-        name: doctor.name || "Unknown Doctor", // Fallback for name
-        specialization: doctor.specialization || "General", // Fallback
-        clinic_id: doctor.clinic_id,
-        clinic_name: clinicMap.get(doctor.clinic_id) || "Unknown Clinic",
-        upcomingAppointments: upcomingMap.get(doctor.id) || [],
-        patientHistory: historyMap.get(doctor.id) || [],
-      }));
-
-      setDoctorsWithSchedules(doctorsWithData);
-    } catch (error) {
-      console.error("Fatal error in loadDoctorsWithSchedules:", error);
-      handleError(error, { action: "loadDoctorsWithSchedules", resource: "doctors" });
-    } finally {
-      setLoadingDoctors(false);
-    }
-  };
-
-  const toggleDoctorExpanded = (doctorId: string) => {
-    const newExpanded = new Set(expandedDoctors);
-    if (newExpanded.has(doctorId)) {
-      newExpanded.delete(doctorId);
-    } else {
-      newExpanded.add(doctorId);
-    }
-    setExpandedDoctors(newExpanded);
-  };
-
-  const handleCreateDoctor = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    // Validate clinic selection
-    if (!doctorForm.clinic_id || doctorForm.clinic_id === "") {
-      toast.error("Validation Failed", {
-        description: "Please select a clinic from the dropdown.",
-      });
-      return;
-    }
-    
-    // Validate required fields
-    if (!doctorForm.name || !doctorForm.specialization) {
-      toast.error("Validation Failed", {
-        description: "Doctor name and specialization are required.",
-      });
-      return;
-    }
-
-    try {
-      const { DoctorSchema } = await import("@/lib/validations");
-      const { validateData } = await import("@/lib/utils");
-
-      const validation = validateData(DoctorSchema, {
-        name: doctorForm.name,
-        specialization: doctorForm.specialization,
-        clinicId: doctorForm.clinic_id,
-      });
-
-      if (!validation.success) {
-        toast.error("Validation Failed", {
-          description: validation.error?.message || "Invalid doctor information.",
-        });
-        return;
-      }
-
-      // Check if doctor with same ID already exists
-      if (doctorForm.doctor_id) {
-        const { data: existingDoctor } = await supabase
-          .from("doctors")
-          .select("id")
-          .eq("doctor_id", doctorForm.doctor_id)
-          .single();
-
-        if (existingDoctor) {
-          toast.error("Doctor ID Exists", {
-            description: "A doctor with this license ID already exists.",
-          });
-          return;
-        }
-      }
-
-      // Create doctor
-      const { error } = await supabase.from("doctors").insert({
-        clinic_id: validation.data.clinicId,
-        name: validation.data.name,
-        specialization: validation.data.specialization,
-        doctor_id: doctorForm.doctor_id || null,
-        degree: doctorForm.degree || null,
-        email: doctorForm.email || null,
-        phone: doctorForm.phone || null,
-      });
-
-      if (error) throw error;
-
-      toast.success("Doctor Created", {
-        description: "The doctor has been added successfully.",
-      });
-      setDoctorForm({
-        name: "",
-        doctor_id: "",
-        specialization: "",
-        degree: "",
-        email: "",
-        phone: "",
-        clinic_id: "",
-      });
-      setShowDoctorModal(false);
-      // Refresh data
-      await loadDoctorsWithSchedules();
-      await loadClinics();
-    } catch (error) {
-      const errorResponse = handleError(error, { action: "createDoctor", resource: "doctors" });
-      toast.error("Creation Failed", {
-        description: errorResponse.error?.message || "Failed to create doctor.",
-      });
-    }
-  };
-
-  const handleCreateAppointment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedClinic || !selectedDoctor || !selectedSlot) return;
-  
-    setCreating(true);
-    try {
-      const res = await fetch("/api/appointments/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clinic_id: selectedClinic,
-          doctor_id: selectedDoctor,
-          slot_id: selectedSlot,
-        }),
-      });
-  
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error);
-  
-      toast.success("Appointment created successfully");
-      setShowCreateModal(false);
-  
-      await loadAppointments();
-      await loadDoctorsWithSchedules();
-    } catch (error: any) {
-      toast.error("Creation Failed", {
-        description: error.message || "Failed to create appointment.",
-      });
-    } finally {
-      setCreating(false);
-    }
-  };
-  
-
-  const handleAcceptAppointment = async (appointmentId: string) => {
-    try {
-      const { AppointmentUpdateSchema } = await import("@/lib/validations");
-      const { validateData } = await import("@/lib/utils");
-
-      const validation = validateData(AppointmentUpdateSchema, {
-        status: "accepted",
-      });
-
-      if (!validation.success) {
-        toast.error("Validation Failed", {
-          description: validation.error?.message || "Invalid appointment status.",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from("appointments")
-        .update({ 
-          status: validation.data.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", appointmentId);
-
-      if (error) throw error;
-
-      // Update slot availability to false since appointment is accepted
-      const appointment = appointments.find(apt => apt.id === appointmentId);
-      if (appointment?.slot_id) {
-        await supabase
-          .from("appointment_slots")
-          .update({ is_available: false })
-          .eq("id", appointment.slot_id);
-      }
-
-      // Send notification to patient
-      if (appointment && appointment.patient_id) {
-        try {
-          const { createNotification } = await import("@/lib/notifications");
-          await createNotification({
-            type: 'appointment_accepted',
-            appointmentId: appointmentId,
-            patientId: appointment.patient_id,
-            clinicId: appointment.clinic_id || "",
-            message: `Your appointment on ${appointment.appointment_date} at ${appointment.appointment_time} has been accepted.`
-          });
-        } catch (error) {
-          handleError(error, { action: "createNotification", resource: "notifications" });
-        }
-      }
-
-      toast.success("Appointment Accepted", {
-        description: "The appointment has been accepted successfully.",
-      });
-      loadAppointments(); // Reload to refresh the list
-      loadDoctorsWithSchedules(); // Reload doctor schedules
-    } catch (error: any) {
-      const errorResponse = handleError(error, { action: "acceptAppointment", resource: "appointments" });
-      toast.error("Action Failed", {
-        description: errorResponse.error?.message || "Failed to accept appointment.",
-      });
-    }
-  };
-
-  const handleDeclineAppointment = async (appointmentId: string) => {
-    try {
-      const { AppointmentUpdateSchema } = await import("@/lib/validations");
-      const { validateData } = await import("@/lib/utils");
-
-      const validation = validateData(AppointmentUpdateSchema, {
-        status: "declined",
-      });
-
-      if (!validation.success) {
-        toast.error("Validation Failed", {
-          description: validation.error?.message || "Invalid appointment status.",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from("appointments")
-        .update({ 
-          status: validation.data.status,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", appointmentId);
-
-      if (error) throw error;
-
-      // Send notification to patient
-      const appointment = appointments.find(apt => apt.id === appointmentId);
-      if (appointment && appointment.patient_id) {
-        try {
-          const { createNotification } = await import("@/lib/notifications");
-          await createNotification({
-            type: 'appointment_declined',
-            appointmentId: appointmentId,
-            patientId: appointment.patient_id,
-            clinicId: appointment.clinic_id || "",
-            message: `Your appointment request for ${appointment.appointment_date} at ${appointment.appointment_time} has been declined. Please select another time slot.`
-          });
-        } catch (error) {
-          handleError(error, { action: "createNotification", resource: "notifications" });
-        }
-      }
-
-      toast.success("Appointment Declined", {
-        description: "The appointment request has been declined.",
-      });
-      loadAppointments(); // Reload to refresh the list
-      loadDoctorsWithSchedules(); // Reload doctor schedules
-    } catch (error: any) {
-      const errorResponse = handleError(error, { action: "declineAppointment", resource: "appointments" });
-      toast.error("Action Failed", {
-        description: errorResponse.error?.message || "Failed to decline appointment.",
-      });
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-  };
-
-  const pendingAppointments = appointments.filter(
-    (apt) => apt.status === "pending"
-  );
-  const upcomingAppointments = appointments.filter(
-    (apt) => (apt.status === "scheduled" || apt.status === "accepted") && new Date(apt.appointment_date) >= new Date()
-  );
-  const todayAppointments = upcomingAppointments.filter(
-    (apt) => apt.appointment_date === new Date().toISOString().split("T")[0]
-  );
-
-  const filteredAppointments = statusFilter === "all" 
-    ? appointments 
-    : appointments.filter(apt => apt.status === statusFilter);
-
-  const stats = [
-    {
-      label: "Pending Requests",
-      value: pendingAppointments.length,
-      icon: <Clock className="h-6 w-6" />,
-      gradient: "bg-yellow-500",
-    },
-    {
-      label: "Today's Appointments",
-      value: todayAppointments.length,
-      icon: <Calendar className="h-6 w-6" />,
-      gradient: "bg-green-600",
-    },
-    {
-      label: "Upcoming",
-      value: upcomingAppointments.length,
-      icon: <Clock className="h-6 w-6" />,
-      gradient: "bg-green-600",
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Clean Navbar */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-green-600 rounded-lg">
-                <Stethoscope className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-black">
-                medcAIr - Hospital Portal
-              </h1>
+    <div className="flex h-screen bg-background-light dark:bg-background-dark font-display text-[#0c1b1d] dark:text-white">
+      {/* Sidebar Navigation */}
+      <aside className="w-20 lg:w-64 bg-white dark:bg-gray-800 border-r border-[#e6f3f4] dark:border-gray-700 flex flex-col justify-between py-8 z-20 transition-all">
+        <div>
+          <div className="px-6 mb-12 flex items-center gap-3">
+            <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+              <span className="material-symbols-outlined text-2xl">health_metrics</span>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Notifications */}
-              <div className="relative notification-dropdown">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative border-2 border-gray-400 bg-white hover:bg-gray-50"
-                >
-                  <Bell className="h-4 w-4 text-gray-900" />
-                  {unreadNotificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-green-600 text-white rounded-full text-xs font-bold flex items-center justify-center">
-                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-                    </span>
-                  )}
-                </Button>
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border-2 border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto notification-dropdown">
-                    <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                      <span className="font-bold text-gray-900">Notifications</span>
-                      {unreadNotificationCount > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={markAllNotificationsAsRead}
-                          className="h-6 text-xs"
-                        >
-                          Mark all read
-                        </Button>
-                      )}
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">No notifications</div>
-                      ) : (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                              !notification.read ? 'bg-green-50' : ''
-                            }`}
-                            onClick={() => handleNotificationClick(notification)}
-                          >
-                            <div className="flex items-start gap-2">
-                              <span className="text-lg">
-                                {notification.type === 'appointment_created' ? '📅' : 
-                                 notification.type === 'appointment_accepted' ? '✅' : 
-                                 notification.type === 'appointment_declined' ? '❌' : '🔔'}
-                              </span>
-                              <div className="flex-1">
-                                <p className={`text-sm ${!notification.read ? 'font-bold' : ''}`}>
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {new Date(notification.created_at).toLocaleString()}
-                                </p>
-                              </div>
-                              {!notification.read && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    markNotificationAsRead(notification.id);
-                                  }}
-                                >
-                                  <CheckCircle2 className="h-3 w-3" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <Link href="/hospital/analytics">
-                <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
-                  <BarChart3 className="h-4 w-4 text-gray-900" />
-                  <span className="font-medium text-gray-900">Analytics</span>
-                </Button>
-              </Link>
-              <Link href="/hospital/settings">
-                <Button variant="outline" size="sm" className="flex items-center gap-2 border-2 border-gray-400 bg-white hover:bg-gray-50 text-gray-900 font-medium">
-                  <Settings className="h-4 w-4 text-gray-900" />
-                  <span className="font-medium text-gray-900">Settings</span>
-                </Button>
-              </Link>
-              <div className="hidden sm:block text-sm font-medium text-gray-700">
-                Welcome, <span className="text-black font-bold">{userName}</span>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleLogout}
-                className="border-gray-300 hover:bg-gray-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
+            <span className="hidden lg:block text-xl font-extrabold tracking-tight">Healio<span className="text-primary">.doc</span></span>
           </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Sparkles className="h-8 w-8 text-green-600" />
-            <h2 className="text-4xl md:text-5xl font-bold text-black">
-              Hospital Dashboard
-            </h2>
-          </div>
-          <p className="text-lg text-gray-700 font-medium">Manage appointments, schedules, and patient care</p>
-        </div>
-
-        {/* Vibrant Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {stats.map((stat, idx) => (
-            <div
-              key={idx}
-              className={`relative overflow-hidden rounded-lg ${stat.gradient} p-6 shadow-md transform hover:scale-105 transition-all duration-300`}
-            >
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm text-white">
-                    {stat.icon}
-                  </div>
-                </div>
-                <p className="text-sm font-semibold text-white opacity-90 mb-1">{stat.label}</p>
-                <p className="text-4xl font-bold text-white">{stat.value}</p>
-              </div>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            </div>
-          ))}
-        </div>
-
-        {/* Actions Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <h3 className="text-2xl font-bold text-gray-900">Appointments</h3>
-            <div className="flex gap-2 border-r border-gray-300 pr-3 mr-3">
-              <Button
-                variant={viewMode === "list" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className={viewMode === "list" ? "bg-green-600 text-white" : ""}
+          <nav className="space-y-2 px-3">
+            {[
+              { icon: "dashboard", label: "Overview", active: true },
+              { icon: "calendar_month", label: "Schedule", active: false },
+              { icon: "group", label: "Patients", active: false },
+              { icon: "chat", label: "Messages", active: false, badge: 3 },
+              { icon: "payments", label: "Finances", active: false },
+              { icon: "settings", label: "Settings", active: false },
+            ].map((item, idx) => (
+              <a
+                key={idx}
+                href="#"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${item.active ? 'bg-primary text-white shadow-lg shadow-primary/25 font-bold' : 'text-gray-500 hover:bg-[#e6f3f4] dark:hover:bg-gray-700 hover:text-primary'}`}
               >
-                List View
-              </Button>
-              <Button
-                variant={viewMode === "schedule" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("schedule")}
-                className={viewMode === "schedule" ? "bg-green-600 text-white" : ""}
-              >
-                Schedule View
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={statusFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("all")}
-                className={statusFilter === "all" ? "bg-green-600 text-white" : ""}
-              >
-                All
-              </Button>
-              <Button
-                variant={statusFilter === "scheduled" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("scheduled")}
-                className={statusFilter === "scheduled" ? "bg-green-600 text-white" : ""}
-              >
-                Scheduled
-              </Button>
-              <Button
-                variant={statusFilter === "pending" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("pending")}
-                className={statusFilter === "pending" ? "bg-yellow-500 text-white" : ""}
-              >
-                Pending
-                {pendingAppointments.length > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">
-                    {pendingAppointments.length}
+                <span className={`material-symbols-outlined ${item.active ? 'fill-1' : ''}`}>{item.icon}</span>
+                <span className="hidden lg:block font-medium">{item.label}</span>
+                {item.badge && (
+                  <span className="hidden lg:flex ml-auto size-5 bg-red-500 text-white text-xs font-bold items-center justify-center rounded-full">
+                    {item.badge}
                   </span>
                 )}
-              </Button>
-              <Button
-                variant={statusFilter === "completed" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("completed")}
-                className={statusFilter === "completed" ? "bg-green-600 text-white" : ""}
-              >
-                Completed
-              </Button>
+              </a>
+            ))}
+          </nav>
+        </div>
+        <div className="px-6">
+          <div className="hidden lg:flex items-center gap-3 p-3 bg-[#e6f3f4] dark:bg-gray-700/50 rounded-xl">
+            <div className="size-10 rounded-full bg-cover bg-center border-2 border-white" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBSNpjkgHyB7Br7jetQgTz1iMCfB4oMZnt2EJ112Izcaq1yVkHs8pVnjuJas_kanGUfehMF0WYqzBSZ-fsFz_XyVZi_7qAJUDTGxAP_u3F4SAQnn2RdEZRFZbBIPAu6OgTAche-HiWpmw_DuTBwehwwtNq8pEEwB4UWYI9pZNBxT0nROliuzgJXWwNc8e5J6YsNOy931tDvVBOj0l4i2SWvD_iMNQQci7TViNAu8dz7I0E6GMGTeFhs4vYfrPw4iN7Wh55YBznqvg')" }}></div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate">{userName || "Dr. Smith"}</p>
+              <p className="text-xs text-primary font-medium truncate">Cardiologist</p>
             </div>
+            <button onClick={() => supabase.auth.signOut().then(() => router.push('/auth/login'))} className="ml-auto text-gray-400 hover:text-red-500">
+              <span className="material-symbols-outlined">logout</span>
+            </button>
           </div>
         </div>
+      </aside>
 
-        {/* Appointments List/Schedule */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-            <p className="text-gray-600 mt-4 font-medium">Loading appointments...</p>
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-8 py-5 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+            <p className="text-sm text-gray-500 font-medium">Have a nice day, Dr. {userName.split(' ')[0] || "Smith"}!</p>
           </div>
-        ) : filteredAppointments.length === 0 ? (
-              <Card className="border border-gray-200 shadow-sm bg-white">
-                <CardContent className="pt-6 text-center py-12">
-                  <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-xl font-bold text-black mb-2">No appointments found</p>
-                  <p className="text-gray-600 mb-4">Create your first appointment to get started</p>
-                  <Button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-green-600 text-white hover:bg-green-700"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Appointment
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : viewMode === "schedule" ? (
-              // Schedule View - Group by date
-              (() => {
-                // Group appointments by date
-                const groupedByDate = filteredAppointments.reduce((acc, apt) => {
-                  const date = apt.appointment_date;
-                  if (!acc[date]) {
-                    acc[date] = [];
-                  }
-                  acc[date].push(apt);
-                  return acc;
-                }, {} as Record<string, typeof filteredAppointments>);
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center bg-white dark:bg-gray-800 rounded-xl px-4 py-2.5 border border-[#e6f3f4] dark:border-gray-700 w-64 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <Search className="size-4 text-gray-400 mr-2" />
+              <input type="text" placeholder="Search appointments..." className="bg-transparent border-none text-sm w-full focus:ring-0 placeholder:text-gray-400" />
+            </div>
+            <button className="relative p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-[#e6f3f4] dark:border-gray-700 text-gray-500 hover:text-primary transition-colors shadow-sm">
+              <Bell className="size-5" />
+              <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+          </div>
+        </header>
 
-                // Sort dates
-                const sortedDates = Object.keys(groupedByDate).sort();
-
-                return (
-                  <div className="space-y-6">
-                    {sortedDates.map((date) => {
-                      const dateAppointments = groupedByDate[date];
-                      // Sort appointments by time
-                      const sortedAppointments = [...dateAppointments].sort((a, b) => {
-                        return a.appointment_time.localeCompare(b.appointment_time);
-                      });
-
-                      // Calculate end time (15 minutes after start)
-                      const formatEndTime = (startTime: string) => {
-                        const [hours, minutes] = startTime.split(':').map(Number);
-                        const startDate = new Date();
-                        startDate.setHours(hours, minutes, 0, 0);
-                        const endDate = new Date(startDate.getTime() + 15 * 60 * 1000);
-                        return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-                      };
-
-                      return (
-                        <Card key={date} className="border-2 border-gray-200 shadow-md bg-white">
-                          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-gray-200">
-                            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                              <Calendar className="h-5 w-5 text-green-600" />
-                              {new Date(date).toLocaleDateString("en-US", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </CardTitle>
-                            <CardDescription className="text-gray-700 font-medium mt-1">
-                              {sortedAppointments.length} appointment{sortedAppointments.length !== 1 ? 's' : ''} scheduled
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {sortedAppointments.map((appointment) => {
-                                const statusColor = 
-                                  appointment.status === "pending" ? "border-yellow-500 bg-yellow-50" :
-                                  appointment.status === "accepted" || appointment.status === "scheduled" ? "border-green-500 bg-green-50" :
-                                  appointment.status === "completed" ? "border-blue-500 bg-blue-50" :
-                                  appointment.status === "declined" || appointment.status === "cancelled" ? "border-red-500 bg-red-50" :
-                                  "border-gray-300 bg-gray-50";
-
-                                return (
-                                  <div
-                                    key={appointment.id}
-                                    className={`p-4 rounded-lg border-2 ${statusColor} shadow-sm hover:shadow-md transition-all`}
-                                  >
-                                    <div className="flex items-center justify-between mb-3">
-                                      <div className="flex items-center gap-2">
-                                        <Clock className="h-5 w-5 text-gray-700" />
-                                        <div>
-                                          <div className="font-bold text-lg text-gray-900">
-                                            {appointment.appointment_time}
-                                          </div>
-                                          <div className="text-xs text-gray-600">
-                                            - {formatEndTime(appointment.appointment_time)}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <span
-                                        className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                          appointment.status === "pending"
-                                            ? "bg-yellow-500 text-white"
-                                            : appointment.status === "accepted" || appointment.status === "scheduled"
-                                            ? "bg-green-600 text-white"
-                                            : appointment.status === "completed"
-                                            ? "bg-blue-600 text-white"
-                                            : appointment.status === "declined" || appointment.status === "cancelled"
-                                            ? "bg-red-500 text-white"
-                                            : "bg-gray-400 text-white"
-                                        }`}
-                                      >
-                                        {appointment.status.toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <div>
-                                        <p className="text-xs font-semibold text-gray-600 mb-1">Patient</p>
-                                        <p className="font-semibold text-gray-900">{appointment.patient.full_name}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-semibold text-gray-600 mb-1">Doctor</p>
-                                        <p className="font-medium text-gray-900">{appointment.doctor.name}</p>
-                                      </div>
-                                      <div>
-                                        <p className="text-xs font-semibold text-gray-600 mb-1">Clinic</p>
-                                        <p className="text-sm text-gray-800">{appointment.clinic.name}</p>
-                                      </div>
-                                    </div>
-                                    {appointment.status === "pending" && (
-                                      <div className="mt-4 pt-3 border-t border-gray-300 flex gap-2">
-                                        <Button
-                                          size="sm"
-                                          className="flex-1 bg-green-600 text-white hover:bg-green-700 text-xs"
-                                          onClick={() => handleAcceptAppointment(appointment.id)}
-                                        >
-                                          Accept
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="flex-1 border-red-300 text-red-700 hover:bg-red-50 text-xs"
-                                          onClick={() => handleDeclineAppointment(appointment.id)}
-                                        >
-                                          Decline
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+        <div className="p-8 space-y-8">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { label: "Total Patients", value: stats.totalPatients, icon: "group", color: "text-blue-500", bg: "bg-blue-500/10", trend: "+12%" },
+              { label: "Appointments", value: stats.appointmentsPending + appointments.length, icon: "calendar_month", color: "text-purple-500", bg: "bg-purple-500/10", trend: "+5%" },
+              { label: "New Consults", value: stats.patientsToday, icon: "person_add", color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+18%" },
+              { label: "Earnings", value: `$${stats.revenue}`, icon: "payments", color: "text-amber-500", bg: "bg-amber-500/10", trend: "+8%" },
+            ].map((stat, idx) => (
+              <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
+                    <span className="material-symbols-outlined">{stat.icon}</span>
                   </div>
-                );
-              })()
-            ) : (
-              // List View
+                  <span className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                    <TrendingUp className="size-3 mr-1" />
+                    {stat.trend}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-extrabold mb-1">{stat.value}</h3>
+                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Today's Schedule */}
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold">Today's Appointments</h2>
+                  <p className="text-xs text-gray-500 font-medium">Monday, 14 Oct 2023</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <Filter className="size-3.5" />
+                    Filter
+                  </button>
+                  <button className="flex items-center gap-2 px-3 py-1.5 text-sm font-bold text-primary bg-primary/10 rounded-lg hover:bg-primary/20">
+                    <Calendar className="size-3.5" />
+                    View All
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-4">
-                {filteredAppointments.map((appointment) => (
-                <Card
-                  key={appointment.id}
-                  className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
-                >
-                  <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "pending" ? "bg-yellow-500" :
-                    appointment.status === "accepted" || appointment.status === "scheduled" ? "bg-green-600" :
-                    appointment.status === "completed" ? "bg-green-600" :
-                    appointment.status === "declined" ? "bg-red-500" :
-                    appointment.status === "cancelled" ? "bg-red-500" :
-                    "bg-gray-400"
-                  }`}></div>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-3 flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Calendar className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <span className="font-bold text-lg text-gray-900">
-                              {new Date(appointment.appointment_date).toLocaleDateString("en-US", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </span>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Clock className="h-4 w-4 text-gray-500" />
-                              <span className="text-gray-700 font-semibold">{appointment.appointment_time}</span>
-                            </div>
-                          </div>
+                {loading ? (
+                  <div className="text-center py-8 text-gray-500">Loading appointments...</div>
+                ) : appointments.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No scheduled appointments today.</div>
+                ) : (
+                  appointments.map((appt, idx) => (
+                    <div key={appt.id} className="group flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-xl border border-transparent hover:border-gray-100 hover:bg-background-light dark:hover:bg-gray-700/30 transition-all">
+                      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-600 px-4 py-3 rounded-xl text-center min-w-[80px] shadow-sm">
+                        <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider">{appt.appointment_time.slice(0, 5)}</span>
+                        <span className="block text-primary font-bold">{parseInt(appt.appointment_time) >= 12 ? 'PM' : 'AM'}</span>
+                      </div>
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="size-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-lg">
+                          {appt.patient.full_name[0]}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ml-12">
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 mb-1">PATIENT</p>
-                            <p className="font-semibold text-gray-900">{appointment.patient.full_name}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 mb-1">CLINIC</p>
-                            <p className="font-semibold text-gray-900">{appointment.clinic.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 mb-1">DOCTOR</p>
-                            <p className="font-semibold text-gray-900">{appointment.doctor.name}</p>
+                        <div>
+                          <h4 className="font-bold text-[#0c1b1d] dark:text-white group-hover:text-primary transition-colors">{appt.patient.full_name}</h4>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                            <span className="flex items-center gap-1"><span className="material-symbols-outlined !text-xs">female</span> 24 yrs</span>
+                            <span className="size-1 bg-gray-300 rounded-full"></span>
+                            <span className="flex items-center gap-1">New Patient</span>
                           </div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <span
-                          className={`px-4 py-2 rounded-full text-sm font-bold ${
-                            appointment.status === "pending"
-                              ? "bg-yellow-500 text-white"
-                              : appointment.status === "accepted" || appointment.status === "scheduled"
-                              ? "bg-green-600 text-white"
-                              : appointment.status === "completed"
-                              ? "bg-green-600 text-white"
-                              : appointment.status === "declined" || appointment.status === "cancelled"
-                              ? "bg-red-500 text-white"
-                              : "bg-gray-400 text-white"
-                          }`}
-                        >
-                          {appointment.status.toUpperCase()}
-                        </span>
+
+                      <div className="flex items-center gap-2 my-2 md:my-0">
+                        {appt.type === "In-Person" ? (
+                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100 flex items-center gap-1">
+                            <span className="material-symbols-outlined !text-sm">stethoscope</span> General Checkup
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-bold border border-purple-100 flex items-center gap-1">
+                            <Video className="size-3" /> Video Consult
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 md:opacity-0 group-hover:opacity-100 transition-all ml-auto">
+                        <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Accept">
+                          <span className="material-symbols-outlined">check</span>
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancel">
+                          <span className="material-symbols-outlined">close</span>
+                        </button>
+                        <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                          <MoreVertical className="size-5" />
+                        </button>
                       </div>
                     </div>
-                    {appointment.status === "pending" && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 flex gap-3">
-                        <Button
-                          size="sm"
-                          className="flex-1 bg-green-600 text-white hover:bg-green-700"
-                          onClick={() => handleAcceptAppointment(appointment.id)}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
-                          onClick={() => handleDeclineAppointment(appointment.id)}
-                        >
-                          Decline
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                  ))
+                )}
+              </div>
             </div>
-          )
-        }
 
-        {/* Doctors & Schedules Section */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-black mb-2">Doctors & Schedules</h2>
-              <p className="text-gray-600">View doctors, their upcoming schedules, and patient history</p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setShowDoctorModal(true)}
-                className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
-              >
-                <User className="h-5 w-5 mr-2" />
-                Add Doctor
-              </Button>
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg font-bold"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Create Appointment
-              </Button>
+            {/* Right Column: Waiting Room & Quick Actions */}
+            <div className="space-y-6">
+              {/* Now Waiting */}
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-bold">Waiting Room</h3>
+                  <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs font-bold rounded-md">3 Active</span>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { name: "John Doe", time: "10 mins", status: "In Lobby" },
+                    { name: "Sarah Connor", time: "5 mins", status: "Checked In" },
+                    { name: "Mike Ross", time: "2 mins", status: "Arriving" }
+                  ].map((patient, idx) => (
+                    <div key={idx} className="flex items-center gap-3 pb-4 border-b border-gray-50 last:border-0 last:pb-0">
+                      <div className="relative">
+                        <div className="size-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-400">{patient.name[0]}</div>
+                        <div className="absolute -bottom-0.5 -right-0.5 size-3 bg-green-500 border-2 border-white rounded-full"></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold">{patient.name}</p>
+                        <p className="text-xs text-gray-500">Waiting for {patient.time}</p>
+                      </div>
+                      <button className="text-xs font-bold text-primary hover:underline">Call</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="bg-primary rounded-2xl p-6 text-white shadow-xl shadow-primary/20 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                <h3 className="font-bold text-lg mb-4 relative z-10">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3 relative z-10">
+                  <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
+                    <Calendar className="size-6" />
+                    <span className="text-xs font-bold">Add Slot</span>
+                  </button>
+                  <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
+                    <span className="material-symbols-outlined text-2xl">person_add</span>
+                    <span className="text-xs font-bold">New Patient</span>
+                  </button>
+                  <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
+                    <span className="material-symbols-outlined text-2xl">prescriptions</span>
+                    <span className="text-xs font-bold">Rx</span>
+                  </button>
+                  <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
+                    <Video className="size-6" />
+                    <span className="text-xs font-bold">Tele-OPD</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-
-          {loadingDoctors ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="pt-6">
-                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
-                    <div className="h-20 bg-gray-200 rounded"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : doctorsWithSchedules.length === 0 ? (
-                  <Card>
-              <CardContent className="pt-6 text-center py-12">
-                <User className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-xl font-bold text-black mb-2">No doctors found</p>
-                <p className="text-gray-600 mb-4">Add doctors to see their schedules and appointment history</p>
-                <Button 
-                  onClick={() => setShowDoctorModal(true)}
-                  className="bg-green-600 text-white hover:bg-green-700"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Add Doctor
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {doctorsWithSchedules.map((doctor) => {
-                const isExpanded = expandedDoctors.has(doctor.id);
-                const totalUpcoming = doctor.upcomingAppointments.length;
-                const totalHistory = doctor.patientHistory.length;
-
-                return (
-                  <Card
-                    key={doctor.id}
-                    className="border-0 shadow-lg bg-white hover:shadow-xl transition-all"
-                  >
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                              <User className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                              <h3 className="text-xl font-bold text-black">{doctor.name}</h3>
-                              <p className="text-sm text-gray-600">{doctor.specialization}</p>
-                            </div>
-                          </div>
-                          <div className="ml-12 mt-2">
-                            <p className="text-sm text-gray-500">
-                              <span className="font-semibold">Clinic:</span> {doctor.clinic_name}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-green-600">{totalUpcoming}</div>
-                            <div className="text-xs text-gray-500">Upcoming</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-gray-600">{totalHistory}</div>
-                            <div className="text-xs text-gray-500">History</div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleDoctorExpanded(doctor.id)}
-                            className="ml-2"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="h-5 w-5" />
-                            ) : (
-                              <ChevronDown className="h-5 w-5" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {isExpanded && (
-                        <div className="mt-6 pt-6 border-t border-gray-200">
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Upcoming Schedule */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-4">
-                                <Calendar className="h-5 w-5 text-green-600" />
-                                <h4 className="text-lg font-bold text-black">Upcoming Schedule</h4>
-                                <span className="ml-auto px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                  {totalUpcoming}
-                                </span>
-                              </div>
-                              {totalUpcoming === 0 ? (
-                                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                                  <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                  <p className="text-sm text-gray-500">No upcoming appointments</p>
-                                </div>
-                              ) : (
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
-                                  {doctor.upcomingAppointments.map((apt) => (
-                                    <div
-                                      key={apt.id}
-                                      className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-                                    >
-                                      <div className="flex items-start justify-between mb-2">
-                                        <div>
-                                          <p className="font-semibold text-black">{apt.patient.full_name}</p>
-                                          <p className="text-xs text-gray-500">{apt.clinic.name}</p>
-                                        </div>
-                                        <span
-                                          className={`px-2 py-1 rounded text-xs font-semibold ${
-                                            apt.status === "pending"
-                                              ? "bg-yellow-100 text-yellow-700"
-                                              : apt.status === "accepted" || apt.status === "scheduled"
-                                              ? "bg-green-100 text-green-700"
-                                              : "bg-gray-100 text-gray-700"
-                                          }`}
-                                        >
-                                          {apt.status}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="h-3 w-3" />
-                                          {new Date(apt.appointment_date).toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                          })}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3" />
-                                          {apt.appointment_time}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Patient History */}
-                            <div>
-                              <div className="flex items-center gap-2 mb-4">
-                                <History className="h-5 w-5 text-gray-600" />
-                                <h4 className="text-lg font-bold text-black">Patient History</h4>
-                                <span className="ml-auto px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
-                                  {totalHistory}
-                                </span>
-                              </div>
-                              {totalHistory === 0 ? (
-                                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                                  <History className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                                  <p className="text-sm text-gray-500">No patient history</p>
-                                </div>
-                              ) : (
-                                <div className="space-y-3 max-h-96 overflow-y-auto">
-                                  {doctor.patientHistory.map((apt) => (
-                                    <div
-                                      key={apt.id}
-                                      className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-                                    >
-                                      <div className="flex items-start justify-between mb-2">
-                                        <div>
-                                          <p className="font-semibold text-black">{apt.patient.full_name}</p>
-                                          <p className="text-xs text-gray-500">{apt.clinic.name}</p>
-                                        </div>
-                                        <span
-                                          className={`px-2 py-1 rounded text-xs font-semibold ${
-                                            apt.status === "completed"
-                                              ? "bg-green-100 text-green-700"
-                                              : apt.status === "cancelled"
-                                              ? "bg-red-100 text-red-700"
-                                              : "bg-gray-100 text-gray-700"
-                                          }`}
-                                        >
-                                          {apt.status}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                                        <div className="flex items-center gap-1">
-                                          <Calendar className="h-3 w-3" />
-                                          {new Date(apt.appointment_date).toLocaleDateString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            year: "numeric",
-                                          })}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3" />
-                                          {apt.appointment_time}
-                                        </div>
-                                      </div>
-                                      {apt.notes && (
-                                        <p className="text-xs text-gray-500 mt-2 italic">Note: {apt.notes}</p>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        </div>
       </main>
-
-      {/* Create Appointment Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-white">
-            <CardHeader className="bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold">Create New Appointment</CardTitle>
-                  <CardDescription className="text-white/90 mt-1">Book an appointment for a patient</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-white hover:bg-white/20"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-bold text-blue-900 mb-1">Note: Patient Booking</p>
-                    <p className="text-sm text-blue-800">
-                      Patients can book appointments directly through the patient portal. 
-                      To manage appointment slots, go to Settings to create and manage available time slots.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">To enable direct appointment creation by hospitals,</p>
-                <p className="text-sm text-gray-500 mb-6">this feature requires server-side implementation with admin API access.</p>
-                <div className="flex gap-3 justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowCreateModal(false)}
-                    className="border-2"
-                  >
-                    Close
-                  </Button>
-                  <Link href="/hospital/settings">
-                    <Button
-                      className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:opacity-90 font-bold shadow-lg"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Go to Settings
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Add Doctor Modal */}
-      {showDoctorModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-2xl bg-white">
-            <CardHeader className="bg-green-600 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl font-bold">Add Doctor</CardTitle>
-                  <CardDescription className="text-white/90 mt-1">Add a new doctor to your clinic</CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setShowDoctorModal(false);
-                    setDoctorForm({
-                      name: "",
-                      doctor_id: "",
-                      specialization: "",
-                      degree: "",
-                      email: "",
-                      phone: "",
-                      clinic_id: "",
-                    });
-                  }}
-                  className="text-white hover:bg-white/20"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleCreateDoctor} className="space-y-4">
-                <div>
-                  <Label htmlFor="clinic_id" className="text-black font-semibold">Select Clinic *</Label>
-                  <select
-                    id="clinic_id"
-                    value={doctorForm.clinic_id}
-                    onChange={(e) => setDoctorForm({ ...doctorForm, clinic_id: e.target.value })}
-                    className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black mt-1"
-                  >
-                    <option value="">Select a clinic</option>
-                    {clinics.map((clinic: Clinic) => (
-                      <option key={clinic.id} value={clinic.id}>
-                        {clinic.name} - {clinic.department}
-                      </option>
-                    ))}
-                  </select>
-                  {clinics.length === 0 && (
-                    <p className="text-sm text-gray-500 mt-1">No clinics found. Please add clinics in Settings first.</p>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="doctor_name" className="text-black font-semibold">Doctor Name *</Label>
-                  <Input
-                    id="doctor_name"
-                    value={doctorForm.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, name: e.target.value })
-                    }
-                    required
-                    placeholder="Dr. John Doe"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="doctor_id" className="text-black font-semibold">License ID / Doctor ID</Label>
-                  <Input
-                    id="doctor_id"
-                    value={doctorForm.doctor_id}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, doctor_id: e.target.value })
-                    }
-                    placeholder="MD12345"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="specialization" className="text-black font-semibold">Specialization / Occupation *</Label>
-                  <Input
-                    id="specialization"
-                    value={doctorForm.specialization}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, specialization: e.target.value })
-                    }
-                    required
-                    placeholder="Cardiologist"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="degree" className="text-black font-semibold">Degree</Label>
-                  <Input
-                    id="degree"
-                    value={doctorForm.degree}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, degree: e.target.value })
-                    }
-                    placeholder="MD, MBBS, etc."
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="doctor_email" className="text-black font-semibold">Email</Label>
-                  <Input
-                    id="doctor_email"
-                    type="email"
-                    value={doctorForm.email}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, email: e.target.value })
-                    }
-                    placeholder="doctor@example.com"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="doctor_phone" className="text-black font-semibold">Phone</Label>
-                  <Input
-                    id="doctor_phone"
-                    type="tel"
-                    value={doctorForm.phone}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDoctorForm({ ...doctorForm, phone: e.target.value })
-                    }
-                    placeholder="+1-555-0100"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowDoctorModal(false);
-                      setDoctorForm({
-                        name: "",
-                        doctor_id: "",
-                        specialization: "",
-                        degree: "",
-                        email: "",
-                        phone: "",
-                        clinic_id: "",
-                      });
-                    }}
-                    className="flex-1 border-2"
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="flex-1 bg-green-600 text-white hover:bg-green-700">
-                    Add Doctor
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
