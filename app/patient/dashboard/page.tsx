@@ -179,7 +179,7 @@ export default function PatientDashboard() {
           </div>
           <div className="flex items-center gap-6">
             <nav className="hidden lg:flex items-center gap-8">
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Find Doctors</a>
+              <Link href="/patient/dashboard" className="text-sm font-medium hover:text-primary transition-colors">Find Doctors</Link>
               <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Medical Records</a>
               <Link href="/patient/appointments" className="text-sm font-medium hover:text-primary transition-colors">My Appointments</Link>
             </nav>

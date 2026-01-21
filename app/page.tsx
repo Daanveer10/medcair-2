@@ -16,10 +16,10 @@ export default function Home() {
               <span className="text-xl font-extrabold tracking-tight text-primary">Healio</span>
             </div>
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#" className="text-sm font-semibold hover:text-primary transition-colors">Find Doctors</a>
-              <a href="#" className="text-sm font-semibold hover:text-primary transition-colors">Video Consult</a>
-              <a href="#" className="text-sm font-semibold hover:text-primary transition-colors">Medicines</a>
-              <a href="#" className="text-sm font-semibold hover:text-primary transition-colors">Records</a>
+              <Link href="/patient/dashboard" className="text-sm font-semibold hover:text-primary transition-colors">Find Doctors</Link>
+              <Link href="/patient/dashboard" className="text-sm font-semibold hover:text-primary transition-colors">Video Consult</Link>
+              <Link href="#" className="text-sm font-semibold hover:text-primary transition-colors">Medicines</Link>
+              <Link href="#" className="text-sm font-semibold hover:text-primary transition-colors">Records</Link>
             </nav>
             <div className="flex items-center gap-4">
               <Link href="/auth/login">
@@ -63,9 +63,11 @@ export default function Home() {
                       <span className="material-symbols-outlined text-slate-400">search</span>
                       <input type="text" placeholder="Search doctors, clinics..." className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-slate-400" />
                     </div>
-                    <button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap">
-                      Find Now
-                    </button>
+                    <Link href="/patient/dashboard">
+                      <button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap">
+                        Find Now
+                      </button>
+                    </Link>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">

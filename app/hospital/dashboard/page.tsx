@@ -4,18 +4,20 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import {
-  Users,
   Calendar,
-  Clock,
-  TrendingUp,
+  Filter,
   Search,
   Bell,
+  Settings,
   MoreVertical,
-  MapPin,
-  Phone,
+  TrendingUp,
+  Users,
   Video,
+  Clock,
+  MapPin,
   ChevronRight,
-  Filter
+  User,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -178,6 +180,24 @@ export default function HospitalDashboard() {
     }
   };
 
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Optimistic update or reload
+      setAppointments((prev: Appointment[]) => prev.map((a: Appointment) => a.id === id ? { ...a, status } : a));
+      toast.success(`Appointment ${status}`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to update status");
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background-light dark:bg-background-dark font-display text-[#0c1b1d] dark:text-white">
       {/* Sidebar Navigation */}
@@ -191,16 +211,16 @@ export default function HospitalDashboard() {
           </div>
           <nav className="space-y-2 px-3">
             {[
-              { icon: "dashboard", label: "Overview", active: true },
-              { icon: "calendar_month", label: "Schedule", active: false },
-              { icon: "group", label: "Patients", active: false },
-              { icon: "chat", label: "Messages", active: false, badge: 3 },
-              { icon: "payments", label: "Finances", active: false },
-              { icon: "settings", label: "Settings", active: false },
+              { icon: "dashboard", label: "Overview", active: true, href: "/hospital/dashboard" },
+              { icon: "calendar_month", label: "Schedule", active: false, href: "#" },
+              { icon: "group", label: "Patients", active: false, href: "#" },
+              { icon: "chat", label: "Messages", active: false, badge: 3, href: "#" },
+              { icon: "payments", label: "Finances", active: false, href: "/hospital/analytics" },
+              { icon: "settings", label: "Settings", active: false, href: "/hospital/settings" },
             ].map((item, idx) => (
-              <a
+              <Link
                 key={idx}
-                href="#"
+                href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${item.active ? 'bg-primary text-white shadow-lg shadow-primary/25 font-bold' : 'text-gray-500 hover:bg-[#e6f3f4] dark:hover:bg-gray-700 hover:text-primary'}`}
               >
                 <span className={`material-symbols-outlined ${item.active ? 'fill-1' : ''}`}>{item.icon}</span>
@@ -210,7 +230,7 @@ export default function HospitalDashboard() {
                     {item.badge}
                   </span>
                 )}
-              </a>
+              </Link>
             ))}
           </nav>
         </div>
@@ -333,15 +353,25 @@ export default function HospitalDashboard() {
                       </div>
 
                       <div className="flex gap-2 md:opacity-0 group-hover:opacity-100 transition-all ml-auto">
-                        <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Accept">
+                        <button
+                          onClick={() => handleUpdateStatus(appt.id, 'accepted')}
+                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Accept"
+                        >
                           <span className="material-symbols-outlined">check</span>
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancel">
+                        <button
+                          onClick={() => handleUpdateStatus(appt.id, 'cancelled')}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Cancel"
+                        >
                           <span className="material-symbols-outlined">close</span>
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                          <MoreVertical className="size-5" />
-                        </button>
+                        <Link href={`/patient/appointments/${appt.id}`}>
+                          <button className="p-2 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors" title="View Details">
+                            <span className="material-symbols-outlined">visibility</span>
+                          </button>
+                        </Link>
                       </div>
                     </div>
                   ))
