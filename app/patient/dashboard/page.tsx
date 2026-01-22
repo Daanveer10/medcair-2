@@ -181,7 +181,7 @@ export default function PatientDashboard() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold">Filters</h3>
-                  <button onClick={() => setShowFavoritesOnly(false)} className="text-xs text-primary font-bold hover:underline">Clear all</button>
+                  {/* <button className="text-xs text-primary font-bold hover:underline">Clear all</button> */}
                 </div>
                 <div className="space-y-6">
                   {/* Availability */}
