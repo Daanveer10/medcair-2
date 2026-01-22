@@ -163,7 +163,11 @@ export default function DoctorDashboard() {
 
     return (
         <div className="min-h-screen font-display text-white relative selection:bg-primary/30">
-            <ShaderBackground />
+            {/* Static Background */}
+            <div className="fixed inset-0 z-[-1] bg-black">
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px]" />
+            </div>
 
             {/* Navbar */}
             <nav className="sticky top-0 z-50 w-full bg-black/20 backdrop-blur-md border-b border-white/10">
