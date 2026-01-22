@@ -49,6 +49,8 @@ export function LoginForm({
 
         if (profile?.role === "hospital") {
           router.push("/hospital/dashboard");
+        } else if (profile?.role === "doctor") {
+          router.push("/doctor/dashboard");
         } else {
           router.push("/patient/dashboard");
         }
