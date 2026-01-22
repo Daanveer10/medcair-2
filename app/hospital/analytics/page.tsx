@@ -67,7 +67,7 @@ export default function HospitalAnalytics() {
         .from("hospitals")
         .select("id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (!hospital) return;
 
@@ -219,8 +219,8 @@ export default function HospitalAnalytics() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-4xl font-bold text-black mb-2">Analytics Dashboard</h2>
-              <p className="text-gray-600">Insights into your hospital's appointment data</p>
+              <h2 className="text-4xl font-bold text-black dark:text-white mb-2">Analytics Dashboard</h2>
+              <p className="text-gray-600 dark:text-gray-400">Insights into your hospital's appointment data</p>
             </div>
             <div className="flex gap-2">
               <Button
@@ -252,11 +252,11 @@ export default function HospitalAnalytics() {
         </div>
 
         {!analytics ? (
-          <Card>
+          <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
             <CardContent className="pt-6 text-center py-12">
-              <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-xl font-bold text-black mb-2">No data available</p>
-              <p className="text-gray-600">Start booking appointments to see analytics</p>
+              <BarChart3 className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">No data available</p>
+              <p className="text-gray-600 dark:text-gray-400">Start booking appointments to see analytics</p>
             </CardContent>
           </Card>
         ) : (
@@ -311,17 +311,17 @@ export default function HospitalAnalytics() {
 
             {/* Status Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <Card>
+              <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
                 <CardHeader>
-                  <CardTitle>Appointments by Status</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white">Appointments by Status</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {analytics.appointmentsByStatus.map((item) => (
                       <div key={item.status} className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900 capitalize">{item.status}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-200 capitalize">{item.status}</span>
                         <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-green-600 h-2 rounded-full"
                               style={{
@@ -329,7 +329,7 @@ export default function HospitalAnalytics() {
                               }}
                             ></div>
                           </div>
-                          <span className="font-bold text-gray-900 w-12 text-right">{item.count}</span>
+                          <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
                         </div>
                       </div>
                     ))}
@@ -337,17 +337,17 @@ export default function HospitalAnalytics() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
                 <CardHeader>
-                  <CardTitle>Appointments by Clinic</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white">Appointments by Clinic</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {analytics.appointmentsByClinic.slice(0, 5).map((item) => (
                       <div key={item.clinicName} className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900">{item.clinicName}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-200">{item.clinicName}</span>
                         <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                          <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-blue-600 h-2 rounded-full"
                               style={{
@@ -355,7 +355,7 @@ export default function HospitalAnalytics() {
                               }}
                             ></div>
                           </div>
-                          <span className="font-bold text-gray-900 w-12 text-right">{item.count}</span>
+                          <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
                         </div>
                       </div>
                     ))}
@@ -365,17 +365,17 @@ export default function HospitalAnalytics() {
             </div>
 
             {/* Popular Time Slots */}
-            <Card className="mb-8">
+            <Card className="mb-8 bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
               <CardHeader>
-                <CardTitle>Popular Time Slots</CardTitle>
-                <CardDescription>Most booked appointment times</CardDescription>
+                <CardTitle className="text-gray-900 dark:text-white">Popular Time Slots</CardTitle>
+                <CardDescription className="text-gray-500 dark:text-gray-400">Most booked appointment times</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {analytics.popularTimeSlots.map((slot) => (
-                    <div key={slot.time} className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="font-bold text-lg text-gray-900">{slot.time}</p>
-                      <p className="text-sm text-gray-600 mt-1">{slot.count} appointments</p>
+                    <div key={slot.time} className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <p className="font-bold text-lg text-gray-900 dark:text-white">{slot.time}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{slot.count} appointments</p>
                     </div>
                   ))}
                 </div>
@@ -383,9 +383,9 @@ export default function HospitalAnalytics() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
               <CardHeader>
-                <CardTitle>Appointments Trend (Last 7 Days)</CardTitle>
+                <CardTitle className="text-gray-900 dark:text-white">Appointments Trend (Last 7 Days)</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-end gap-2 h-48">
@@ -399,10 +399,10 @@ export default function HospitalAnalytics() {
                           style={{ height: `${height}%` }}
                           title={`${item.count} appointments`}
                         ></div>
-                        <span className="text-xs text-gray-600 font-semibold">
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
                           {new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </span>
-                        <span className="text-xs font-bold text-gray-900">{item.count}</span>
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">{item.count}</span>
                       </div>
                     );
                   })}

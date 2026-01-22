@@ -127,7 +127,7 @@ export default function HospitalDashboard() {
           appointment_date,
           appointment_time,
           status,
-          type,
+          reason,
           patient:patient_id (full_name, phone_number)
         `)
         .in("status", ["scheduled", "pending", "accepted"])

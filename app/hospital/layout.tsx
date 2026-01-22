@@ -50,6 +50,7 @@ export default function HospitalLayout({
 
     const navItems = [
         { icon: "dashboard", label: "Overview", href: "/hospital/dashboard" },
+        { icon: "stethoscope", label: "Doctors", href: "/hospital/doctors" },
         { icon: "calendar_month", label: "Schedule", href: "#" },
         { icon: "group", label: "Patients", href: "#" },
         { icon: "chat", label: "Messages", badge: 3, href: "#" },
@@ -85,8 +86,8 @@ export default function HospitalLayout({
                                     key={idx}
                                     href={item.href}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${isActive
-                                            ? 'bg-primary text-white shadow-lg shadow-primary/25 font-bold'
-                                            : 'text-gray-500 hover:bg-[#e6f3f4] dark:hover:bg-gray-700 hover:text-primary'
+                                        ? 'bg-primary text-white shadow-lg shadow-primary/25 font-bold'
+                                        : 'text-gray-500 hover:bg-[#e6f3f4] dark:hover:bg-gray-700 hover:text-primary'
                                         }`}
                                 >
                                     <span className={`material-symbols-outlined ${isActive ? 'fill-1' : ''}`}>{item.icon}</span>
