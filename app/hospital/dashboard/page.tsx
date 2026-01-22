@@ -172,18 +172,19 @@ export default function HospitalDashboard() {
         name: app.patient?.full_name || "Unknown",
         time: app.appointment_time,
         status: app.status === 'accepted' ? 'Checked In' : 'Arriving'
+      }));
       setWaitingRoom(transformedWaiting);
 
       // 7. Fetch Doctors (for list view)
       const { data: doctorsData } = await supabase
-          .from("doctors")
-          .select("id, name, specialization, consultation_fee, availability_status, hospital_id");
-        // We really should filter by hospital_id using RLS or explicit check?
-        // The RLS policy "Hospital owners can manage doctors linked to their hospital"
-        // ensures we only see our doctors if we are the hospital owner.
-        // But for clarity let's rely on RLS.
+        .from("doctors")
+        .select("id, name, specialization, consultation_fee, availability_status, hospital_id");
+      // We really should filter by hospital_id using RLS or explicit check?
+      // The RLS policy "Hospital owners can manage doctors linked to their hospital"
+      // ensures we only see our doctors if we are the hospital owner.
+      // But for clarity let's rely on RLS.
 
-        setDoctorsList(doctorsData || []);
+      setDoctorsList(doctorsData || []);
 
 
 
