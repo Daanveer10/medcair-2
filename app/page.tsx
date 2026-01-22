@@ -59,66 +59,62 @@ export default function Home() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative pt-16 pb-24 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <div>
-                  <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase bg-white/10 text-primary-foreground rounded-full border border-white/10 backdrop-blur-sm">
-                    Next-Gen Healthcare
+        <section className="relative pt-32 pb-32 overflow-hidden flex items-center min-h-[80vh]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+            <div className="max-w-4xl mx-auto text-center space-y-10">
+              <div className="animate-in fade-in slide-in-from-bottom-5 duration-1000">
+                <span className="inline-block px-4 py-1.5 mb-6 text-xs font-bold tracking-widest uppercase bg-indigo-500/10 text-indigo-300 rounded-full border border-indigo-500/20 backdrop-blur-md shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                  Next-Gen Healthcare
+                </span>
+                <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-white drop-shadow-xl">
+                  Your Health, <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 animate-gradient-x">
+                    Simplified & Secure.
                   </span>
-                  <h1 className="text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight text-white">
-                    Your Health, <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-primary">Simplified.</span>
-                  </h1>
-                  <p className="mt-6 text-lg text-gray-300 leading-relaxed max-w-lg">
-                    Connect with top specialists, manage medical records securely, and get AI-powered health insights in one platform.
-                  </p>
-                </div>
-                {/* Search Component */}
-                <div className="bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/20 max-w-xl shadow-2xl">
-                  <div className="flex flex-col md:flex-row items-center gap-2">
-                    <div className="flex items-center w-full px-4 py-3 gap-3 border-b md:border-b-0 md:border-r border-white/20">
-                      <MapPin className="size-5 text-gray-400" />
-                      <input type="text" placeholder="Your City" className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-gray-400 text-white" />
-                    </div>
-                    <div className="flex items-center w-full px-4 py-3 gap-3">
-                      <Search className="size-5 text-gray-400" />
-                      <input type="text" placeholder="Search doctors, clinics..." className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-gray-400 text-white" />
-                    </div>
-                    <Link href="/patient/dashboard">
-                      <button className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg font-bold text-sm transition-all whitespace-nowrap shadow-lg">
-                        Find Now
-                      </button>
-                    </Link>
+                </h1>
+                <p className="mt-8 text-xl text-indigo-100/80 leading-relaxed max-w-2xl mx-auto">
+                  Connect with top specialists, manage medical records securely, and get AI-powered health insights in one unified ecosystem.
+                </p>
+              </div>
+
+              {/* Search Component */}
+              <div className="bg-white/5 backdrop-blur-xl p-3 rounded-2xl border border-white/10 max-w-2xl mx-auto shadow-2xl ring-1 ring-white/10">
+                <div className="flex flex-col md:flex-row items-center gap-3">
+                  <div className="flex items-center w-full px-4 py-3 gap-3 bg-white/5 rounded-xl border border-white/5 focus-within:bg-white/10 focus-within:border-white/20 transition-all">
+                    <MapPin className="size-5 text-indigo-300" />
+                    <input
+                      type="text"
+                      placeholder="Your City"
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-indigo-300/50 text-white"
+                    />
                   </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex -space-x-3">
-                    <div className="w-10 h-10 rounded-full border-2 border-primary bg-slate-200 bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBh3764arRW9-UZ7rFIj-3qsTvQ9gsQcpYFWEX4CMer5i96BjHtupsS_oswY02rLMdIBP-EpoFF73c0hEpeHYR1SnMUAiDZaIuC6hVz3xOY9sK2kUYDzWfL9qB7vcrTJEQWV5RugNuDBtv8e0s3KLgSQltrV-6FaO4menoqvEs30sirSF6XbhhwVLCyd_NZ-IaMf6Ywgx0GSga7ISa3VgBYGqxbDeOvigepqiTHHpHyyeEH587661ORHHpGG-zfJdWC6kJS93oesQ')" }}></div>
-                    <div className="w-10 h-10 rounded-full border-2 border-primary bg-slate-200 bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZGJbLWt8qhMKijYvYYKtJ27QGS2cT97PVx0OTloKBV_grblVdU7KvaiNHSzodkVrJXksiOenfYDPnoTQ7FMMPoVGcnqr-P59rWTISUS50iOEDkUKBZeZnUAIce_fuKbFmhaZ5Dy0jg81qN5j0Eoe5Zri2MmIQ2cJgK2Ca6HKddru9kX3u85aBx_6ye44xalsIyqcRNNcoa0iNVI6cs-Tg7AgTWpyYF8DMRDjzlO3Nd9emWXpWlLX61HL-LbFE-6kxjVTFL13qBw')" }}></div>
-                    <div className="w-10 h-10 rounded-full border-2 border-primary bg-slate-200 bg-cover" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuD0mkhp3IvR3Rywr-FuqWpxn7DTCvrJNd0g7zAo3fVPgh4-ep091VsWl0xScj_oNub2V9sODfM2N0zpBYxRWX6npj_MdkPxahwwAx3pQxwW4SBQv6vnXxRbRfdAWqgrepkZpUNySkhZT4P8OuGPtlebgDIs6_93CNn5iTaJLc7TaZQt_zDH5zJjTWiBv0o2k87OiWj9r9TbC5caVjjr6ryyHHtDC-M0wuDBag_9Jjy-4S11kQou0ShvPi1z7KwuVx-_ckLNpYC0eg')" }}></div>
+                  <div className="flex items-center w-full px-4 py-3 gap-3 bg-white/5 rounded-xl border border-white/5 focus-within:bg-white/10 focus-within:border-white/20 transition-all">
+                    <Search className="size-5 text-indigo-300" />
+                    <input
+                      type="text"
+                      placeholder="Search doctors..."
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-indigo-300/50 text-white"
+                    />
                   </div>
-                  <p className="text-sm font-medium text-gray-300">
-                    Joined by <span className="text-white font-bold">10,000+</span> top medical professionals
-                  </p>
+                  <Link href="/patient/dashboard" className="w-full md:w-auto">
+                    <button className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-4 rounded-xl font-bold text-sm transition-all whitespace-nowrap shadow-lg shadow-indigo-500/30">
+                      Find Now
+                    </button>
+                  </Link>
                 </div>
               </div>
-              <div className="relative hidden lg:block">
-                <div className="absolute -top-10 -right-10 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/20">
-                  <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSNpjkgHyB7Br7jetQgTz1iMCfB4oMZnt2EJ112Izcaq1yVkHs8pVnjuJas_kanGUfehMF0WYqzBSZ-fsFz_XyVZi_7qAJUDTGxAP_u3F4SAQnn2RdEZRFZbBIPAu6OgTAche-HiWpmw_DuTBwehwwtNq8pEEwB4UWYI9pZNBxT0nROliuzgJXWwNc8e5J6YsNOy931tDvVBOj0l4i2SWvD_iMNQQci7TViNAu8dz7I0E6GMGTeFhs4vYfrPw4iN7Wh55YBznqvg" alt="Healthcare Professional" className="w-full h-auto object-cover aspect-[4/5] rounded-2xl" />
-                  <div className="absolute bottom-6 left-6 right-6 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/20">
-                    <div className="flex items-center gap-4">
-                      <div className="size-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center border border-emerald-500/30">
-                        <BadgeCheck className="size-6" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Available Now</p>
-                        <p className="font-bold text-white">Instant Video Consultation</p>
-                      </div>
+
+              <div className="flex items-center justify-center gap-6 pt-4">
+                <div className="flex -space-x-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className={`size-12 rounded-full border-2 border-indigo-950 bg-indigo-900/50 flex items-center justify-center text-xs font-bold text-white relative z-${10 - i}`}>
+                      <User className="size-6 text-indigo-300" />
                     </div>
-                  </div>
+                  ))}
                 </div>
+                <p className="text-sm font-medium text-indigo-200">
+                  Trusted by <span className="text-white font-bold">10,000+</span> professionals
+                </p>
               </div>
             </div>
           </div>
