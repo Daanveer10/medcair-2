@@ -21,7 +21,7 @@ export default function HospitalSettings() {
   const [hospital, setHospital] = useState<any>(null);
   const [clinics, setClinics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showClinicForm, setShowClinicForm] = useState(false);
+  const [showClinicForm, setShowClinicForm] = useState(false); // Deprecated
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState("");
@@ -353,85 +353,8 @@ export default function HospitalSettings() {
     }
   };
 
-  const handleCreateClinic = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!hospital) return;
+  // handleCreateClinic removed
 
-    try {
-      // Validate clinic data
-      const { ClinicSchema } = await import("@/lib/validations");
-      const { validateData } = await import("@/lib/utils");
-
-      const specialties = clinicForm.specialties
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const services = clinicForm.services
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const insuranceProviders = clinicForm.insurance_providers
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const paymentMethods = clinicForm.payment_methods
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const validation = validateData(ClinicSchema, {
-        name: clinicForm.name,
-        department: clinicForm.department,
-        specialties,
-        hospitalId: hospital.id,
-      });
-
-      if (!validation.success) {
-        toast.error("Validation Failed", {
-          description: validation.error?.message || "Invalid clinic data. Please check your inputs.",
-        });
-        return;
-      }
-
-      const { error } = await supabase.from("clinics").insert({
-        hospital_id: validation.data.hospitalId,
-        name: validation.data.name,
-        department: validation.data.department,
-        specialties: validation.data.specialties || [],
-        photo_url: clinicForm.photo_url || null,
-        consultation_fee: clinicForm.consultation_fee ? parseFloat(clinicForm.consultation_fee) : null,
-        services: services.length > 0 ? services : null,
-        insurance_providers: insuranceProviders.length > 0 ? insuranceProviders : null,
-        payment_methods: paymentMethods.length > 0 ? paymentMethods : null,
-      });
-
-      if (error) throw error;
-
-      toast.success("Clinic Created", {
-        description: "The clinic has been created successfully.",
-      });
-      setClinicForm({
-        name: "",
-        department: "",
-        specialties: "",
-        photo_url: "",
-        consultation_fee: "",
-        services: "",
-        insurance_providers: "",
-        payment_methods: "",
-      });
-      setShowClinicForm(false);
-      loadData();
-    } catch (error) {
-      const errorResponse = handleError(error, { action: "createClinic", resource: "clinics" });
-      toast.error("Creation Failed", {
-        description: errorResponse.error?.message || "Failed to create clinic.",
-      });
-    }
-  };
 
   const handleCreateSlot = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

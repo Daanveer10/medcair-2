@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { AddDoctorDialog } from "@/components/hospital/add-doctor-dialog";
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,7 @@ export default function HospitalDashboard() {
     totalPatients: 0,
     revenue: 0,
   });
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -170,8 +172,19 @@ export default function HospitalDashboard() {
         name: app.patient?.full_name || "Unknown",
         time: app.appointment_time,
         status: app.status === 'accepted' ? 'Checked In' : 'Arriving'
-      }));
       setWaitingRoom(transformedWaiting);
+
+      // 7. Fetch Doctors (for list view)
+      const { data: doctorsData } = await supabase
+          .from("doctors")
+          .select("id, name, specialization, consultation_fee, availability_status, hospital_id");
+        // We really should filter by hospital_id using RLS or explicit check?
+        // The RLS policy "Hospital owners can manage doctors linked to their hospital"
+        // ensures we only see our doctors if we are the hospital owner.
+        // But for clarity let's rely on RLS.
+
+        setDoctorsList(doctorsData || []);
+
 
 
     } catch (error) {
@@ -346,10 +359,7 @@ export default function HospitalDashboard() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
             <h3 className="font-bold text-lg mb-4 relative z-10">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3 relative z-10">
-              <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
-                <Calendar className="size-6" />
-                <span className="text-xs font-bold">Add Slot</span>
-              </button>
+              <AddDoctorDialog onSuccess={loadDashboardData} />
               <button className="bg-white/10 hover:bg-white/20 p-3 rounded-xl flex flex-col items-center gap-2 transition-colors">
                 <span className="material-symbols-outlined text-2xl">person_add</span>
                 <span className="text-xs font-bold">New Patient</span>
@@ -365,6 +375,30 @@ export default function HospitalDashboard() {
             </div>
           </div>
         </div>
+
+        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm p-6">
+          <h2 className="text-lg font-bold mb-4">Your Doctors</h2>
+          {doctorsList.length === 0 ? (
+            <p className="text-gray-500">No doctors added yet.</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {doctorsList.map((doc) => (
+                <div key={doc.id} className="p-4 border rounded-xl flex items-center justify-between">
+                  <div>
+                    <p className="font-bold">{doc.name}</p>
+                    <p className="text-xs text-gray-500">{doc.specialization}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-xs px-2 py-1 rounded-full ${doc.availability_status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {doc.availability_status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

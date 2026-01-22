@@ -63,6 +63,30 @@ export default function PatientAppointments() {
 
   useEffect(() => {
     loadAppointments();
+
+    // Real-time subscription for appointment status changes
+    const channel = supabase.channel('my-appointments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        (payload) => {
+          // We could filter by patient_id in the subscription filter string if we had the ID ready, 
+          // but simpler to just reload if any appointment changes (or filter client side).
+          // Since we don't have profile.id in scope easily without refactoring, we'll reload.
+          // Ideally we subscribe after getting profile.id, but for MVP:
+          loadAppointments();
+          if (payload.eventType === 'UPDATE') {
+            const newStatus = payload.new.status;
+            if (newStatus === 'accepted') toast.success("Appointment Accepted!");
+            if (newStatus === 'rejected') toast.error("Appointment Rejected");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [showPrevious]);
 
   const loadAppointments = async () => {
@@ -83,7 +107,7 @@ export default function PatientAppointments() {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       let query = supabase
         .from("appointments")
         .select(`
@@ -194,7 +218,7 @@ export default function PatientAppointments() {
 
       const { error } = await supabase
         .from("appointments")
-        .update({ 
+        .update({
           status: validation.data.status,
           reason: validation.data.reason || "Cancelled by patient"
         })
@@ -246,7 +270,7 @@ export default function PatientAppointments() {
   const handleRescheduleClick = async (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowRescheduleModal(true);
-    
+
     // Load available slots for this clinic
     if (appointment.clinic_id) {
       try {
@@ -277,7 +301,7 @@ export default function PatientAppointments() {
 
         const bookedSlotIds = new Set((bookedSlots || []).map(s => s.slot_id));
         const available = (data || []).filter(slot => !bookedSlotIds.has(slot.id));
-        
+
         setAvailableSlots(available);
       } catch (error) {
         const { handleError } = await import("@/lib/utils");
@@ -408,7 +432,7 @@ export default function PatientAppointments() {
               My Appointments
             </h2>
           </div>
-          
+
           <div className="flex items-center gap-4 mt-4">
             <Button
               variant={!showPrevious ? "default" : "outline"}
@@ -449,8 +473,8 @@ export default function PatientAppointments() {
                     {showPrevious ? "No previous appointments" : "No active appointments"}
                   </p>
                   <p className="text-gray-600 mb-4">
-                    {showPrevious 
-                      ? "You haven't had any previous appointments yet." 
+                    {showPrevious
+                      ? "You haven't had any previous appointments yet."
                       : "You don't have any upcoming appointments. Book one now!"}
                   </p>
                   {!showPrevious && (
@@ -468,12 +492,11 @@ export default function PatientAppointments() {
                   key={appointment.id}
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
-                  <div className={`absolute top-0 left-0 right-0 h-2 ${
-                    appointment.status === "scheduled" ? "bg-green-600" :
-                    appointment.status === "completed" ? "bg-green-600" :
-                    appointment.status === "cancelled" ? "bg-red-500" :
-                    "bg-gray-400"
-                  }`}></div>
+                  <div className={`absolute top-0 left-0 right-0 h-2 ${appointment.status === "scheduled" ? "bg-green-600" :
+                      appointment.status === "completed" ? "bg-green-600" :
+                        appointment.status === "cancelled" ? "bg-red-500" :
+                          "bg-gray-400"
+                    }`}></div>
                   <CardHeader className="pt-5">
                     <div className="flex justify-between items-start">
                       <div>
@@ -482,17 +505,16 @@ export default function PatientAppointments() {
                         </CardTitle>
                         <CardDescription className="font-medium">{appointment.clinic.department}</CardDescription>
                       </div>
-                        <span
-                          className={`px-4 py-2 rounded-full text-sm font-bold ${
-                            appointment.status === "scheduled"
-                              ? "bg-green-600 text-white"
-                              : appointment.status === "completed"
+                      <span
+                        className={`px-4 py-2 rounded-full text-sm font-bold ${appointment.status === "scheduled"
+                            ? "bg-green-600 text-white"
+                            : appointment.status === "completed"
                               ? "bg-green-600 text-white"
                               : appointment.status === "cancelled"
-                              ? "bg-red-500 text-white"
-                              : "bg-gray-400 text-white"
+                                ? "bg-red-500 text-white"
+                                : "bg-gray-400 text-white"
                           }`}
-                        >
+                      >
                         {appointment.status.toUpperCase()}
                       </span>
                     </div>
@@ -569,13 +591,12 @@ export default function PatientAppointments() {
                                     {new Date(followUp.follow_up_date).toLocaleDateString()} at {followUp.follow_up_time}
                                   </span>
                                   <span
-                                    className={`px-2 py-1 rounded text-xs font-bold ${
-                                      followUp.status === "completed"
+                                    className={`px-2 py-1 rounded text-xs font-bold ${followUp.status === "completed"
                                         ? "bg-green-500 text-white"
                                         : followUp.status === "pending"
-                                        ? "bg-yellow-500 text-white"
-                                        : "bg-red-500 text-white"
-                                    }`}
+                                          ? "bg-yellow-500 text-white"
+                                          : "bg-red-500 text-white"
+                                      }`}
                                   >
                                     {followUp.status}
                                   </span>
@@ -687,11 +708,10 @@ export default function PatientAppointments() {
                         <button
                           key={slot.id}
                           onClick={() => setSelectedSlot(slot.id)}
-                          className={`p-3 border-2 rounded-lg text-left transition-all ${
-                            selectedSlot === slot.id
+                          className={`p-3 border-2 rounded-lg text-left transition-all ${selectedSlot === slot.id
                               ? "border-green-600 bg-green-50"
                               : "border-gray-200 hover:border-gray-300"
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold text-gray-900">
                             {new Date(slot.date).toLocaleDateString("en-US", {

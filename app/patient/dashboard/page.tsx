@@ -23,11 +23,13 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export const dynamic = 'force-dynamic';
 
-interface Clinic {
+interface Doctor {
   id: string;
   name: string;
-  department: string;
-  specialties: string[];
+  department: string; // Map specialization to department for search compatibility if needed, or just use specialization
+  specialties: string[]; // Doctors have 'specialization' (string), but search uses array. We can split it.
+  specialization: string;
+  consultation_fee: number;
   hospital: {
     name: string;
     address: string;
@@ -40,17 +42,18 @@ export default function PatientDashboard() {
   const router = useRouter();
   const supabase = createClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const [favoriteClinicIds, setFavoriteClinicIds] = useState<Set<string>>(new Set());
+  const [favoriteDoctorIds, setFavoriteDoctorIds] = useState<Set<string>>(new Set());
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
 
   useEffect(() => {
     checkUser();
-    loadClinics();
-    loadFavorites();
+    checkUser();
+    loadDoctors();
+    // loadFavorites(); // TODO: Update favoriting for doctors if needed. Disabling for MVP refactor to avoid errors.
   }, []);
 
   const loadFavorites = async () => {
@@ -93,10 +96,10 @@ export default function PatientDashboard() {
     setUserName(profile.full_name || "Patient");
   };
 
-  const loadClinics = async () => {
+  const loadDoctors = async () => {
     try {
-      const { data, error } = await supabase.from("clinics").select(`
-          id, name, department, specialties,
+      const { data, error } = await supabase.from("doctors").select(`
+          id, name, specialization, consultation_fee,
           hospital:hospitals (id, name, address, city, latitude, longitude)
         `);
       if (error) throw error;
@@ -113,17 +116,19 @@ export default function PatientDashboard() {
         } catch { }
       }
 
-      const transformedClinics: Clinic[] = (data || []).map((clinic: any) => {
-        const hospitalData = Array.isArray(clinic.hospital) ? clinic.hospital[0] : clinic.hospital;
+      const transformedDoctors: Doctor[] = (data || []).map((doc: any) => {
+        const hospitalData = Array.isArray(doc.hospital) ? doc.hospital[0] : doc.hospital;
         let distance: number | null = null;
         if (userLat && userLng && hospitalData?.latitude && hospitalData?.longitude) {
           distance = calculateDistance(userLat, userLng, parseFloat(hospitalData.latitude), parseFloat(hospitalData.longitude));
         }
         return {
-          id: clinic.id,
-          name: clinic.name,
-          department: clinic.department,
-          specialties: clinic.specialties || [],
+          id: doc.id,
+          name: doc.name,
+          department: doc.specialization, // Mapping specialization to department field for compatibility
+          specialization: doc.specialization,
+          specialties: [doc.specialization], // Wrap in array
+          consultation_fee: doc.consultation_fee || 50,
           hospital: {
             name: hospitalData?.name || "Unknown",
             address: hospitalData?.address || "Unknown",
@@ -133,22 +138,22 @@ export default function PatientDashboard() {
         };
       }).sort((a, b) => (a.hospital.distance || 9999) - (b.hospital.distance || 9999));
 
-      setClinics(transformedClinics);
+      setDoctors(transformedDoctors);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load clinics");
+      toast.error("Failed to load doctors");
     } finally {
       setLoading(false);
     }
   };
 
   // Filtering Logic
-  const filteredClinics = clinics.filter((clinic) => {
-    const matchesFavorites = !showFavoritesOnly || favoriteClinicIds.has(clinic.id);
+  const filteredDoctors = doctors.filter((doc) => {
+    // const matchesFavorites = !showFavoritesOnly || favoriteDoctorIds.has(doc.id);
     const searchLower = searchTerm.toLowerCase();
-    const searchStr = `${clinic.name} ${clinic.department} ${clinic.hospital.name} ${clinic.specialties.join(" ")}`.toLowerCase();
+    const searchStr = `${doc.name} ${doc.specialization} ${doc.hospital.name}`.toLowerCase();
     const matchesSearch = !searchTerm || searchStr.includes(searchLower);
-    return matchesFavorites && matchesSearch;
+    return matchesSearch; // && matchesFavorites;
   });
 
   return (
@@ -255,7 +260,7 @@ export default function PatientDashboard() {
           {/* Center Content: Search Results */}
           <div className="flex-1 space-y-6">
             <div className="flex items-baseline justify-between">
-              <h1 className="text-2xl font-bold">{filteredClinics.length} Results Found</h1>
+              <h1 className="text-2xl font-bold">{filteredDoctors.length} Doctors Found</h1>
               <div className="flex items-center gap-2 text-sm text-[#4596a1]">
                 <span>Sort by:</span>
                 <select className="bg-transparent border-none focus:ring-0 font-bold text-[#0c1b1d] dark:text-white cursor-pointer py-0">
@@ -267,24 +272,24 @@ export default function PatientDashboard() {
             </div>
 
             {loading ? (
-              <div className="p-12 text-center text-gray-500">Loading clinics...</div>
-            ) : filteredClinics.length === 0 ? (
-              <div className="p-12 text-center text-gray-500">No clinics found matching your search.</div>
+              <div className="p-12 text-center text-gray-500">Loading doctors...</div>
+            ) : filteredDoctors.length === 0 ? (
+              <div className="p-12 text-center text-gray-500">No doctors found matching your search.</div>
             ) : (
-              filteredClinics.map((clinic) => (
-                <div key={clinic.id} className="group relative bg-white dark:bg-gray-800 rounded-xl p-6 border border-transparent hover:border-primary/30 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
+              filteredDoctors.map((doc) => (
+                <div key={doc.id} className="group relative bg-white dark:bg-gray-800 rounded-xl p-6 border border-transparent hover:border-primary/30 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="relative">
                       <div className="size-24 md:size-32 rounded-xl overflow-hidden bg-gray-100 items-center justify-center flex text-gray-300">
-                        <span className="material-symbols-outlined text-4xl">local_hospital</span>
+                        <span className="material-symbols-outlined text-4xl">stethoscope</span>
                       </div>
                       <div className="absolute -bottom-2 -right-2 bg-green-500 border-4 border-white dark:border-gray-800 size-6 rounded-full" title="Available Today"></div>
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-1">
                         <div>
-                          <h3 className="text-xl font-bold">{clinic.name}</h3>
-                          <p className="text-primary font-semibold">{clinic.department}</p>
+                          <h3 className="text-xl font-bold">{doc.name}</h3>
+                          <p className="text-primary font-semibold">{doc.specialization}</p>
                         </div>
                         <div className="flex items-center gap-1 bg-[#e6f3f4] dark:bg-primary/10 px-3 py-1 rounded-full">
                           <span className="material-symbols-outlined text-primary !text-sm">star</span>
@@ -295,37 +300,39 @@ export default function PatientDashboard() {
                       <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <span className="material-symbols-outlined !text-sm">location_on</span>
-                          <span>{clinic.hospital.name}, {clinic.hospital.city}</span>
+                          <span>{doc.hospital.name}, {doc.hospital.city}</span>
                         </div>
-                        {clinic.hospital.distance && (
+                        {doc.hospital.distance && (
                           <div className="flex items-center gap-1 text-green-600">
                             <span className="material-symbols-outlined !text-sm">near_me</span>
-                            <span>{clinic.hospital.distance} km</span>
+                            <span>{doc.hospital.distance} km</span>
                           </div>
                         )}
                         <div className="flex items-center gap-1">
                           <span className="material-symbols-outlined !text-sm">medical_services</span>
-                          <span>{clinic.specialties.slice(0, 3).join(", ")}</span>
+                          <span>{doc.specialties.join(", ")}</span>
                         </div>
                       </div>
                       <div className="mt-6 flex items-center justify-between">
                         <div className="text-lg font-bold">
-                          $50 <span className="text-sm font-normal text-gray-400">/ consultation</span>
+                          ${doc.consultation_fee} <span className="text-sm font-normal text-gray-400">/ consultation</span>
                         </div>
                         <div className="flex gap-3">
+                          {/* 
                           <button
-                            onClick={() => toggleFavorite(clinic.id)}
-                            className={`px-4 py-2 border-2 ${favoriteClinicIds.has(clinic.id) ? 'border-red-500 text-red-500' : 'border-primary text-primary'} font-bold rounded-xl hover:bg-primary/5 transition-all`}
+                            onClick={() => toggleFavorite(doc.id)}
+                            className={`px-4 py-2 border-2 ${favoriteDoctorIds.has(doc.id) ? 'border-red-500 text-red-500' : 'border-primary text-primary'} font-bold rounded-xl hover:bg-primary/5 transition-all`}
                           >
-                            {favoriteClinicIds.has(clinic.id) ? <Heart className="fill-current h-5 w-5" /> : 'Favorite'}
+                            {favoriteDoctorIds.has(doc.id) ? <Heart className="fill-current h-5 w-5" /> : 'Favorite'}
                           </button>
+                           */}
                           <button
-                            onClick={() => setSelectedClinicId(clinic.id)}
+                            onClick={() => setSelectedDoctorId(doc.id)}
                             className="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/10"
                           >
                             Select
                           </button>
-                          <Link href={`/patient/clinic/${clinic.id}`}>
+                          <Link href={`/patient/doctor/${doc.id}`}>
                             <button className="px-6 py-2 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-all">
                               Book Now
                             </button>
@@ -345,9 +352,9 @@ export default function PatientDashboard() {
               <div className="p-6 border-b border-[#e6f3f4] dark:border-gray-700">
                 <h3 className="text-lg font-bold mb-1">Quick Book</h3>
                 <p className="text-xs text-[#4596a1]">
-                  {selectedClinicId
-                    ? `Selected: ${clinics.find(c => c.id === selectedClinicId)?.name}`
-                    : "Select a clinic to view slots"}
+                  {selectedDoctorId
+                    ? `Selected: ${doctors.find(d => d.id === selectedDoctorId)?.name}`
+                    : "Select a doctor to view slots"}
                 </p>
               </div>
               <div className="p-6">
@@ -382,9 +389,9 @@ export default function PatientDashboard() {
                   <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">6</span>
                   <span className="p-2 bg-primary text-white font-bold rounded-lg cursor-pointer">7</span>
                 </div>
-                {selectedClinicId && (
+                {selectedDoctorId && (
                   <div className="mt-8 space-y-3">
-                    <Link href={`/patient/clinic/${selectedClinicId}`}>
+                    <Link href={`/patient/doctor/${selectedDoctorId}`}>
                       <button className="w-full py-4 bg-primary text-white rounded-xl font-bold transition-transform hover:scale-[1.02] shadow-lg shadow-primary/25">
                         View Full Schedule
                       </button>
