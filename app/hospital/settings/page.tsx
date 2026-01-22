@@ -251,36 +251,52 @@ export default function HospitalSettings() {
       let lat = currentLocation?.lat;
       let lng = currentLocation?.lng;
 
-      // Logic: 
+      // Logic:
       // 1. If user manually set location (GPS/Search) -> Use that (locationManuallySet is true)
-      // 2. If NOT manually set (meaning currentLocation is either null or just loaded from DB stale) -> FORCE Geocode address form
-      //    (This handles the case where user edits address text but forgets to update map)
+      // 2. If address changed since load -> Try Geocode
+      // 3. If address unchanged -> Keep existing (don't overwrite with null if we have one)
+
+      const addressChanged = hospital && (
+        hospital.address !== hospitalForm.address ||
+        hospital.city !== hospitalForm.city ||
+        hospital.state !== hospitalForm.state ||
+        hospital.zip_code !== hospitalForm.zip_code
+      );
+
+      const hasExistingLocation = hospital?.latitude !== undefined && hospital?.latitude !== null;
 
       if (!locationManuallySet) {
-        // Force geocode based on current form values, ignoring stale DB location
-        lat = undefined;
-        lng = undefined;
-      }
+        // if user didn't touch the map, only geocode if address changed OR we have no location yet
+        // If we just loaded from DB and hit save without changes, we want to KEEP the DB value, not set it to undefined
 
-      if (!lat || !lng) {
-        // Geocode the address
-        const { geocodeAddress } = await import("@/lib/geocoding");
-        const geocodeResult = await geocodeAddress(
-          hospitalForm.address,
-          hospitalForm.city,
-          hospitalForm.state,
-          hospitalForm.zip_code
-        );
+        if (addressChanged || !hasExistingLocation) {
+          console.log("Address changed or no location, attempting geocode...");
+          lat = undefined;
+          lng = undefined;
 
-        if (geocodeResult) {
-          lat = geocodeResult.latitude;
-          lng = geocodeResult.longitude;
+          // Geocode the address
+          const { geocodeAddress } = await import("@/lib/geocoding");
+          const geocodeResult = await geocodeAddress(
+            hospitalForm.address,
+            hospitalForm.city,
+            hospitalForm.state,
+            hospitalForm.zip_code
+          );
+
+          if (geocodeResult) {
+            lat = geocodeResult.latitude;
+            lng = geocodeResult.longitude;
+          } else {
+            // If geocoding fails, warn user
+            if (addressChanged) {
+              toast.warning("Location not found for this new address", {
+                description: "Saving address, but map location could not be updated.",
+              });
+            }
+          }
         } else {
-          // If geocoding fails, we can either block or just save without location
-          // Let's warn but save
-          toast.warning("Location not found for this address", {
-            description: "Saving without map coordinates.",
-          });
+          // Address NOT changed and we have location -> Keep existing
+          console.log("Address unchanged and no manual location set. Keeping existing coordinates.");
         }
       }
 
