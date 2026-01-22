@@ -127,7 +127,6 @@ export default function HospitalDashboard() {
           appointment_date,
           appointment_time,
           status,
-          reason,
           patient:patient_id (full_name, phone_number)
         `)
         .in("status", ["scheduled", "pending", "accepted"])
@@ -147,7 +146,7 @@ export default function HospitalDashboard() {
         appointment_date: app.appointment_date,
         appointment_time: app.appointment_time,
         status: app.status,
-        type: app.reason?.toLowerCase().includes("video") ? "Video Call" : "In-Person", // Simple heuristic for type
+        type: "In-Person", // Default to In-Person as reason column is missing
       }));
 
       setAppointments(transformedAppointments);

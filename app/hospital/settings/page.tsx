@@ -97,6 +97,9 @@ export default function HospitalSettings() {
   // Debug state
   const [locationDetails, setLocationDetails] = useState<{ lat: number, lng: number, accuracy: number } | null>(null);
 
+  // Track if location was manually set by user (Map Search or GPS) vs just loaded from DB
+  const [locationManuallySet, setLocationManuallySet] = useState(false);
+
   // Search State
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -151,6 +154,7 @@ export default function HospitalSettings() {
     // Set map location (and debug info if needed)
     setCurrentLocation({ lat, lng: lon });
     setLocationDetails({ lat, lng: lon, accuracy: 0 }); // 0 accuracy serves as "manual/exact" flag
+    setLocationManuallySet(true);
 
     const { street, city, state, zip } = normalizeAddress(address, display_name);
 
@@ -195,6 +199,7 @@ export default function HospitalSettings() {
         }
 
         setCurrentLocation({ lat: latitude, lng: longitude });
+        setLocationManuallySet(true);
 
         try {
           const { reverseGeocodeStructured } = await import("@/lib/geocoding");
@@ -246,9 +251,16 @@ export default function HospitalSettings() {
       let lat = currentLocation?.lat;
       let lng = currentLocation?.lng;
 
-      // Only geocode if we don't have precise current location or if user changed address
-      // But for simplicity, if we have currentLocation (from GPS), we utilize it primarily
-      // If we don't have GPS location set in this session or DB, we try to geocode the address string
+      // Logic: 
+      // 1. If user manually set location (GPS/Search) -> Use that (locationManuallySet is true)
+      // 2. If NOT manually set (meaning currentLocation is either null or just loaded from DB stale) -> FORCE Geocode address form
+      //    (This handles the case where user edits address text but forgets to update map)
+
+      if (!locationManuallySet) {
+        // Force geocode based on current form values, ignoring stale DB location
+        lat = undefined;
+        lng = undefined;
+      }
 
       if (!lat || !lng) {
         // Geocode the address
