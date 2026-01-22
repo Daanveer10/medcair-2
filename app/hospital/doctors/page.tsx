@@ -412,8 +412,14 @@ export default function DoctorDashboard() {
                                 </div>
 
                                 <div className="flex gap-2">
-                                    <Button className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100 shadow-none dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
-                                        View Schedule
+                                    <Button
+                                        onClick={() => router.push(`/hospital/messages/${doc.id}`)}
+                                        className="flex-1 bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/20"
+                                    >
+                                        Message
+                                    </Button>
+                                    <Button className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-100 shadow-none dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600">
+                                        Schedule
                                     </Button>
                                 </div>
                             </CardContent>

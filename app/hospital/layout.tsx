@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Search, Bell } from "lucide-react";
+import { NotificationsPopover } from "@/components/notifications-popover";
 
 export default function HospitalLayout({
     children,
@@ -130,10 +131,13 @@ export default function HospitalLayout({
                             <Search className="size-4 text-gray-400 mr-2" />
                             <input type="text" placeholder="Search..." className="bg-transparent border-none text-sm w-full focus:ring-0 placeholder:text-gray-400" />
                         </div>
-                        <button className="relative p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-[#e6f3f4] dark:border-gray-700 text-gray-500 hover:text-primary transition-colors shadow-sm">
+                        <button className="hidden p-2.5 bg-white dark:bg-gray-800 rounded-xl border border-[#e6f3f4] dark:border-gray-700 text-gray-500 hover:text-primary transition-colors shadow-sm">
                             <Bell className="size-5" />
-                            <span className="absolute top-2 right-2.5 size-2 bg-red-500 rounded-full border-2 border-white"></span>
                         </button>
+                        {/* Integrated Notifications Popover */}
+                        <div className="relative z-50">
+                            <NotificationsPopover />
+                        </div>
                     </div>
                 </header>
 
