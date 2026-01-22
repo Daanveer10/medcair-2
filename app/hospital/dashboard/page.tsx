@@ -17,7 +17,9 @@ import {
   MapPin,
   ChevronRight,
   User,
-  LogOut
+  LogOut,
+  UserPlus,
+  Banknote
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -204,15 +206,15 @@ export default function HospitalDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Patients", value: stats.totalPatients, icon: "group", color: "text-blue-500", bg: "bg-blue-500/10", trend: "+12%" },
-          { label: "Appointments", value: stats.appointmentsPending + appointments.length, icon: "calendar_month", color: "text-purple-500", bg: "bg-purple-500/10", trend: "+5%" },
-          { label: "New Consults", value: stats.patientsToday, icon: "person_add", color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+18%" },
-          { label: "Earnings", value: `$${stats.revenue.toLocaleString()}`, icon: "payments", color: "text-amber-500", bg: "bg-amber-500/10", trend: "+8%" },
+          { label: "Total Patients", value: stats.totalPatients, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+12%" },
+          { label: "Appointments", value: stats.appointmentsPending + appointments.length, icon: Calendar, color: "text-purple-500", bg: "bg-purple-500/10", trend: "+5%" },
+          { label: "New Consults", value: stats.patientsToday, icon: UserPlus, color: "text-emerald-500", bg: "bg-emerald-500/10", trend: "+18%" },
+          { label: "Earnings", value: `$${stats.revenue.toLocaleString()}`, icon: Banknote, color: "text-amber-500", bg: "bg-amber-500/10", trend: "+8%" },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
             <div className="flex items-start justify-between mb-4">
               <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <span className="material-symbols-outlined">{stat.icon}</span>
+                <stat.icon className="size-6" />
               </div>
               <span className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                 <TrendingUp className="size-3 mr-1" />

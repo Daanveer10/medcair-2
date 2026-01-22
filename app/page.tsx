@@ -1,4 +1,25 @@
 import Link from "next/link";
+import {
+  Activity,
+  MapPin,
+  Search,
+  BadgeCheck,
+  ArrowRight,
+  HeartPulse,
+  Baby,
+  Brain,
+  Stethoscope,
+  User,
+  Calendar,
+  Video,
+  Bot,
+  CheckCircle,
+  FileText,
+  Pill,
+  Syringe,
+  Globe,
+  Share2
+} from "lucide-react";
 import { AuthButton } from "@/components/auth-button"; // Assuming this or similar exists or we manually build buttons
 import { hasEnvVars } from "@/lib/utils"; // Keep existing checks if needed, or simplify
 
@@ -11,7 +32,7 @@ export default function Home() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                <span className="material-symbols-outlined">health_metrics</span>
+                <Activity className="size-5" />
               </div>
               <span className="text-xl font-extrabold tracking-tight text-primary">medcAIr</span>
             </div>
@@ -56,11 +77,11 @@ export default function Home() {
                 <div className="bg-white dark:bg-slate-800 p-2 rounded-xl soft-shadow border border-slate-100 dark:border-slate-700 max-w-xl">
                   <div className="flex flex-col md:flex-row items-center gap-2">
                     <div className="flex items-center w-full px-4 py-3 gap-3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700">
-                      <span className="material-symbols-outlined text-slate-400">location_on</span>
+                      <MapPin className="size-5 text-slate-400" />
                       <input type="text" placeholder="Your City" className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-slate-400" />
                     </div>
                     <div className="flex items-center w-full px-4 py-3 gap-3">
-                      <span className="material-symbols-outlined text-slate-400">search</span>
+                      <Search className="size-5 text-slate-400" />
                       <input type="text" placeholder="Search doctors, clinics..." className="w-full bg-transparent border-none focus:ring-0 text-sm font-medium placeholder:text-slate-400" />
                     </div>
                     <Link href="/patient/dashboard">
@@ -89,7 +110,7 @@ export default function Home() {
                   <div className="absolute bottom-6 left-6 right-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur p-4 rounded-xl border border-white/20">
                     <div className="flex items-center gap-4">
                       <div className="size-10 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center">
-                        <span className="material-symbols-outlined">verified</span>
+                        <BadgeCheck className="size-6" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Available Now</p>
@@ -109,26 +130,29 @@ export default function Home() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Popular Specialties</h2>
               <a href="#" className="text-sm font-bold text-primary flex items-center gap-1">
-                View all <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                View all <ArrowRight className="size-4" />
               </a>
             </div>
             <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
               {[
-                { icon: "ecg_heart", name: "Cardiology" },
-                { icon: "child_care", name: "Pediatrics" },
-                { icon: "neurology", name: "Neurology" },
-                { icon: "dentistry", name: "Dental" },
-                { icon: "dermatology", name: "Dermatology" },
-                { icon: "orthopedics", name: "Orthopedics" },
-                { icon: "female", name: "Gynecology" }
-              ].map((specialty, idx) => (
-                <div key={idx} className="flex-none w-32 group cursor-pointer text-center">
-                  <div className="size-20 mx-auto bg-background-light dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
-                    <span className="material-symbols-outlined text-primary text-3xl">{specialty.icon}</span>
+                { icon: HeartPulse, name: "Cardiology" },
+                { icon: Baby, name: "Pediatrics" },
+                { icon: Brain, name: "Neurology" },
+                { icon: Stethoscope, name: "Dental" },
+                { icon: User, name: "Dermatology" },
+                { icon: Activity, name: "Orthopedics" },
+                { icon: User, name: "Gynecology" }
+              ].map((specialty, idx) => {
+                const Icon = specialty.icon;
+                return (
+                  <div key={idx} className="flex-none w-32 group cursor-pointer text-center">
+                    <div className="size-20 mx-auto bg-background-light dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+                      <Icon className="size-8 text-primary" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{specialty.name}</p>
                   </div>
-                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{specialty.name}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
@@ -144,41 +168,41 @@ export default function Home() {
               {/* Book Appointment */}
               <div className="group bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all soft-shadow">
                 <div className="size-14 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-blue-600 text-3xl">calendar_month</span>
+                  <Calendar className="size-8 text-blue-600" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">Book Appointment</h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
                   Schedule in-person visits with top-rated specialists at your convenience. Real-time availability and instant confirmation.
                 </p>
                 <button className="text-primary font-bold text-sm flex items-center gap-2">
-                  Book Now <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  Book Now <ArrowRight className="size-4" />
                 </button>
               </div>
               {/* Consult Online */}
               <div className="group bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-100 dark:border-slate-700 hover:border-primary/50 transition-all soft-shadow">
                 <div className="size-14 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-emerald-600 text-3xl">videocam</span>
+                  <Video className="size-8 text-emerald-600" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">Consult Online</h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm leading-relaxed">
                   Connect with board-certified doctors via high-quality video calls 24/7. Get prescriptions and medical advice instantly.
                 </p>
                 <button className="text-primary font-bold text-sm flex items-center gap-2">
-                  Start Consultation <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  Start Consultation <ArrowRight className="size-4" />
                 </button>
               </div>
               {/* AI Assistant */}
               <div className="group bg-slate-900 dark:bg-slate-800/50 rounded-2xl p-8 border border-slate-700/50 transition-all soft-shadow relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
                 <div className="size-14 bg-primary/20 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-primary text-3xl">smart_toy</span>
+                  <Bot className="size-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">AI Health Assistant</h3>
                 <p className="text-slate-400 mb-6 text-sm leading-relaxed">
                   Get personalized wellness insights and symptom guidance powered by our advanced medical AI. Available anytime, anywhere.
                 </p>
                 <button className="text-primary font-bold text-sm flex items-center gap-2">
-                  Try AI Assistant <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  Try AI Assistant <ArrowRight className="size-4" />
                 </button>
               </div>
             </div>
@@ -202,15 +226,15 @@ export default function Home() {
                   </p>
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
-                      <span className="material-symbols-outlined text-emerald-300">check_circle</span>
+                      <CheckCircle className="size-6 text-emerald-300" />
                       <span className="font-medium">End-to-end encrypted storage</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="material-symbols-outlined text-emerald-300">check_circle</span>
+                      <CheckCircle className="size-6 text-emerald-300" />
                       <span className="font-medium">Easy sharing with specialists</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="material-symbols-outlined text-emerald-300">check_circle</span>
+                      <CheckCircle className="size-6 text-emerald-300" />
                       <span className="font-medium">Automated health history timeline</span>
                     </div>
                   </div>
@@ -222,7 +246,7 @@ export default function Home() {
                   <div className="bg-white/10 backdrop-blur p-8 rounded-2xl border border-white/20 h-full flex flex-col justify-center">
                     <div className="bg-white rounded-xl p-4 mb-4 soft-shadow flex items-center gap-4 translate-x-12">
                       <div className="size-10 bg-blue-100 rounded flex items-center justify-center">
-                        <span className="material-symbols-outlined text-blue-600">description</span>
+                        <FileText className="size-6 text-blue-600" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400">MAY 12, 2023</p>
@@ -231,7 +255,7 @@ export default function Home() {
                     </div>
                     <div className="bg-white rounded-xl p-4 mb-4 soft-shadow flex items-center gap-4 -translate-x-4">
                       <div className="size-10 bg-emerald-100 rounded flex items-center justify-center">
-                        <span className="material-symbols-outlined text-emerald-600">prescriptions</span>
+                        <Pill className="size-6 text-emerald-600" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400">APR 28, 2023</p>
@@ -240,7 +264,7 @@ export default function Home() {
                     </div>
                     <div className="bg-white rounded-xl p-4 soft-shadow flex items-center gap-4 translate-x-8">
                       <div className="size-10 bg-amber-100 rounded flex items-center justify-center">
-                        <span className="material-symbols-outlined text-amber-600">vaccines</span>
+                        <Syringe className="size-6 text-amber-600" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400">MAR 15, 2023</p>
@@ -262,7 +286,7 @@ export default function Home() {
             <div className="col-span-2 lg:col-span-2 space-y-6">
               <div className="flex items-center gap-2">
                 <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                  <span className="material-symbols-outlined">health_metrics</span>
+                  <Activity className="size-5" />
                 </div>
                 <span className="text-xl font-extrabold tracking-tight text-primary">medcAIr</span>
               </div>
@@ -271,13 +295,13 @@ export default function Home() {
               </p>
               <div className="flex gap-4">
                 <a href="#" className="size-10 bg-background-light dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined">public</span>
+                  <Globe className="size-5" />
                 </a>
                 <a href="#" className="size-10 bg-background-light dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined">share</span>
+                  <Share2 className="size-5" />
                 </a>
                 <a href="#" className="size-10 bg-background-light dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined">videocam</span>
+                  <Video className="size-5" />
                 </a>
               </div>
             </div>
