@@ -1,4 +1,4 @@
-export type UserRole = 'patient' | 'hospital';
+export type UserRole = 'patient' | 'hospital' | 'doctor';
 
 export interface UserProfile {
   id: string;
@@ -47,10 +47,12 @@ export interface Clinic {
 
 export interface Doctor {
   id: string;
-  clinic_id: string;
+  user_id: string;
+  hospital_id: string;
+  clinic_id?: string;
   name: string;
   specialization: string;
-  doctor_id?: string;
+  doctor_id?: string; // Legacy / External ID if needed
   degree?: string;
   email?: string;
   phone?: string;

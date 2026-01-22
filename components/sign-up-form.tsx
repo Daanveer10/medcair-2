@@ -16,6 +16,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UserRole } from "@/lib/types";
+import { useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 export function SignUpForm({
   className,
@@ -26,9 +35,29 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [userRole, setUserRole] = useState<UserRole>("patient");
+  const [selectedHospital, setSelectedHospital] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [hospitals, setHospitals] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
+
+  useEffect(() => {
+    if (userRole === "doctor") {
+      const fetchHospitals = async () => {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("hospitals")
+          .select("id, name");
+        if (!error && data) {
+          setHospitals(data);
+        }
+      };
+      fetchHospitals();
+    }
+  }, [userRole]);
+
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +80,10 @@ export function SignUpForm({
           data: {
             full_name: fullName,
             role: userRole,
+            ...(userRole === "doctor" && {
+              hospital_id: selectedHospital,
+              specialization: specialization || "General",
+            }),
           },
         },
       });
@@ -58,10 +91,9 @@ export function SignUpForm({
 
       // Profile will be automatically created by database trigger
       // The trigger reads role and full_name from raw_user_meta_data
-      // It uses SECURITY DEFINER so it bypasses RLS and always works
-      // No need for manual fallback - trigger handles it at database level
 
       router.push("/auth/sign-up-success");
+
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -128,8 +160,53 @@ export function SignUpForm({
                     />
                     <span className="text-[#0c1b1d] dark:text-white font-medium">Hospital</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="userRole"
+                      value="doctor"
+                      checked={userRole === "doctor"}
+                      onChange={(e) => setUserRole(e.target.value as UserRole)}
+                      className="w-4 h-4 text-primary focus:ring-primary"
+                    />
+                    <span className="text-[#0c1b1d] dark:text-white font-medium">Doctor</span>
+                  </label>
                 </div>
               </div>
+
+              {userRole === "doctor" && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="hospital" className="text-[#0c1b1d] dark:text-white font-semibold">Select Hospital</Label>
+                    <Select value={selectedHospital} onValueChange={setSelectedHospital}>
+                      <SelectTrigger className="border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[#0c1b1d] dark:text-white">
+                        <SelectValue placeholder="Select a hospital" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hospitals.map((hospital) => (
+                          <SelectItem key={hospital.id} value={hospital.id}>
+                            {hospital.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="specialization" className="text-[#0c1b1d] dark:text-white font-semibold">
+                      Specialization
+                    </Label>
+                    <Input
+                      id="specialization"
+                      type="text"
+                      placeholder="e.g. Cardiology"
+                      value={specialization}
+                      onChange={(e) => setSpecialization(e.target.value)}
+                      className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password" className="text-[#0c1b1d] dark:text-white font-semibold">Password</Label>

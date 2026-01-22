@@ -3,380 +3,357 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import {
-    Calendar,
-    Clock,
-    User,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    LogOut,
-    TrendingUp,
-    MapPin,
-    Video
-} from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Bell, Calendar, ClipboardList, User, LogOut, CheckCircle, XCircle, Clock } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const dynamic = 'force-dynamic';
+interface Appointment {
+    id: string;
+    patient: {
+        full_name: string;
+        phone: string;
+    };
+    appointment_date: string;
+    appointment_time: string;
+    status: string;
+    reason: string;
+}
+
+interface DoctorProfile {
+    full_name: string;
+    specialization: string;
+    hospital?: {
+        name: string;
+    }
+}
 
 export default function DoctorDashboard() {
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [rejectReason, setRejectReason] = useState("");
+    const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+    const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     const router = useRouter();
     const supabase = createClient();
-    const [loading, setLoading] = useState(true);
-    const [doctor, setDoctor] = useState<any>(null);
-    const [appointments, setAppointments] = useState<any[]>([]);
-    const [slots, setSlots] = useState<any[]>([]);
-    const [requests, setRequests] = useState<any[]>([]);
-
-    // Form states
-    const [newSlot, setNewSlot] = useState({ date: "", startTime: "", endTime: "" });
 
     useEffect(() => {
-        checkUser();
-    }, []);
-
-    const checkUser = async () => {
-        try {
+        const fetchDashboardData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { router.push("/auth/login"); return; }
-
-            // 1. Check if user is a doctor (via profile)
-            // Note: We might need to ensure the profile role is set to 'doctor'
-            // Or we can just check if they exist in the 'doctors' table by email/user_id
-
-            let { data: doc } = await supabase
-                .from("doctors")
-                .select("*, hospital:hospitals(name)")
-                .or(`user_id.eq.${user.id},email.eq.${user.email}`)
-                .single();
-
-            if (!doc) {
-                // Not found as a doctor?
-                toast.error("Doctor profile not found.");
-                // router.push("/"); 
-                setLoading(false);
+            if (!user) {
+                router.push("/auth/login");
                 return;
             }
 
-            setDoctor(doc);
+            // Fetch Doctor Profile
+            const { data: doctorData, error: doctorError } = await supabase
+                .from("doctors")
+                .select("name, specialization, hospitals(name)")
+                .eq("user_id", user.id)
+                .single();
 
-            // Load data
-            await loadDashboardData(doc.id);
-
-            // Realtime subscription
-            const channel = supabase
-                .channel('doctor-dashboard')
-                .on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: 'appointments', filter: `doctor_id=eq.${doc.id}` },
-                    (payload) => {
-                        console.log('Realtime update:', payload);
-                        loadDashboardData(doc.id); // Reload on any change
-                        toast.info("Dashboard updated");
-                    }
-                )
-                .subscribe();
-
-            return () => {
-                supabase.removeChannel(channel);
-            };
-
-        } catch (error) {
-            console.error(error);
-            setLoading(false);
-        }
-    };
-
-    const loadDashboardData = async (doctorId: string) => {
-        setLoading(true);
-        try {
-            const today = new Date().toISOString().split("T")[0];
-
-            // 1. Get Appointments (Accepted/Scheduled)
-            const { data: appts } = await supabase
-                .from("appointments")
-                .select("*, patient:user_profiles(full_name, phone)")
-                .eq("doctor_id", doctorId)
-                .in("status", ["scheduled", "accepted", "completed"])
-                .gte("appointment_date", today)
-                .order("appointment_date", { ascending: true })
-                .order("appointment_time", { ascending: true });
-
-            setAppointments(appts || []);
-
-            // 2. Get Requests (Pending)
-            const { data: reqs } = await supabase
-                .from("appointments")
-                .select("*, patient:user_profiles(full_name, phone)")
-                .eq("doctor_id", doctorId)
-                .eq("status", "pending")
-                .order("created_at", { ascending: false });
-
-            setRequests(reqs || []);
-
-            // 3. Get Slots
-            const { data: mySlots } = await supabase
-                .from("appointment_slots")
-                .select("*")
-                .eq("doctor_id", doctorId)
-                .gte("date", today)
-                .order("date", { ascending: true });
-
-            setSlots(mySlots || []);
-
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to load data");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreateSlot = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!doctor) return;
-
-        try {
-            const { error } = await supabase.from("appointment_slots").insert({
-                doctor_id: doctor.id,
-                clinic_id: doctor.clinic_id,
-
-                date: newSlot.date,
-                start_time: newSlot.startTime,
-                end_time: newSlot.endTime,
-                is_available: true
-            });
-
-            if (error) {
-                // If clinic_id is null in doctor profile (because linked to hospital directly), 
-                // and appointment_slots requires clinic_id, this will fail.
-                // I should probably make appointment_slots.clinic_id optional too or link to hospital.
-                // For now, let's assume doctor has a clinic_id or I'll catch the error.
-                throw error;
+            if (doctorData) {
+                setDoctorProfile({
+                    full_name: doctorData.name,
+                    specialization: doctorData.specialization,
+                    hospital: doctorData.hospitals as unknown as { name: string } || undefined
+                });
             }
 
-            toast.success("Slot added");
-            setNewSlot({ date: "", startTime: "", endTime: "" });
-            loadDashboardData(doctor.id);
-        } catch (error: any) {
-            console.error(error);
-            toast.error("Failed to add slot: " + error.message);
-        }
-    };
-
-    const handleAction = async (appointmentId: string, action: 'accepted' | 'rejected') => {
-        try {
-            const { error } = await supabase
+            // Fetch Appointments
+            // Note: This relies on the updated RLS policies allowing doctors to view appointments assigned to them.
+            // We need to join with user_profiles to get patient name.
+            const { data: appointmentData, error: appError } = await supabase
                 .from("appointments")
-                .update({ status: action })
-                .eq("id", appointmentId);
+                .select(`
+          id,
+          appointment_date,
+          appointment_time,
+          status,
+          reason,
+          patient:user_profiles!patient_id(full_name, phone)
+        `)
+                .order('appointment_date', { ascending: true });
 
-            if (error) throw error;
-            toast.success(`Appointment ${action}`);
-            // Optimistic update
-            setRequests(current => current.filter(r => r.id !== appointmentId));
-            if (action === 'accepted') {
-                loadDashboardData(doctor.id); // Reload to move to appointments list
+            if (appointmentData) {
+                // Transform data to match interface
+                const formattedAppointments = appointmentData.map((app: any) => ({
+                    id: app.id,
+                    patient: {
+                        full_name: app.patient?.full_name || 'Unknown',
+                        phone: app.patient?.phone || 'N/A'
+                    },
+                    appointment_date: app.appointment_date,
+                    appointment_time: app.appointment_time,
+                    status: app.status,
+                    reason: app.reason,
+                }));
+                setAppointments(formattedAppointments);
             }
-        } catch (error) {
-            console.error(error);
-            toast.error("Action failed");
+
+            setLoading(false);
+        };
+
+        fetchDashboardData();
+    }, [router, supabase]);
+
+    const handleStatusUpdate = async (id: string, status: string, reason?: string) => {
+        const { error } = await supabase
+            .from("appointments")
+            .update({ status, ...(reason && { notes: reason }) }) // Storing reject reason in notes for now
+            .eq("id", id);
+
+        if (!error) {
+            setAppointments((prev) =>
+                prev.map((app) => (app.id === id ? { ...app, status } : app))
+            );
+            setIsRejectDialogOpen(false);
+            setRejectReason("");
         }
     };
 
-    if (loading && !doctor) {
-        return <div className="p-8 flex justify-center text-gray-500">Loading Doctor Dashboard...</div>;
-    }
+    const pendingAppointments = appointments.filter(a => a.status === 'pending');
+    const upcomingAppointments = appointments.filter(a => a.status === 'accepted' || a.status === 'scheduled');
+    const pastAppointments = appointments.filter(a => ['completed', 'cancelled', 'declined'].includes(a.status));
 
-    if (!doctor) {
-        return <div className="p-8 text-center text-red-500">Access Denied: You are not registered as a doctor.</div>;
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        router.push("/");
+    };
+
+    if (loading) {
+        return <div className="min-h-screen flex items-center justify-center text-primary">Loading...</div>;
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-
-                {/* Header */}
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dr. {doctor.name}</h1>
-                        <p className="text-gray-500">{doctor.specialization} • {doctor.hospital?.name || "Independent"}</p>
+        <div className="min-h-screen bg-background-light dark:bg-background-dark font-display">
+            {/* Navbar */}
+            <nav className="w-full border-b border-[#e6f3f4] dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+                <div className="w-full max-w-7xl mx-auto flex justify-between items-center p-3 px-5">
+                    <Link href="/" className="flex items-center gap-2 group">
+                        <div className="size-8 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+                            <span className="material-symbols-outlined text-xl">health_metrics</span>
+                        </div>
+                        <span className="text-xl font-extrabold tracking-tight text-[#0c1b1d] dark:text-white">medcAIr</span>
+                    </Link>
+                    <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-sm font-bold text-[#0c1b1d] dark:text-white">{doctorProfile?.full_name}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{doctorProfile?.specialization} • {doctorProfile?.hospital?.name}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => { }} className="text-gray-500 hover:text-primary">
+                            <Bell className="h-5 w-5" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={handleSignOut} className="gap-2">
+                            <LogOut className="h-4 w-4" />
+                            Sign Out
+                        </Button>
                     </div>
-                    <Button variant="outline" onClick={() => router.push('/auth/login')}>Sign Out</Button>
+                </div>
+            </nav>
+
+            <main className="max-w-7xl mx-auto p-6 space-y-8">
+
+                {/* Dashboard Header */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="bg-gradient-to-br from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 border-none shadow-md">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-medium text-gray-500 dark:text-gray-400">Pending Requests</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-bold text-primary">{pendingAppointments.length}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-50 to-white dark:from-gray-800 dark:to-gray-900 border-none shadow-md">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-medium text-gray-500 dark:text-gray-400">Upcoming Appointments</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-bold text-green-600">{upcomingAppointments.length}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-purple-50 to-white dark:from-gray-800 dark:to-gray-900 border-none shadow-md">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Patients</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-bold text-purple-600">{pastAppointments.length + upcomingAppointments.length}</div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Content Tabs */}
+                <Tabs defaultValue="appointments" className="w-full space-y-6">
+                    <TabsList className="bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 w-full sm:w-auto grid grid-cols-2 sm:flex">
+                        <TabsTrigger value="appointments" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">Appointments</TabsTrigger>
+                        <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white px-6">Patient History</TabsTrigger>
+                    </TabsList>
 
-                    {/* Left Column: Requests & Schedule */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <TabsContent value="appointments" className="space-y-6">
+                        {/* Pending Appointments Section */}
+                        {pendingAppointments.length > 0 && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-[#0c1b1d] dark:text-white flex items-center gap-2">
+                                    <Clock className="text-orange-500" /> Pending Approvals
+                                </h2>
+                                <div className="grid gap-4">
+                                    {pendingAppointments.map((app) => (
+                                        <Card key={app.id} className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+                                            <CardContent className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                                <div className="space-y-1">
+                                                    <h3 className="font-bold text-lg text-[#0c1b1d] dark:text-white">{app.patient.full_name}</h3>
+                                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                                        <Calendar className="h-4 w-4" />
+                                                        {new Date(app.appointment_date).toLocaleDateString()} at {app.appointment_time}
+                                                    </div>
+                                                    {app.reason && <p className="text-sm text-gray-600 dark:text-gray-300 italic">" {app.reason} "</p>}
+                                                </div>
+                                                <div className="flex gap-2 w-full sm:w-auto">
+                                                    <Button
+                                                        className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                                                        onClick={() => handleStatusUpdate(app.id, 'accepted')}
+                                                    >
+                                                        <CheckCircle className="h-4 w-4 mr-2" /> Accept
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="flex-1 sm:flex-none border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-950"
+                                                        onClick={() => {
+                                                            setSelectedAppointmentId(app.id);
+                                                            setIsRejectDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <XCircle className="h-4 w-4 mr-2" /> Decline
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-                        {/* Appointment Requests */}
-                        <Card className="border-[#e6f3f4] dark:border-gray-700 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <AlertCircle className="size-5 text-orange-500" />
-                                    Appointment Requests
-                                    {requests.length > 0 && <span className="ml-2 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">{requests.length}</span>}
-                                </CardTitle>
-                                <CardDescription>New booking requests requiring your approval</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {requests.length === 0 ? (
-                                    <p className="text-gray-500 text-sm">No pending requests.</p>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {requests.map((req) => (
-                                            <div key={req.id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 bg-white border rounded-xl gap-4">
-                                                <div className="flex gap-4">
-                                                    <div className="size-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold">
-                                                        {req.patient?.full_name?.[0] || "P"}
+                        {/* Upcoming Appointments Section */}
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-bold text-[#0c1b1d] dark:text-white flex items-center gap-2">
+                                <Calendar className="text-primary" /> Upcoming Schedule
+                            </h2>
+                            {upcomingAppointments.length === 0 ? (
+                                <Card className="p-8 text-center text-gray-500">No upcoming appointments scheduled.</Card>
+                            ) : (
+                                <div className="grid gap-4">
+                                    {upcomingAppointments.map((app) => (
+                                        <Card key={app.id} className="shadow-sm hover:shadow-md transition-shadow">
+                                            <CardContent className="p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                                                        {app.patient.full_name[0]}
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-900">{req.patient?.full_name}</p>
-                                                        <p className="text-xs text-gray-500 flex items-center gap-2">
-                                                            {req.appointment_date} at {req.appointment_time}
-                                                        </p>
+                                                        <h3 className="font-bold text-[#0c1b1d] dark:text-white">{app.patient.full_name}</h3>
+                                                        <p className="text-sm text-gray-500">{app.patient.phone}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2 w-full md:w-auto">
-                                                    <Button size="sm" className="bg-green-600 hover:bg-green-700 flex-1 md:flex-none" onClick={() => handleAction(req.id, 'accepted')}>
-                                                        Accept
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 flex-1 md:flex-none" onClick={() => handleAction(req.id, 'rejected')}>
-                                                        Decline
-                                                    </Button>
+                                                <div className="text-right">
+                                                    <div className="font-semibold text-[#0c1b1d] dark:text-white">
+                                                        {new Date(app.appointment_date).toLocaleDateString()}
+                                                    </div>
+                                                    <div className="text-sm text-primary font-medium">
+                                                        {app.appointment_time}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                                <div>
+                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Confirmed</Badge>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
 
-                        {/* Upcoming Schedule */}
-                        <Card className="border-[#e6f3f4] dark:border-gray-700 shadow-sm">
+                    <TabsContent value="history">
+                        <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="size-5 text-gray-500" />
-                                    Your Schedule
-                                </CardTitle>
+                                <CardTitle>Patient History</CardTitle>
+                                <CardDescription>View past appointments and outcomes.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                {appointments.length === 0 ? (
-                                    <p className="text-gray-500 text-sm">No scheduled appointments.</p>
+                                {pastAppointments.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">No history found.</div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {appointments.map((apt) => (
-                                            <div key={apt.id} className="flex items-center p-4 border rounded-xl hover:border-blue-200 transition-all group">
-                                                <div className="w-20 text-center border-r pr-4 mr-4">
-                                                    <p className="font-bold text-gray-900">{apt.appointment_time}</p>
-                                                    <p className="text-xs text-gray-500">{apt.appointment_date}</p>
+                                        {pastAppointments.map((app) => (
+                                            <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500">
+                                                        <User className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium">{app.patient.full_name}</p>
+                                                        <p className="text-xs text-gray-500">{new Date(app.appointment_date).toLocaleDateString()} • {app.status}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="font-bold text-lg">{apt.patient?.full_name}</p>
-                                                    <p className="text-sm text-gray-500">{apt.type || "General Consultation"}</p>
-                                                </div>
-                                                <div>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${apt.status === 'completed' ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-600'}`}>
-                                                        {apt.status}
-                                                    </span>
-                                                </div>
+                                                <Badge variant={app.status === 'completed' ? 'default' : 'secondary'}>
+                                                    {app.status}
+                                                </Badge>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
+                    </TabsContent>
+                </Tabs>
+            </main>
+
+            {/* Reject Dialog */}
+            <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Decline Appointment</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for declining this appointment. This will be visible to the patient.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="reason">Reason</Label>
+                            <Input
+                                id="reason"
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="e.g. Doctor unavailable, Schedule conflict..."
+                            />
+                        </div>
                     </div>
-
-                    {/* Right Column: Slot Management */}
-                    <div className="space-y-8">
-                        <Card className="border-[#e6f3f4] dark:border-gray-700 shadow-sm bg-blue-50/50">
-                            <CardHeader>
-                                <CardTitle className="text-lg">Manage Availability</CardTitle>
-                                <CardDescription>Add new time slots for patients</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form onSubmit={handleCreateSlot} className="space-y-4">
-                                    <div>
-                                        <Label>Date</Label>
-                                        <Input
-                                            type="date"
-                                            value={newSlot.date}
-                                            onChange={(e) => setNewSlot({ ...newSlot, date: e.target.value })}
-                                            min={new Date().toISOString().split("T")[0]}
-                                            required
-                                            className="bg-white"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <Label>Start</Label>
-                                            <Input
-                                                type="time"
-                                                value={newSlot.startTime}
-                                                onChange={(e) => setNewSlot({ ...newSlot, startTime: e.target.value })}
-                                                required
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label>End</Label>
-                                            <Input
-                                                type="time"
-                                                value={newSlot.endTime}
-                                                onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                                                required
-                                                className="bg-white"
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">Add Slot</Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-[#e6f3f4] dark:border-gray-700 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">Available Slots</CardTitle>
-                            </CardHeader>
-                            <CardContent className="max-h-[300px] overflow-y-auto">
-                                {slots.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No active slots.</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {slots.map((slot) => (
-                                            <div key={slot.id} className="flex justify-between items-center p-2 bg-white border rounded text-sm">
-                                                <div>
-                                                    <span className="font-medium text-gray-900">{slot.date}</span>
-                                                    <span className="text-gray-500 mx-2">|</span>
-                                                    <span>{slot.start_time} - {slot.end_time}</span>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 w-6 p-0 text-red-400 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={async () => {
-                                                        await supabase.from("appointment_slots").delete().eq("id", slot.id);
-                                                        loadDashboardData(doctor.id);
-                                                    }}
-                                                >
-                                                    <XCircle className="size-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                </div>
-            </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => selectedAppointmentId && handleStatusUpdate(selectedAppointmentId, 'declined', rejectReason)}
+                            disabled={!rejectReason}
+                        >
+                            Decline Appointment
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
