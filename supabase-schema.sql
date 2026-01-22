@@ -43,11 +43,17 @@ CREATE TABLE IF NOT EXISTS clinics (
 -- Doctors Table
 CREATE TABLE IF NOT EXISTS doctors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  clinic_id UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Link to auth user
+  hospital_id UUID REFERENCES hospitals(id) ON DELETE CASCADE,
+  clinic_id UUID REFERENCES clinics(id) ON DELETE SET NULL, -- Made optional
   name TEXT NOT NULL,
   specialization TEXT NOT NULL,
   email TEXT,
   phone TEXT,
+  consultation_fee NUMERIC(10, 2) DEFAULT 0.00,
+  experience_years INTEGER DEFAULT 0,
+  about TEXT,
+  availability_status TEXT DEFAULT 'available' CHECK (availability_status IN ('available', 'unavailable', 'break')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -74,7 +80,8 @@ CREATE TABLE IF NOT EXISTS appointments (
   slot_id UUID NOT NULL REFERENCES appointment_slots(id) ON DELETE CASCADE,
   appointment_date DATE NOT NULL,
   appointment_time TIME NOT NULL,
-  status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled', 'no_show')),
+  appointment_time TIME NOT NULL,
+  status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled', 'no_show', 'pending', 'accepted', 'rejected')),
   reason TEXT,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

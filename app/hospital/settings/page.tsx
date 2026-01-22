@@ -21,7 +21,7 @@ export default function HospitalSettings() {
   const [hospital, setHospital] = useState<any>(null);
   const [clinics, setClinics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showClinicForm, setShowClinicForm] = useState(false);
+  const [showClinicForm, setShowClinicForm] = useState(false); // Deprecated
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState("");
@@ -353,85 +353,8 @@ export default function HospitalSettings() {
     }
   };
 
-  const handleCreateClinic = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!hospital) return;
+  // handleCreateClinic removed
 
-    try {
-      // Validate clinic data
-      const { ClinicSchema } = await import("@/lib/validations");
-      const { validateData } = await import("@/lib/utils");
-
-      const specialties = clinicForm.specialties
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const services = clinicForm.services
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const insuranceProviders = clinicForm.insurance_providers
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const paymentMethods = clinicForm.payment_methods
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-
-      const validation = validateData(ClinicSchema, {
-        name: clinicForm.name,
-        department: clinicForm.department,
-        specialties,
-        hospitalId: hospital.id,
-      });
-
-      if (!validation.success) {
-        toast.error("Validation Failed", {
-          description: validation.error?.message || "Invalid clinic data. Please check your inputs.",
-        });
-        return;
-      }
-
-      const { error } = await supabase.from("clinics").insert({
-        hospital_id: validation.data.hospitalId,
-        name: validation.data.name,
-        department: validation.data.department,
-        specialties: validation.data.specialties || [],
-        photo_url: clinicForm.photo_url || null,
-        consultation_fee: clinicForm.consultation_fee ? parseFloat(clinicForm.consultation_fee) : null,
-        services: services.length > 0 ? services : null,
-        insurance_providers: insuranceProviders.length > 0 ? insuranceProviders : null,
-        payment_methods: paymentMethods.length > 0 ? paymentMethods : null,
-      });
-
-      if (error) throw error;
-
-      toast.success("Clinic Created", {
-        description: "The clinic has been created successfully.",
-      });
-      setClinicForm({
-        name: "",
-        department: "",
-        specialties: "",
-        photo_url: "",
-        consultation_fee: "",
-        services: "",
-        insurance_providers: "",
-        payment_methods: "",
-      });
-      setShowClinicForm(false);
-      loadData();
-    } catch (error) {
-      const errorResponse = handleError(error, { action: "createClinic", resource: "clinics" });
-      toast.error("Creation Failed", {
-        description: errorResponse.error?.message || "Failed to create clinic.",
-      });
-    }
-  };
 
   const handleCreateSlot = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -818,123 +741,11 @@ export default function HospitalSettings() {
                 <CardTitle className="text-2xl font-bold text-black">Clinics</CardTitle>
                 <CardDescription className="text-gray-600">Manage your clinics and departments</CardDescription>
               </div>
-              <Button
-                onClick={() => setShowClinicForm(!showClinicForm)}
-                className="bg-green-600 text-white hover:bg-green-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Clinic
-              </Button>
+
             </div>
           </CardHeader>
           <CardContent>
-            {showClinicForm && (
-              <form onSubmit={handleCreateClinic} className="mb-6 p-6 border-2 border-gray-200 rounded-lg space-y-4 bg-gray-50">
-                <div>
-                  <Label className="text-black font-semibold">Clinic Name</Label>
-                  <Input
-                    value={clinicForm.name}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, name: e.target.value })
-                    }
-                    required
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Department</Label>
-                  <Input
-                    value={clinicForm.department}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, department: e.target.value })
-                    }
-                    required
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Specialties (comma-separated)</Label>
-                  <Input
-                    value={clinicForm.specialties}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, specialties: e.target.value })
-                    }
-                    placeholder="Cardiology, Heart Disease, Hypertension"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Photo URL (Optional)</Label>
-                  <Input
-                    type="url"
-                    value={clinicForm.photo_url}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, photo_url: e.target.value })
-                    }
-                    placeholder="https://example.com/clinic-photo.jpg"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Consultation Fee (Optional)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={clinicForm.consultation_fee}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, consultation_fee: e.target.value })
-                    }
-                    placeholder="500.00"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Services Offered (comma-separated, Optional)</Label>
-                  <Input
-                    value={clinicForm.services}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, services: e.target.value })
-                    }
-                    placeholder="X-Ray, Ultrasound, Lab Tests"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Insurance Providers (comma-separated, Optional)</Label>
-                  <Input
-                    value={clinicForm.insurance_providers}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, insurance_providers: e.target.value })
-                    }
-                    placeholder="Aetna, Blue Cross, Medicare"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div>
-                  <Label className="text-black font-semibold">Payment Methods (comma-separated, Optional)</Label>
-                  <Input
-                    value={clinicForm.payment_methods}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setClinicForm({ ...clinicForm, payment_methods: e.target.value })
-                    }
-                    placeholder="Cash, Credit Card, Insurance, UPI"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-green-600 text-white hover:bg-green-700">Create Clinic</Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowClinicForm(false)}
-                    className="border-2"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            )}
+
 
             <div className="space-y-3">
               {clinics.map((clinic: any) => (
