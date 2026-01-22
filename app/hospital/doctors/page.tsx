@@ -52,17 +52,40 @@ export default function DoctorDashboard() {
             }
 
             // 1. Get Hospital ID
-            const { data: hospital } = await supabase
+            let { data: hospital } = await supabase
                 .from("hospitals")
                 .select("id, name")
                 .eq("user_id", user.id)
                 .maybeSingle();
 
             if (!hospital) {
-                // Redirect to settings if no hospital profile
-                toast.error("Please set up your hospital profile first");
-                router.push("/hospital/settings");
-                return;
+                // If no hospital profile, create one automatically (implicit profile)
+                const { data: profile } = await supabase
+                    .from("user_profiles")
+                    .select("full_name")
+                    .eq("user_id", user.id)
+                    .single();
+
+                const { data: newHospital, error: createError } = await supabase
+                    .from("hospitals")
+                    .insert({
+                        user_id: user.id,
+                        name: profile?.full_name || "My Hospital",
+                        address: "",
+                        city: "",
+                        state: "",
+                        zip_code: "",
+                        phone: "",
+                        email: user.email || "",
+                    })
+                    .select("id, name")
+                    .single();
+
+                if (createError) throw createError;
+
+                // Continue with the new hospital
+                hospital = newHospital;
+                toast.success("Hospital profile initialized");
             }
 
             setHospitalId(hospital.id);
