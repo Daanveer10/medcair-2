@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import ShaderBackground from "@/components/ui/shader-background";
 
 interface Appointment {
     id: string;

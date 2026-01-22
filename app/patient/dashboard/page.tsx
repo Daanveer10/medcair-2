@@ -125,24 +125,30 @@ export default function PatientDashboard() {
   });
 
   return (
-    <div className="bg-background-light dark:bg-background-dark text-[#0c1b1d] dark:text-white font-display min-h-screen">
+    <div className="min-h-screen bg-black text-white font-display selection:bg-primary/30">
+      {/* Static Background */}
+      <div className="fixed inset-0 z-0 bg-black">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px]" />
+      </div>
+
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-[#e6f3f4] dark:border-gray-700 px-6 lg:px-20 py-3">
+      <header className="sticky top-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10 px-6 lg:px-20 py-3">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-8">
           <div className="flex items-center gap-8 flex-1">
-            <Link href="/" className="flex items-center gap-2 text-primary">
-              <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+            <Link href="/" className="flex items-center gap-2 text-primary hover:text-primary-light transition-colors">
+              <div className="size-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
                 <span className="material-symbols-outlined">health_metrics</span>
               </div>
-              <h2 className="text-xl font-bold leading-tight tracking-tight">medcAIr</h2>
+              <h2 className="text-xl font-bold leading-tight tracking-tight text-white">medcAIr</h2>
             </Link>
             <label className="hidden md:flex flex-1 max-w-md">
-              <div className="flex w-full items-stretch rounded-xl h-10 bg-[#e6f3f4] dark:bg-gray-800">
-                <div className="text-primary flex items-center justify-center pl-4">
+              <div className="flex w-full items-stretch rounded-xl h-10 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                <div className="text-gray-400 flex items-center justify-center pl-4">
                   <span className="material-symbols-outlined">search</span>
                 </div>
                 <input
-                  className="w-full border-none bg-transparent focus:ring-0 placeholder:text-[#4596a1] px-4 text-sm font-normal"
+                  className="w-full border-none bg-transparent focus:ring-0 placeholder:text-gray-500 px-4 text-sm font-normal text-white"
                   placeholder="Search doctors, clinics, or symptoms..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -152,35 +158,35 @@ export default function PatientDashboard() {
           </div>
           <div className="flex items-center gap-6">
             <nav className="hidden lg:flex items-center gap-8">
-              <Link href="/patient/dashboard" className="text-sm font-medium hover:text-primary transition-colors">Find Doctors</Link>
-              <a href="#" className="text-sm font-medium hover:text-primary transition-colors">Medical Records</a>
-              <Link href="/patient/appointments" className="text-sm font-medium hover:text-primary transition-colors">My Appointments</Link>
+              <Link href="/patient/dashboard" className="text-sm font-medium hover:text-primary transition-colors text-white">Find Doctors</Link>
+              <a href="#" className="text-sm font-medium hover:text-primary transition-colors text-gray-400">Medical Records</a>
+              <Link href="/patient/appointments" className="text-sm font-medium hover:text-primary transition-colors text-gray-400">My Appointments</Link>
             </nav>
-            <div className="flex items-center gap-3 border-l border-[#e6f3f4] dark:border-gray-700 pl-6">
-              <button className="flex min-w-[84px] items-center justify-center rounded-xl h-10 px-4 bg-primary text-white text-sm font-bold transition-transform hover:scale-105 active:scale-95">
+            <div className="flex items-center gap-3 border-l border-white/10 pl-6">
+              <button className="flex min-w-[84px] items-center justify-center rounded-xl h-10 px-4 bg-primary text-white text-sm font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
                 {userName.split(' ')[0]}
               </button>
-              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAzIXKDjh_NGcb5eucQvniIBxAtVKkRPtV-5VbGGxPFdUGuYo12GpgCtFOUxu8BPPiBu0fbLpvGwm82UsTUKpPyho-w--pUs9r3ATeEZpwaGXCqNXHZZuwxXIlM_o5Pc7og54M5tQE0UwTiHCTixUKpoWwaQGLDahcpzgpKbcDAmibkrX4vt7uOBKeVNOanNfGUrInW2zKRJndBC4dB8DYm04YYOGYW9BVdB2Ce2cdcoD5gWzOd3fN3EJ_a0yxSNFe6iExMTk3hFA")' }}></div>
+              <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-white/10" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAzIXKDjh_NGcb5eucQvniIBxAtVKkRPtV-5VbGGxPFdUGuYo12GpgCtFOUxu8BPPiBu0fbLpvGwm82UsTUKpPyho-w--pUs9r3ATeEZpwaGXCqNXHZZuwxXIlM_o5Pc7og54M5tQE0UwTiHCTixUKpoWwaQGLDahcpzgpKbcDAmibkrX4vt7uOBKeVNOanNfGUrInW2zKRJndBC4dB8DYm04YYOGYW9BVdB2Ce2cdcoD5gWzOd3fN3EJ_a0yxSNFe6iExMTk3hFA")' }}></div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1440px] mx-auto px-6 lg:px-20 py-6">
+      <main className="relative z-10 max-w-[1440px] mx-auto px-6 lg:px-20 py-6">
         {/* Breadcrumbs */}
         <nav className="flex flex-wrap gap-2 mb-6 items-center text-sm">
           <Link href="/" className="text-primary font-medium hover:underline">Home</Link>
-          <span className="text-primary/40 material-symbols-outlined !text-sm">chevron_right</span>
-          <span className="font-semibold">Search Results</span>
+          <span className="text-gray-600 material-symbols-outlined !text-sm">chevron_right</span>
+          <span className="font-semibold text-gray-300">Search Results</span>
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar: Filters */}
           <aside className="w-full lg:w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-8 bg-white dark:bg-gray-800 p-6 rounded-xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm">
+            <div className="sticky top-24 space-y-8 bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold">Filters</h3>
+                  <h3 className="text-lg font-bold text-white">Filters</h3>
                   {/* <button className="text-xs text-primary font-bold hover:underline">Clear all</button> */}
                 </div>
                 <div className="space-y-6">
@@ -192,12 +198,12 @@ export default function PatientDashboard() {
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" className="h-5 w-5 rounded border-[#cde6ea] text-primary focus:ring-primary/20" />
-                        <span className="text-sm group-hover:text-primary transition-colors">Available Today</span>
+                        <input type="checkbox" className="h-5 w-5 rounded border-gray-600 bg-white/5 text-primary focus:ring-primary/20" />
+                        <span className="text-sm text-gray-400 group-hover:text-primary transition-colors">Available Today</span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" checked className="h-5 w-5 rounded border-[#cde6ea] text-primary focus:ring-primary/20" />
-                        <span className="text-sm group-hover:text-primary transition-colors">This Week</span>
+                        <input type="checkbox" checked className="h-5 w-5 rounded border-gray-600 bg-white/5 text-primary focus:ring-primary/20" />
+                        <span className="text-sm text-gray-400 group-hover:text-primary transition-colors">This Week</span>
                       </label>
                     </div>
                   </div>
@@ -214,13 +220,13 @@ export default function PatientDashboard() {
           {/* Center Content: Search Results */}
           <div className="flex-1 space-y-6">
             <div className="flex items-baseline justify-between">
-              <h1 className="text-2xl font-bold">{filteredDoctors.length} Doctors Found</h1>
-              <div className="flex items-center gap-2 text-sm text-[#4596a1]">
+              <h1 className="text-2xl font-bold text-white">{filteredDoctors.length} Doctors Found</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
                 <span>Sort by:</span>
-                <select className="bg-transparent border-none focus:ring-0 font-bold text-[#0c1b1d] dark:text-white cursor-pointer py-0">
-                  <option>Highest Rated</option>
-                  <option>Experience</option>
-                  <option>Distance</option>
+                <select className="bg-transparent border-none focus:ring-0 font-bold text-white cursor-pointer py-0">
+                  <option className="text-black">Highest Rated</option>
+                  <option className="text-black">Experience</option>
+                  <option className="text-black">Distance</option>
                 </select>
               </div>
             </div>
@@ -231,33 +237,33 @@ export default function PatientDashboard() {
               <div className="p-12 text-center text-gray-500">No doctors found matching your search.</div>
             ) : (
               filteredDoctors.map((doc) => (
-                <div key={doc.id} className="group relative bg-white dark:bg-gray-800 rounded-xl p-6 border border-transparent hover:border-primary/30 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
+                <div key={doc.id} className="group relative bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-primary/30 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 hover:bg-white/10">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="relative">
-                      <div className="size-24 md:size-32 rounded-xl overflow-hidden bg-gray-100 items-center justify-center flex text-gray-300">
+                      <div className="size-24 md:size-32 rounded-xl overflow-hidden bg-white/5 border border-white/10 items-center justify-center flex text-gray-500">
                         <span className="material-symbols-outlined text-4xl">stethoscope</span>
                       </div>
-                      <div className="absolute -bottom-2 -right-2 bg-green-500 border-4 border-white dark:border-gray-800 size-6 rounded-full" title="Available Today"></div>
+                      <div className="absolute -bottom-2 -right-2 bg-green-500 border-4 border-black size-6 rounded-full" title="Available Today"></div>
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-1">
                         <div>
-                          <h3 className="text-xl font-bold">{doc.name}</h3>
+                          <h3 className="text-xl font-bold text-white">{doc.name}</h3>
                           <p className="text-primary font-semibold">{doc.specialization}</p>
                         </div>
-                        <div className="flex items-center gap-1 bg-[#e6f3f4] dark:bg-primary/10 px-3 py-1 rounded-full">
+                        <div className="flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
                           <span className="material-symbols-outlined text-primary !text-sm">star</span>
                           <span className="text-sm font-bold text-primary">4.9</span>
-                          <span className="text-xs text-[#4596a1]">(Verified)</span>
+                          <span className="text-xs text-gray-400">(Verified)</span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-400">
                         <div className="flex items-center gap-1">
                           <span className="material-symbols-outlined !text-sm">location_on</span>
                           <span>{doc.hospital.name}, {doc.hospital.city}</span>
                         </div>
                         {doc.hospital.distance && (
-                          <div className="flex items-center gap-1 text-green-600">
+                          <div className="flex items-center gap-1 text-emerald-400">
                             <span className="material-symbols-outlined !text-sm">near_me</span>
                             <span>{doc.hospital.distance} km</span>
                           </div>
@@ -268,8 +274,8 @@ export default function PatientDashboard() {
                         </div>
                       </div>
                       <div className="mt-6 flex items-center justify-between">
-                        <div className="text-lg font-bold">
-                          ${doc.consultation_fee} <span className="text-sm font-normal text-gray-400">/ consultation</span>
+                        <div className="text-lg font-bold text-white">
+                          ${doc.consultation_fee} <span className="text-sm font-normal text-gray-500">/ consultation</span>
                         </div>
                         <div className="flex gap-3">
                           {/* 
@@ -287,7 +293,7 @@ export default function PatientDashboard() {
                             Select
                           </button>
                           <Link href={`/patient/doctor/${doc.id}`}>
-                            <button className="px-6 py-2 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-all">
+                            <button className="px-6 py-2 bg-white/5 border border-white/10 text-primary font-bold rounded-xl hover:bg-white/10 transition-all">
                               Book Now
                             </button>
                           </Link>
@@ -302,10 +308,10 @@ export default function PatientDashboard() {
 
           {/* Right Sidebar: Quick Booking Calendar */}
           <aside className="w-full lg:w-80 flex-shrink-0">
-            <div className="sticky top-24 bg-white dark:bg-gray-800 rounded-xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-[#e6f3f4] dark:border-gray-700">
-                <h3 className="text-lg font-bold mb-1">Quick Book</h3>
-                <p className="text-xs text-[#4596a1]">
+            <div className="sticky top-24 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg overflow-hidden">
+              <div className="p-6 border-b border-white/10">
+                <h3 className="text-lg font-bold mb-1 text-white">Quick Book</h3>
+                <p className="text-xs text-gray-400">
                   {selectedDoctorId
                     ? `Selected: ${doctors.find(d => d.id === selectedDoctorId)?.name}`
                     : "Select a doctor to view slots"}
@@ -313,34 +319,34 @@ export default function PatientDashboard() {
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="font-bold">October 2023</span>
+                  <span className="font-bold text-white">October 2023</span>
                   <div className="flex gap-2">
-                    <button className="p-1 hover:bg-[#e6f3f4] rounded-lg transition-colors">
+                    <button className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
                       <span className="material-symbols-outlined">chevron_left</span>
                     </button>
-                    <button className="p-1 hover:bg-[#e6f3f4] rounded-lg transition-colors">
+                    <button className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
                       <span className="material-symbols-outlined">chevron_right</span>
                     </button>
                   </div>
                 </div>
                 {/* Mini Calendar mockup matches design */}
                 <div className="grid grid-cols-7 gap-1 text-center text-xs mb-6">
-                  <span className="text-[#4596a1] font-bold">M</span>
-                  <span className="text-[#4596a1] font-bold">T</span>
-                  <span className="text-[#4596a1] font-bold">W</span>
-                  <span className="text-[#4596a1] font-bold">T</span>
-                  <span className="text-[#4596a1] font-bold">F</span>
-                  <span className="text-[#4596a1] font-bold">S</span>
-                  <span className="text-[#4596a1] font-bold">S</span>
-                  <span className="p-2 text-gray-300">28</span>
-                  <span className="p-2 text-gray-300">29</span>
-                  <span className="p-2 text-gray-300">30</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">1</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">2</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">3</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">4</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">5</span>
-                  <span className="p-2 hover:bg-[#e6f3f4] rounded-lg cursor-pointer">6</span>
+                  <span className="text-gray-500 font-bold">M</span>
+                  <span className="text-gray-500 font-bold">T</span>
+                  <span className="text-gray-500 font-bold">W</span>
+                  <span className="text-gray-500 font-bold">T</span>
+                  <span className="text-gray-500 font-bold">F</span>
+                  <span className="text-gray-500 font-bold">S</span>
+                  <span className="text-gray-500 font-bold">S</span>
+                  <span className="p-2 text-gray-600">28</span>
+                  <span className="p-2 text-gray-600">29</span>
+                  <span className="p-2 text-gray-600">30</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">1</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">2</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">3</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">4</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">5</span>
+                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">6</span>
                   <span className="p-2 bg-primary text-white font-bold rounded-lg cursor-pointer">7</span>
                 </div>
                 {selectedDoctorId && (
@@ -359,9 +365,9 @@ export default function PatientDashboard() {
       </main>
 
       {/* AI Chatbot Bubble */}
-      <button className="fixed bottom-8 right-8 size-16 bg-white dark:bg-gray-800 rounded-full shadow-2xl flex items-center justify-center border-2 border-primary group transition-all hover:scale-110 active:scale-95 z-[60]">
-        <div className="absolute inset-0 rounded-full bg-primary/5 group-hover:bg-primary/10 animate-pulse"></div>
-        <span className="material-symbols-outlined text-primary !text-3xl relative z-10">smart_toy</span>
+      <button className="fixed bottom-8 right-8 size-16 bg-white/10 backdrop-blur-md rounded-full shadow-2xl flex items-center justify-center border-2 border-primary group transition-all hover:scale-110 active:scale-95 z-[60]">
+        <div className="absolute inset-0 rounded-full bg-primary/20 group-hover:bg-primary/30 animate-pulse"></div>
+        <span className="material-symbols-outlined text-white !text-3xl relative z-10">smart_toy</span>
       </button>
     </div>
   );
