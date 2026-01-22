@@ -45,48 +45,16 @@ export default function PatientDashboard() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
-  const [favoriteDoctorIds, setFavoriteDoctorIds] = useState<Set<string>>(new Set());
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
 
   useEffect(() => {
     checkUser();
     checkUser();
     loadDoctors();
-    // loadFavorites(); // TODO: Update favoriting for doctors if needed. Disabling for MVP refactor to avoid errors.
   }, []);
 
-  const loadFavorites = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from("user_profiles").select("id").eq("user_id", user.id).single();
-      if (!profile) return;
-      const { data } = await supabase.from("favorite_clinics").select("clinic_id").eq("patient_id", profile.id);
-      if (data) setFavoriteClinicIds(new Set(data.map(f => f.clinic_id)));
-    } catch (error) {
-      console.error("Error loading favorites", error);
-    }
-  };
 
-  const toggleFavorite = async (clinicId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from("user_profiles").select("id").eq("user_id", user.id).single();
-      if (!profile) return;
-      const isFavorite = favoriteClinicIds.has(clinicId);
-      if (isFavorite) {
-        await supabase.from("favorite_clinics").delete().eq("patient_id", profile.id).eq("clinic_id", clinicId);
-        setFavoriteClinicIds(prev => { const next = new Set(prev); next.delete(clinicId); return next; });
-      } else {
-        await supabase.from("favorite_clinics").insert({ patient_id: profile.id, clinic_id: clinicId });
-        setFavoriteClinicIds(prev => new Set(prev).add(clinicId));
-      }
-    } catch (error) {
-      toast.error("Failed to update favorites");
-    }
-  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -234,21 +202,7 @@ export default function PatientDashboard() {
                     </div>
                   </div>
                   {/* Favorites Toggle */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-3 text-primary">
-                      <Heart className="h-4 w-4" />
-                      <span className="text-sm font-bold uppercase tracking-wider">Favorites</span>
-                    </div>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={showFavoritesOnly}
-                        onChange={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                        className="h-5 w-5 rounded border-[#cde6ea] text-primary focus:ring-primary/20"
-                      />
-                      <span className="text-sm group-hover:text-primary transition-colors">Show Favorites Only</span>
-                    </label>
-                  </div>
+
                 </div>
               </div>
               <button className="w-full py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
