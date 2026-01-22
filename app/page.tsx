@@ -142,10 +142,10 @@ export default function Home() {
                 const Icon = specialty.icon;
                 return (
                   <div key={idx} className="flex-none w-32 group cursor-pointer text-center">
-                    <div className="size-20 mx-auto bg-white/10 backdrop-blur rounded-full flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors border border-white/10">
-                      <Icon className="size-8 text-primary" />
+                    <div className="size-20 mx-auto bg-white/5 backdrop-blur rounded-full flex items-center justify-center mb-3 group-hover:bg-indigo-500/20 transition-colors border border-white/10 group-hover:border-indigo-500/30">
+                      <Icon className="size-8 text-indigo-400 group-hover:text-indigo-300" />
                     </div>
-                    <p className="text-sm font-bold text-gray-300 group-hover:text-white">{specialty.name}</p>
+                    <p className="text-sm font-bold text-gray-400 group-hover:text-white transition-colors">{specialty.name}</p>
                   </div>
                 );
               })}
@@ -162,42 +162,42 @@ export default function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               {/* Book Appointment */}
-              <div className="group bg-white/5 backdrop-blur rounded-2xl p-8 border border-white/10 hover:border-primary/50 transition-all hover:-translate-y-1">
-                <div className="size-14 bg-blue-500/20 rounded-xl flex items-center justify-center mb-6 border border-blue-500/30">
-                  <Calendar className="size-8 text-blue-400" />
+              <div className="group bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 hover:border-indigo-500/50 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div className="size-14 bg-indigo-500/20 rounded-xl flex items-center justify-center mb-6 border border-indigo-500/30 group-hover:scale-110 transition-transform">
+                  <Calendar className="size-8 text-indigo-400" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Book Appointment</h3>
                 <p className="text-gray-400 mb-6 text-sm leading-relaxed">
                   Schedule in-person visits with top-rated specialists at your convenience. Real-time availability and instant confirmation.
                 </p>
-                <button className="text-primary font-bold text-sm flex items-center gap-2">
+                <button className="text-indigo-400 font-bold text-sm flex items-center gap-2 group-hover:text-indigo-300 transition-colors">
                   Book Now <ArrowRight className="size-4" />
                 </button>
               </div>
               {/* Consult Online */}
-              <div className="group bg-white/5 backdrop-blur rounded-2xl p-8 border border-white/10 hover:border-primary/50 transition-all hover:-translate-y-1">
-                <div className="size-14 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6 border border-emerald-500/30">
-                  <Video className="size-8 text-emerald-400" />
+              <div className="group bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 hover:border-indigo-500/50 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/10">
+                <div className="size-14 bg-purple-500/20 rounded-xl flex items-center justify-center mb-6 border border-purple-500/30 group-hover:scale-110 transition-transform">
+                  <Video className="size-8 text-purple-400" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">Consult Online</h3>
                 <p className="text-gray-400 mb-6 text-sm leading-relaxed">
                   Connect with board-certified doctors via high-quality video calls 24/7. Get prescriptions and medical advice instantly.
                 </p>
-                <button className="text-primary font-bold text-sm flex items-center gap-2">
+                <button className="text-purple-400 font-bold text-sm flex items-center gap-2 group-hover:text-purple-300 transition-colors">
                   Start Consultation <ArrowRight className="size-4" />
                 </button>
               </div>
               {/* AI Assistant */}
-              <div className="group bg-gradient-to-br from-white/10 to-white/5 backdrop-blur rounded-2xl p-8 border border-primary/20 transition-all hover:-translate-y-1 relative overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
-                <div className="size-14 bg-primary/20 rounded-xl flex items-center justify-center mb-6 border border-primary/30">
-                  <Bot className="size-8 text-primary" />
+              <div className="group bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-md rounded-2xl p-8 border border-white/10 hover:border-indigo-500/50 transition-all hover:-translate-y-1 relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl group-hover:bg-indigo-500/30 transition-colors"></div>
+                <div className="size-14 bg-white/10 rounded-xl flex items-center justify-center mb-6 border border-white/20 group-hover:scale-110 transition-transform">
+                  <Bot className="size-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-white">AI Health Assistant</h3>
-                <p className="text-gray-300 mb-6 text-sm leading-relaxed">
+                <p className="text-indigo-200/70 mb-6 text-sm leading-relaxed">
                   Get personalized wellness insights and symptom guidance powered by our advanced medical AI. Available anytime, anywhere.
                 </p>
-                <button className="text-primary font-bold text-sm flex items-center gap-2">
+                <button className="text-white font-bold text-sm flex items-center gap-2">
                   Try AI Assistant <ArrowRight className="size-4" />
                 </button>
               </div>
@@ -208,34 +208,34 @@ export default function Home() {
         {/* Trust Section / Records Management */}
         <section className="py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-primary/90 backdrop-blur rounded-3xl overflow-hidden relative border border-white/10">
+            <div className="bg-indigo-950/40 backdrop-blur-xl rounded-3xl overflow-hidden relative border border-indigo-500/20 shadow-2xl shadow-indigo-500/10">
               <div className="grid lg:grid-cols-2 items-center">
                 <div className="p-12 lg:p-20 text-white space-y-8">
                   <h2 className="text-4xl font-extrabold leading-tight">Your Medical Records, <br />Secure and Portable.</h2>
-                  <p className="text-white/80 bg-black/10 p-4 rounded-xl text-lg backdrop-blur-sm">
+                  <p className="text-indigo-100/80 bg-indigo-900/30 p-4 rounded-xl text-lg backdrop-blur-sm border border-indigo-500/10">
                     "medcAIr has completely changed how I manage my family's health. Having all prescriptions and reports in one place is a lifesaver."
                   </p>
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
-                      <CheckCircle className="size-6 text-teal-300" />
-                      <span className="font-medium">End-to-end encrypted storage</span>
+                      <CheckCircle className="size-6 text-indigo-400" />
+                      <span className="font-medium text-indigo-100">End-to-end encrypted storage</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <CheckCircle className="size-6 text-teal-300" />
-                      <span className="font-medium">Easy sharing with specialists</span>
+                      <CheckCircle className="size-6 text-indigo-400" />
+                      <span className="font-medium text-indigo-100">Easy sharing with specialists</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <CheckCircle className="size-6 text-teal-300" />
-                      <span className="font-medium">Automated health history timeline</span>
+                      <CheckCircle className="size-6 text-indigo-400" />
+                      <span className="font-medium text-indigo-100">Automated health history timeline</span>
                     </div>
                   </div>
-                  <button className="bg-white text-primary px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-xl">
+                  <button className="bg-white text-indigo-950 px-10 py-4 rounded-xl font-bold text-lg hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-500/20">
                     Get Started Free
                   </button>
                 </div>
                 <div className="hidden lg:block h-full relative p-12">
-                  <div className="bg-white/10 backdrop-blur p-8 rounded-2xl border border-white/20 h-full flex flex-col justify-center">
-                    <div className="bg-white/95 rounded-xl p-4 mb-4 shadow-lg flex items-center gap-4 translate-x-12">
+                  <div className="bg-white/5 backdrop-blur-md p-8 rounded-2xl border border-white/10 h-full flex flex-col justify-center">
+                    <div className="bg-white/90 backdrop-blur rounded-xl p-4 mb-4 shadow-lg flex items-center gap-4 translate-x-12 ring-1 ring-black/5">
                       <div className="size-10 bg-blue-100 rounded flex items-center justify-center">
                         <FileText className="size-6 text-blue-600" />
                       </div>
@@ -244,18 +244,18 @@ export default function Home() {
                         <p className="text-sm font-bold text-slate-900">Lab Results - Cardiology</p>
                       </div>
                     </div>
-                    <div className="bg-white/95 rounded-xl p-4 mb-4 shadow-lg flex items-center gap-4 -translate-x-4">
-                      <div className="size-10 bg-emerald-100 rounded flex items-center justify-center">
-                        <Pill className="size-6 text-emerald-600" />
+                    <div className="bg-white/90 backdrop-blur rounded-xl p-4 mb-4 shadow-lg flex items-center gap-4 -translate-x-4 ring-1 ring-black/5">
+                      <div className="size-10 bg-purple-100 rounded flex items-center justify-center">
+                        <Pill className="size-6 text-purple-600" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-gray-500">APR 28, 2023</p>
-                        <p className="text-sm font-bold text-slate-900">Digital Prescription - Dr. Sarah J.</p>
+                        <p className="text-sm font-bold text-slate-900">Digital Prescription</p>
                       </div>
                     </div>
-                    <div className="bg-white/95 rounded-xl p-4 shadow-lg flex items-center gap-4 translate-x-8">
-                      <div className="size-10 bg-amber-100 rounded flex items-center justify-center">
-                        <Syringe className="size-6 text-amber-600" />
+                    <div className="bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg flex items-center gap-4 translate-x-8 ring-1 ring-black/5">
+                      <div className="size-10 bg-indigo-100 rounded flex items-center justify-center">
+                        <Syringe className="size-6 text-indigo-600" />
                       </div>
                       <div>
                         <p className="text-xs font-bold text-gray-500">MAR 15, 2023</p>
