@@ -54,7 +54,7 @@ export default function HospitalLayout({
         { icon: "stethoscope", label: "Doctors", href: "/hospital/doctors" },
         { icon: "calendar_month", label: "Schedule", href: "#" },
         { icon: "group", label: "Patients", href: "#" },
-        { icon: "chat", label: "Messages", badge: 3, href: "#" },
+        { icon: "chat", label: "Messages", badge: 3, href: "/hospital/messages" },
         { icon: "payments", label: "Finances", href: "/hospital/analytics" },
         { icon: "settings", label: "Settings", href: "/hospital/settings" },
     ];
@@ -81,7 +81,7 @@ export default function HospitalLayout({
                     </div>
                     <nav className="space-y-2 px-3">
                         {navItems.map((item, idx) => {
-                            const isActive = pathname === item.href;
+                            const isActive = pathname === item.href || (item.href !== "#" && pathname?.startsWith(item.href));
                             return (
                                 <Link
                                     key={idx}
