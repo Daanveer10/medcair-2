@@ -143,14 +143,6 @@ export default function DoctorDashboard() {
         try {
             const { error } = await supabase.from("appointment_slots").insert({
                 doctor_id: doctor.id,
-                clinic_id: doctor.clinic_id, // If still used? Or null. Check constraint.
-                // Wait, schema migration made clinic_id optional. But if we are in a hospital, we might want to link it?
-                // Let's assume clinic_id is optional or we use hospital_id if the table supports it (but slots usually link to clinic/doctor).
-                // If my schema update maintained clinic_id on slots, I need to provide it OR make it optional there too.
-                // Checking supabase-schema.sql: 
-                // appointment_slots references clinics(id).
-                // If I haven't made clinic_id optional in appointment_slots, I MUST provide it.
-                // But the doctor might check `clinic_id` from their profile.
                 clinic_id: doctor.clinic_id,
 
                 date: newSlot.date,
