@@ -624,43 +624,43 @@ export default function HospitalSettings() {
         <Card className="bg-white dark:bg-gray-800 rounded-2xl border border-[#e6f3f4] dark:border-gray-700 shadow-sm overflow-hidden">
           <CardHeader className="border-b border-[#e6f3f4] dark:border-gray-700 pb-4">
             <CardTitle className="text-xl font-bold text-[#0c1b1d] dark:text-white">Hospital Information</CardTitle>
-            <CardDescription className="text-gray-500">Update your hospital details and location</CardDescription>
+            <CardDescription className="text-gray-500 dark:text-gray-400">Update your hospital details and location</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleUpdateHospital} className="space-y-4">
               <div>
-                <Label className="text-black font-semibold">Hospital Name</Label>
-                <Input value={hospital?.name || ""} disabled className="border-2 border-gray-300 text-black" />
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold">Hospital Name</Label>
+                <Input value={hospital?.name || ""} disabled className="border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <Label className="text-black font-semibold">Email</Label>
-                <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 text-black" />
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold">Email</Label>
+                <Input value={hospital?.email || ""} disabled className="border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100" />
               </div>
               {/* Location Search Section */}
-              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-black font-semibold mb-2 block">Search Location (Manual Selection)</Label>
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold mb-2 block">Search Location (Manual Selection)</Label>
                 <div className="flex gap-2 relative">
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="e.g. City Hospital, Main Street, Mumbai"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black flex-1"
+                    className="border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:border-green-600 dark:focus:border-green-500 text-gray-900 dark:text-gray-100 flex-1 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearchAddress())}
                   />
                   <Button
                     type="button"
                     onClick={handleSearchAddress}
                     disabled={searching}
-                    className="bg-gray-800 text-white hover:bg-gray-700"
+                    className="bg-gray-800 dark:bg-gray-700 text-white hover:bg-gray-700 dark:hover:bg-gray-600"
                   >
                     {searching ? "Searching..." : "Search"}
                   </Button>
 
                   {/* Search Results Dropdown */}
                   {showResults && searchResults.length > 0 && (
-                    <div className="absolute top-12 left-0 right-0 bg-white border border-gray-200 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
-                      <div className="p-2 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                        <span className="text-xs font-medium text-gray-500">Select the closest match:</span>
+                    <div className="absolute top-12 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
+                      <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/80">
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Select the closest match:</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -674,31 +674,31 @@ export default function HospitalSettings() {
                         <button
                           key={index}
                           type="button"
-                          className="w-full text-left p-3 hover:bg-green-50 border-b border-gray-50 last:border-0 transition-colors"
+                          className="w-full text-left p-3 hover:bg-green-50 dark:hover:bg-green-900/20 border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
                           onClick={() => handleSelectAddress(result)}
                         >
-                          <p className="font-medium text-sm text-gray-900 truncate">{result.display_name.split(",")[0]}</p>
-                          <p className="text-xs text-gray-500 truncate">{result.display_name}</p>
+                          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{result.display_name.split(",")[0]}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{result.display_name}</p>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Search for your hospital or a nearby landmark if GPS is inaccurate.
                 </p>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <Label className="text-black font-semibold">Address *</Label>
+                  <Label className="text-gray-900 dark:text-gray-200 font-semibold">Address *</Label>
                   <Button
                     type="button"
                     variant="link"
                     size="sm"
                     onClick={handleUseCurrentLocation}
                     disabled={gettingLocation}
-                    className="text-green-600 p-0 h-auto font-semibold"
+                    className="text-green-600 dark:text-green-400 p-0 h-auto font-semibold"
                   >
                     {gettingLocation ? "Locating..." : "📍 Use Current Location"}
                   </Button>
@@ -706,7 +706,7 @@ export default function HospitalSettings() {
 
                 {/* Debug Info for Location Issues */}
                 {locationDetails && (
-                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                  <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-xs text-blue-800 dark:text-blue-200">
                     <p><strong>Debug Info:</strong></p>
                     <p>Lat: {locationDetails.lat.toFixed(6)}, Lng: {locationDetails.lng.toFixed(6)}</p>
                     <p>Accuracy: ±{Math.round(locationDetails.accuracy)} meters</p>
@@ -714,7 +714,7 @@ export default function HospitalSettings() {
                       href={`https://www.google.com/maps/search/?api=1&query=${locationDetails.lat},${locationDetails.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800 mt-1 inline-block"
+                      className="text-blue-600 dark:text-blue-300 underline hover:text-blue-800 dark:hover:text-blue-100 mt-1 inline-block"
                     >
                       View detected location on Google Maps
                     </a>
@@ -726,74 +726,74 @@ export default function HospitalSettings() {
                   onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
                   required
                   placeholder="123 Medical Center Drive"
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-black font-semibold">City *</Label>
+                  <Label className="text-gray-900 dark:text-gray-200 font-semibold">City *</Label>
                   <Input
                     value={hospitalForm.city}
                     onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
                     required
                     placeholder="New York"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
-                  <Label className="text-black font-semibold">State *</Label>
+                  <Label className="text-gray-900 dark:text-gray-200 font-semibold">State *</Label>
                   <Input
                     value={hospitalForm.state}
                     onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
                     required
                     placeholder="NY"
-                    className="border-2 border-gray-300 focus:border-green-600 text-black"
+                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
               </div>
               <div>
-                <Label className="text-black font-semibold">Zip Code *</Label>
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold">Zip Code *</Label>
                 <Input
                   value={hospitalForm.zip_code}
                   onChange={(e) => setHospitalForm({ ...hospitalForm, zip_code: e.target.value })}
                   required
                   placeholder="10001"
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div>
-                <Label className="text-black font-semibold">Phone *</Label>
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold">Phone *</Label>
                 <Input
                   value={hospitalForm.phone}
                   onChange={(e) => setHospitalForm({ ...hospitalForm, phone: e.target.value })}
                   required
                   placeholder="+1-555-0100"
-                  className="border-2 border-gray-300 focus:border-green-600 text-black"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div>
-                <Label className="text-black font-semibold">Description (Optional)</Label>
+                <Label className="text-gray-900 dark:text-gray-200 font-semibold">Description (Optional)</Label>
                 <textarea
                   value={hospitalForm.description}
                   onChange={(e) => setHospitalForm({ ...hospitalForm, description: e.target.value })}
                   placeholder="Brief description of your hospital..."
                   rows={3}
-                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:border-green-600 focus:outline-none text-black"
+                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 bg-transparent rounded-md focus:border-green-600 dark:focus:border-green-500 focus:outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               {hospital?.latitude && hospital?.longitude && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-300">
                     <strong>Location verified:</strong> {hospital.latitude.toFixed(6)}, {hospital.longitude.toFixed(6)}
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                     Your hospital will appear in nearby clinic searches for patients.
                   </p>
                 </div>
               )}
               {(!hospital?.latitude || !hospital?.longitude) && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
                     <strong>Location not set:</strong> Please update your address and click "Update & Geocode" to enable nearby clinic search.
                   </p>
                 </div>
