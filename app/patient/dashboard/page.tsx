@@ -47,14 +47,23 @@ export default function PatientDashboard() {
   const [userName, setUserName] = useState("");
 
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
-    checkUser();
     checkUser();
     loadDoctors();
   }, []);
 
-
+  useEffect(() => {
+    if (selectedDoctorId) {
+      loadSlots(selectedDoctorId);
+    } else {
+      setAvailableSlots([]);
+      setSelectedDate("");
+    }
+  }, [selectedDoctorId]);
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -115,6 +124,53 @@ export default function PatientDashboard() {
     }
   };
 
+  const loadSlots = async (doctorId: string) => {
+    setLoadingSlots(true);
+    try {
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+
+      const { data: slotsData, error: slotsError } = await supabase
+        .from("appointment_slots")
+        .select("*")
+        .eq("doctor_id", doctorId)
+        .gte("date", today.toISOString().split("T")[0])
+        .lte("date", nextWeek.toISOString().split("T")[0])
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (slotsError) throw slotsError;
+
+      // Get booked/pending appointments
+      const slotIds = (slotsData || []).map((s: any) => s.id);
+      if (slotIds.length > 0) {
+        const { data: appointmentsData } = await supabase
+          .from("appointments")
+          .select("slot_id, status")
+          .in("slot_id", slotIds)
+          .in("status", ["pending", "accepted", "scheduled"]);
+
+        const bookedSlotIds = new Set((appointmentsData || []).map((a: any) => a.slot_id));
+        const available = (slotsData || []).filter((s: any) => !bookedSlotIds.has(s.id) && s.is_available);
+        setAvailableSlots(available);
+
+        // Auto-select first available date if not selected
+        if (available.length > 0 && !selectedDate) {
+          setSelectedDate(available[0].date);
+        }
+      } else {
+        setAvailableSlots([]);
+      }
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load slots");
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   // Filtering Logic
   const filteredDoctors = doctors.filter((doc) => {
     // const matchesFavorites = !showFavoritesOnly || favoriteDoctorIds.has(doc.id);
@@ -123,6 +179,15 @@ export default function PatientDashboard() {
     const matchesSearch = !searchTerm || searchStr.includes(searchLower);
     return matchesSearch; // && matchesFavorites;
   });
+
+  // Group slots by date for Quick Book
+  const groupedSlots = availableSlots.reduce((acc, slot: any) => {
+    if (!acc[slot.date]) acc[slot.date] = [];
+    acc[slot.date].push(slot);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  const uniqueDates = Object.keys(groupedSlots).sort().slice(0, 7); // Show max 7 days
 
   return (
     <div className="min-h-screen bg-black text-white font-display selection:bg-primary/30">
@@ -278,14 +343,6 @@ export default function PatientDashboard() {
                           ${doc.consultation_fee} <span className="text-sm font-normal text-gray-500">/ consultation</span>
                         </div>
                         <div className="flex gap-3">
-                          {/* 
-                          <button
-                            onClick={() => toggleFavorite(doc.id)}
-                            className={`px-4 py-2 border-2 ${favoriteDoctorIds.has(doc.id) ? 'border-red-500 text-red-500' : 'border-primary text-primary'} font-bold rounded-xl hover:bg-primary/5 transition-all`}
-                          >
-                            {favoriteDoctorIds.has(doc.id) ? <Heart className="fill-current h-5 w-5" /> : 'Favorite'}
-                          </button>
-                           */}
                           <button
                             onClick={() => setSelectedDoctorId(doc.id)}
                             className="px-6 py-2 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-md shadow-primary/10"
@@ -318,44 +375,67 @@ export default function PatientDashboard() {
                 </p>
               </div>
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="font-bold text-white">October 2023</span>
-                  <div className="flex gap-2">
-                    <button className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
-                      <span className="material-symbols-outlined">chevron_left</span>
-                    </button>
-                    <button className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white">
-                      <span className="material-symbols-outlined">chevron_right</span>
-                    </button>
+                {selectedDoctorId && loadingSlots ? (
+                  <div className="text-center py-4 text-gray-400">Loading slots...</div>
+                ) : selectedDoctorId && uniqueDates.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-bold text-white">
+                        {new Date(uniqueDates[0]).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </span>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-4">
+                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                        <span key={i} className="text-gray-500 font-bold">{d}</span>
+                      ))}
+                      {uniqueDates.map(date => {
+                        const d = new Date(date);
+                        const isSelected = selectedDate === date;
+                        return (
+                          <button
+                            key={date}
+                            onClick={() => setSelectedDate(date)}
+                            className={`p-2 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-primary text-white font-bold' : 'hover:bg-white/10 text-gray-300'}`}
+                          >
+                            {d.getDate()}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Slots for selected date */}
+                    {selectedDate && groupedSlots[selectedDate] && (
+                      <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                        <p className="text-xs text-gray-400 mb-2">Available times for {new Date(selectedDate).toLocaleDateString()}:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {groupedSlots[selectedDate].map(slot => (
+                            <Link key={slot.id} href={`/patient/doctor/${selectedDoctorId}`}>
+                              <button className="w-full py-2 bg-white/5 border border-white/10 hover:border-primary/50 text-xs text-white rounded-lg transition-colors">
+                                {slot.start_time}
+                              </button>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-6">
+                      <Link href={`/patient/doctor/${selectedDoctorId}`}>
+                        <button className="w-full py-3 bg-primary text-white rounded-xl font-bold transition-transform hover:scale-[1.02] shadow-lg shadow-primary/25 text-sm">
+                          View Full Schedule
+                        </button>
+                      </Link>
+                    </div>
+                  </>
+                ) : selectedDoctorId ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No available slots found for this doctor.
                   </div>
-                </div>
-                {/* Mini Calendar mockup matches design */}
-                <div className="grid grid-cols-7 gap-1 text-center text-xs mb-6">
-                  <span className="text-gray-500 font-bold">M</span>
-                  <span className="text-gray-500 font-bold">T</span>
-                  <span className="text-gray-500 font-bold">W</span>
-                  <span className="text-gray-500 font-bold">T</span>
-                  <span className="text-gray-500 font-bold">F</span>
-                  <span className="text-gray-500 font-bold">S</span>
-                  <span className="text-gray-500 font-bold">S</span>
-                  <span className="p-2 text-gray-600">28</span>
-                  <span className="p-2 text-gray-600">29</span>
-                  <span className="p-2 text-gray-600">30</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">1</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">2</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">3</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">4</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">5</span>
-                  <span className="p-2 hover:bg-white/10 rounded-lg cursor-pointer text-gray-300">6</span>
-                  <span className="p-2 bg-primary text-white font-bold rounded-lg cursor-pointer">7</span>
-                </div>
-                {selectedDoctorId && (
-                  <div className="mt-8 space-y-3">
-                    <Link href={`/patient/doctor/${selectedDoctorId}`}>
-                      <button className="w-full py-4 bg-primary text-white rounded-xl font-bold transition-transform hover:scale-[1.02] shadow-lg shadow-primary/25">
-                        View Full Schedule
-                      </button>
-                    </Link>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    Select a doctor from the list to see their availability here.
                   </div>
                 )}
               </div>

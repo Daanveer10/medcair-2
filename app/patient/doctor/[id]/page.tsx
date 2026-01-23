@@ -258,80 +258,134 @@ export default function DoctorPage() {
     if (!doctor) return <div className="p-8 text-center text-red-500">Doctor not found.</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="min-h-screen bg-black text-white font-display selection:bg-primary/30">
+            {/* Static Background */}
+            <div className="fixed inset-0 z-0 bg-black">
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px]" />
+            </div>
+
+            <div className="relative z-10 max-w-4xl mx-auto p-6 lg:p-12 space-y-8">
                 <Link href="/patient/dashboard">
-                    <Button variant="ghost" className="mb-4">
-                        <ArrowLeft className="h-4 w-4 mr-2" /> Back
+                    <Button variant="ghost" className="mb-4 text-gray-400 hover:text-white hover:bg-white/10">
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
                     </Button>
                 </Link>
 
-                <Card>
+                <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl text-white">
                     <CardHeader>
-                        <CardTitle className="text-2xl">{doctor.name}</CardTitle>
-                        <CardDescription>{doctor.specialization}</CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-3xl font-bold">{doctor.name}</CardTitle>
+                                <CardDescription className="text-xl text-primary font-medium mt-1">{doctor.specialization}</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+                                <span className="font-bold text-primary text-lg">${doctor.consultation_fee}</span>
+                                <span className="text-xs text-gray-400">/ visit</span>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-4">
                             {doctor.hospital && (
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <MapPin className="size-4" />
-                                    <span>{doctor.hospital.name}, {doctor.hospital.city}</span>
+                                <div className="flex items-center gap-3 text-gray-300 bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <div className="bg-white/10 p-2 rounded-lg">
+                                        <MapPin className="size-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-white">{doctor.hospital.name}</p>
+                                        <p className="text-sm text-gray-400">{doctor.hospital.address}, {doctor.hospital.city}</p>
+                                    </div>
                                 </div>
                             )}
-                            <div className="font-semibold text-green-600">${doctor.consultation_fee} / visit</div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl text-white">
                     <CardHeader>
-                        <CardTitle className="text-xl">Available Slots</CardTitle>
-                        <CardDescription>Select a date and time to request an appointment</CardDescription>
+                        <CardTitle className="text-2xl">Available Slots</CardTitle>
+                        <CardDescription className="text-gray-400">Select a date and time to request an appointment</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {availableDates.length === 0 ? (
-                            <p className="text-gray-500 text-center py-6">No slots available currently.</p>
+                            <div className="flex flex-col items-center justify-center py-12 text-gray-500 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                <Calendar className="size-12 mb-4 text-gray-600" />
+                                <p>No slots available currently.</p>
+                            </div>
                         ) : (
-                            <div className="space-y-6">
+                            <div className="space-y-8">
                                 {/* Dates */}
-                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                                    {availableDates.map(date => (
-                                        <button
-                                            key={date}
-                                            onClick={() => setSelectedDate(date)}
-                                            className={`p-2 rounded border text-center text-sm ${selectedDate === date ? 'bg-green-50 border-green-500 text-green-700 font-bold' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                                        >
-                                            {new Date(date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}
-                                        </button>
-                                    ))}
+                                <div>
+                                    <Label className="text-gray-400 mb-3 block">Select Date</Label>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 noscrollbar custom-scrollbar">
+                                        {availableDates.map(date => {
+                                            const isSelected = selectedDate === date;
+                                            const dateObj = new Date(date);
+                                            return (
+                                                <button
+                                                    key={date}
+                                                    onClick={() => setSelectedDate(date)}
+                                                    className={`
+                                                        flex flex-col items-center justify-center min-w-[80px] p-3 rounded-2xl border transition-all
+                                                        ${isSelected
+                                                            ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
+                                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
+                                                        }
+                                                    `}
+                                                >
+                                                    <span className="text-xs font-bold uppercase">{dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                                    <span className="text-xl font-bold">{dateObj.getDate()}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
 
                                 {/* Slots */}
                                 {selectedDate && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                        {slotsForSelectedDate.map(slot => {
-                                            const isAvailable = slot.slot_status === 'available';
-                                            const isPending = slot.slot_status === 'pending';
+                                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <Label className="text-gray-400 mb-3 block">Select Time & Book</Label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                            {slotsForSelectedDate.map(slot => {
+                                                const isAvailable = slot.slot_status === 'available';
+                                                const isPending = slot.slot_status === 'pending';
+                                                const isBooked = slot.slot_status === 'booked';
 
-                                            return (
-                                                <button
-                                                    key={slot.id}
-                                                    disabled={!isAvailable}
-                                                    onClick={() => handleBookAppointment(slot.id)}
-                                                    className={`p-3 rounded border flex flex-col items-center justify-center gap-1 transition-all
-                               ${isAvailable ? 'bg-white border-green-200 hover:border-green-500 hover:shadow-sm cursor-pointer' : ''}
-                               ${isPending ? 'bg-yellow-50 border-yellow-200 text-yellow-700 cursor-not-allowed' : ''}
-                               ${slot.slot_status === 'booked' || slot.slot_status === 'unavailable' ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : ''}
-                             `}
-                                                >
-                                                    <span className="font-bold">{slot.start_time}</span>
-                                                    <span className="text-[10px] uppercase font-bold">
-                                                        {isAvailable ? 'Book' : slot.slot_status}
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
+                                                return (
+                                                    <button
+                                                        key={slot.id}
+                                                        disabled={!isAvailable}
+                                                        onClick={() => handleBookAppointment(slot.id)}
+                                                        className={`
+                                                            group relative p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all
+                                                            ${isAvailable
+                                                                ? 'bg-white/5 border-white/10 text-white hover:border-primary/50 hover:bg-primary/5 hover:text-primary cursor-pointer'
+                                                                : ''
+                                                            }
+                                                            ${isPending
+                                                                ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500 cursor-not-allowed opacity-70'
+                                                                : ''
+                                                            }
+                                                            ${isBooked
+                                                                ? 'bg-red-500/10 border-red-500/20 text-red-500 cursor-not-allowed opacity-50'
+                                                                : ''
+                                                            }
+                                                            ${!isAvailable && !isPending && !isBooked ? 'bg-gray-800/50 border-gray-800 text-gray-500 opacity-50' : ''}
+                                                        `}
+                                                    >
+                                                        <Clock className={`size-5 mb-1 ${isAvailable ? 'text-gray-400 group-hover:text-primary' : 'text-current'}`} />
+                                                        <span className="font-bold text-lg">{slot.start_time}</span>
+                                                        <span className="text-[10px] uppercase font-bold tracking-wider">
+                                                            {isAvailable ? 'Available' : slot.slot_status}
+                                                        </span>
+                                                        {isAvailable && (
+                                                            <div className="absolute inset-0 rounded-xl border-2 border-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
                             </div>
