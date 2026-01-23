@@ -12,8 +12,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    /* Primary: Green (ramain.ai style) */
-    --primary: 142 76% 36%;
+    /* Primary: Orchid (User requested) */
+    --primary: 302 80% 45%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary: Light grey */
@@ -24,8 +24,8 @@
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    /* Accent: Green */
-    --accent: 142 76% 36%;
+    /* Accent: Orchid */
+    --accent: 302 80% 45%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive: Red */
@@ -35,15 +35,15 @@
     /* Borders and inputs */
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 142 76% 36%;
+    --ring: 302 80% 45%;
 
     /* Chart colors */
-    --chart-1: 142 76% 36%;
-    /* Green */
-    --chart-2: 199 89% 48%;
-    /* Cyan */
-    --chart-3: 262 83% 58%;
+    --chart-1: 302 80% 45%;
+    /* Orchid */
+    --chart-2: 262 83% 58%;
     /* Purple */
+    --chart-3: 199 89% 48%;
+    /* Cyan */
     --chart-4: 330 81% 60%;
     /* Pink */
     --chart-5: 38 92% 50%;
@@ -59,22 +59,22 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 142 76% 46%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 302 80% 60%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 142 76% 46%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 302 80% 60%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: 142 76% 46%;
-    --chart-1: 142 76% 46%;
-    --chart-2: 199 89% 58%;
-    --chart-3: 262 83% 68%;
+    --ring: 302 80% 60%;
+    --chart-1: 302 80% 60%;
+    --chart-2: 262 83% 68%;
+    --chart-3: 199 89% 58%;
     --chart-4: 330 81% 70%;
     --chart-5: 38 92% 60%;
   }
