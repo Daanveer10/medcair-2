@@ -59,6 +59,7 @@ export default function HospitalDashboard() {
     revenue: 0,
   });
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [hospitalName, setHospitalName] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,34 +82,54 @@ export default function HospitalDashboard() {
     try {
       const today = new Date().toISOString().split("T")[0];
 
-      // 1. Fetch Appointments Today (Count)
+      // Get current user and their hospital
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch hospital_id for this user
+      const { data: hospitalData, error: hospitalError } = await supabase
+        .from("hospitals")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .single();
+
+      if (hospitalError || !hospitalData) {
+        console.error("Error fetching hospital:", hospitalError);
+        toast.error("Could not load hospital data");
+        setLoading(false);
+        return;
+      }
+
+      const hospitalId = hospitalData.id;
+      setHospitalName(hospitalData.name || "My Hospital");
+
+      // 1. Fetch Appointments Today for this hospital's doctors
       const { count: patientsToday } = await supabase
         .from("appointments")
-        .select("*", { count: "exact", head: true })
+        .select("*, doctor:doctors!inner(hospital_id)", { count: "exact", head: true })
+        .eq("doctor.hospital_id", hospitalId)
         .eq("appointment_date", today);
 
-      // 2. Fetch Pending Appointments (Count)
+      // 2. Fetch Pending Appointments for this hospital
       const { count: appointmentsPending } = await supabase
         .from("appointments")
-        .select("*", { count: "exact", head: true })
+        .select("*, doctor:doctors!inner(hospital_id)", { count: "exact", head: true })
+        .eq("doctor.hospital_id", hospitalId)
         .eq("status", "pending");
 
-      // 3. Fetch Total Unique Patients
-      // Note: Supabase doesn't support COUNT(DISTINCT column) directly in JS client easily without a stored procedure or raw SQL.
-      // We will approximate by counting all appointments for now or fetching unique patient_ids if dataset is small.
-      // For scalability, this should be a stored procedure.
+      // 3. Fetch all appointments for revenue and patient count
       const { data: allAppointments } = await supabase
         .from("appointments")
-        .select("patient_id, clinic:clinics(consultation_fee)")
-        .not("status", "eq", "cancelled"); // Filter out cancelled
+        .select("patient_id, doctor:doctors!inner(hospital_id, consultation_fee)")
+        .eq("doctor.hospital_id", hospitalId)
+        .not("status", "eq", "cancelled");
 
       const uniquePatients = new Set(allAppointments?.map(a => a.patient_id)).size;
       const totalPatients = uniquePatients || 0;
 
-      // 4. Calculate Revenue
-      // Sum (consultation_fee) for all non-cancelled appointments
+      // 4. Calculate Revenue from doctor consultation fees
       const totalRevenue = allAppointments?.reduce((sum, apt: any) => {
-        const fee = apt.clinic?.consultation_fee || 50; // Default $50 if not set
+        const fee = apt.doctor?.consultation_fee || 50;
         return sum + fee;
       }, 0) || 0;
 
@@ -119,7 +140,7 @@ export default function HospitalDashboard() {
         revenue: totalRevenue
       });
 
-      // 5. Fetch Upcoming Appointments (Schedule)
+      // 5. Fetch Upcoming Appointments (Schedule) for this hospital
       const { data: appointmentsData, error } = await supabase
         .from("appointments")
         .select(`
@@ -127,8 +148,10 @@ export default function HospitalDashboard() {
           appointment_date,
           appointment_time,
           status,
-          patient:patient_id (full_name, phone_number)
+          patient:patient_id (full_name, phone_number),
+          doctor:doctors!inner(hospital_id)
         `)
+        .eq("doctor.hospital_id", hospitalId)
         .in("status", ["scheduled", "pending", "accepted"])
         .gte("appointment_date", today)
         .order("appointment_date", { ascending: true })
@@ -146,22 +169,22 @@ export default function HospitalDashboard() {
         appointment_date: app.appointment_date,
         appointment_time: app.appointment_time,
         status: app.status,
-        type: "In-Person", // Default to In-Person as reason column is missing
+        type: "In-Person",
       }));
 
       setAppointments(transformedAppointments);
 
-      // 6. Fetch Waiting Room
-      // For now, we'll consider any appointment scheduled for TODAY that isn't completed/cancelled as "Waiting"
-      // Ideally this would use a specific status like 'checked_in'
+      // 6. Fetch Waiting Room for this hospital
       const { data: waitingData } = await supabase
         .from("appointments")
         .select(`
              id,
              appointment_time,
              status,
-             patient:patient_id (full_name)
+             patient:patient_id (full_name),
+             doctor:doctors!inner(hospital_id)
          `)
+        .eq("doctor.hospital_id", hospitalId)
         .eq("appointment_date", today)
         .in("status", ["scheduled", "accepted"])
         .order("appointment_time", { ascending: true })
@@ -174,18 +197,13 @@ export default function HospitalDashboard() {
       }));
       setWaitingRoom(transformedWaiting);
 
-      // 7. Fetch Doctors (for list view)
+      // 7. Fetch Doctors for this hospital only
       const { data: doctorsData } = await supabase
         .from("doctors")
-        .select("id, name, specialization, consultation_fee, availability_status, hospital_id");
-      // We really should filter by hospital_id using RLS or explicit check?
-      // The RLS policy "Hospital owners can manage doctors linked to their hospital"
-      // ensures we only see our doctors if we are the hospital owner.
-      // But for clarity let's rely on RLS.
+        .select("id, name, specialization, consultation_fee, availability_status, hospital_id")
+        .eq("hospital_id", hospitalId);
 
       setDoctorsList(doctorsData || []);
-
-
 
     } catch (error) {
       console.error("Error loading dashboard:", error);
@@ -237,12 +255,12 @@ export default function HospitalDashboard() {
             <div className="h-8 w-[1px] bg-white/10 mx-2" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-sm font-bold">St. Mary's Hospital</p>
+                <p className="text-sm font-bold">{hospitalName || "My Hospital"}</p>
                 <p className="text-xs text-gray-400">Admin Account</p>
               </div>
               <div className="size-10 rounded-full bg-gradient-to-br from-primary to-blue-600 p-[1px]">
                 <div className="size-full rounded-full bg-black flex items-center justify-center">
-                  <span className="font-bold text-primary">SM</span>
+                  <span className="font-bold text-primary">{hospitalName ? hospitalName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'H'}</span>
                 </div>
               </div>
             </div>

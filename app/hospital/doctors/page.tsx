@@ -59,33 +59,9 @@ export default function DoctorDashboard() {
                 .maybeSingle();
 
             if (!hospital) {
-                // If no hospital profile, create one automatically (implicit profile)
-                const { data: profile } = await supabase
-                    .from("user_profiles")
-                    .select("full_name")
-                    .eq("user_id", user.id)
-                    .single();
-
-                const { data: newHospital, error: createError } = await supabase
-                    .from("hospitals")
-                    .insert({
-                        user_id: user.id,
-                        name: profile?.full_name || "My Hospital",
-                        address: "",
-                        city: "",
-                        state: "",
-                        zip_code: "",
-                        phone: "",
-                        email: user.email || "",
-                    })
-                    .select("id, name")
-                    .single();
-
-                if (createError) throw createError;
-
-                // Continue with the new hospital
-                hospital = newHospital;
-                toast.success("Hospital profile initialized");
+                toast.error("Hospital profile not found. Please complete your profile first.");
+                router.push("/auth/login");
+                return;
             }
 
             setHospitalId(hospital.id);
@@ -98,21 +74,34 @@ export default function DoctorDashboard() {
 
             const clinicIds = clinics?.map(c => c.id) || [];
 
-            if (clinicIds.length === 0) {
-                setDoctors([]);
-                setLoading(false);
-                return;
-            }
+            // 3. Get Doctors by hospital_id OR by clinic_id (covers both paths)
+            let doctorsData: any[] = [];
 
-            // 3. Get Doctors in these clinics
-            const { data: doctorsData, error } = await supabase
+            // Query by hospital_id first
+            const { data: hospitalDoctors, error: err1 } = await supabase
                 .from("doctors")
                 .select("*")
-                .in("clinic_id", clinicIds)
+                .eq("hospital_id", hospital.id)
                 .order("created_at", { ascending: false });
+            if (err1) throw err1;
+            doctorsData = hospitalDoctors || [];
 
-            if (error) throw error;
-            setDoctors(doctorsData || []);
+            // Also query by clinic_id if we have clinics
+            if (clinicIds.length > 0) {
+                const { data: clinicDoctors, error: err2 } = await supabase
+                    .from("doctors")
+                    .select("*")
+                    .in("clinic_id", clinicIds)
+                    .order("created_at", { ascending: false });
+                if (err2) throw err2;
+                // Merge, avoiding duplicates
+                const existingIds = new Set(doctorsData.map(d => d.id));
+                for (const doc of (clinicDoctors || [])) {
+                    if (!existingIds.has(doc.id)) doctorsData.push(doc);
+                }
+            }
+
+            setDoctors(doctorsData);
 
         } catch (error) {
             handleError(error, { action: "loadDoctors", resource: "doctors" });
@@ -136,39 +125,28 @@ export default function DoctorDashboard() {
                 .maybeSingle();
 
             if (!clinic) {
-                // If not found, check if ANY clinic exists to fallback
-                const { data: anyClinic } = await supabase
+                // Create "General Clinic" if it doesn't exist
+                const { data: newClinic, error: createError } = await supabase
                     .from("clinics")
-                    .select("id")
-                    .eq("hospital_id", hospitalId)
-                    .limit(1)
-                    .maybeSingle();
+                    .insert({
+                        hospital_id: hospitalId,
+                        name: "General Clinic",
+                        department: "General",
+                        specialties: ["General"]
+                    })
+                    .select()
+                    .single();
 
-                if (anyClinic) {
-                    clinic = anyClinic;
-                } else {
-                    // Create "General Clinic"
-                    const { data: newClinic, error: createError } = await supabase
-                        .from("clinics")
-                        .insert({
-                            hospital_id: hospitalId,
-                            name: "General Clinic",
-                            department: "General",
-                            specialties: ["General"]
-                        })
-                        .select()
-                        .single();
-
-                    if (createError) throw createError;
-                    clinic = newClinic;
-                }
+                if (createError) throw createError;
+                clinic = newClinic;
             }
 
             if (!clinic) throw new Error("Could not find or create a clinic to assign the doctor to.");
 
-            // 2. Create the Doctor
+            // 2. Create the Doctor (set both clinic_id AND hospital_id)
             const { error } = await supabase.from("doctors").insert({
                 clinic_id: clinic.id,
+                hospital_id: hospitalId,
                 name: doctorForm.name,
                 specialization: doctorForm.specialization,
                 doctor_id: doctorForm.doctor_id || null,
@@ -179,6 +157,7 @@ export default function DoctorDashboard() {
                 credentials: doctorForm.credentials ? doctorForm.credentials.split(',').map(s => s.trim()) : [],
                 years_of_experience: doctorForm.years_of_experience ? parseInt(doctorForm.years_of_experience) : null,
                 languages_spoken: doctorForm.languages_spoken ? doctorForm.languages_spoken.split(',').map(s => s.trim()) : [],
+                availability_status: 'available',
             });
 
             if (error) throw error;

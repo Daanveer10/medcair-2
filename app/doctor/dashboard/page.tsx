@@ -72,10 +72,10 @@ export default function DoctorDashboard() {
                     return;
                 }
 
-                // Fetch Doctor Profile
+                // Fetch Doctor Profile with Hospital
                 const { data: doctorData, error: doctorError } = await supabase
                     .from("doctors")
-                    .select("name, specialization, hospitals(name)")
+                    .select("id, name, specialization, hospital:hospitals(name)")
                     .eq("user_id", user.id)
                     .single();
 
@@ -87,40 +87,41 @@ export default function DoctorDashboard() {
                     setDoctorProfile({
                         full_name: doctorData.name,
                         specialization: doctorData.specialization,
-                        hospital: doctorData.hospitals as unknown as { name: string } || undefined
+                        hospital: (doctorData.hospital as any) || undefined
                     });
-                }
 
-                // Fetch Appointments
-                const { data: appointmentData, error: appError } = await supabase
-                    .from("appointments")
-                    .select(`
-                      id,
-                      appointment_date,
-                      appointment_time,
-                      status,
-                      reason,
-                      patient:user_profiles!patient_id(full_name, phone)
-                    `)
-                    .order('appointment_date', { ascending: true });
+                    // Fetch Appointments for this specific doctor
+                    const { data: appointmentData, error: appError } = await supabase
+                        .from("appointments")
+                        .select(`
+                          id,
+                          appointment_date,
+                          appointment_time,
+                          status,
+                          reason,
+                          patient:user_profiles!patient_id(full_name, phone)
+                        `)
+                        .eq("doctor_id", doctorData.id)
+                        .order('appointment_date', { ascending: true });
 
-                if (appError) {
-                    console.error("Error fetching appointments:", appError);
-                }
+                    if (appError) {
+                        console.error("Error fetching appointments:", appError);
+                    }
 
-                if (appointmentData) {
-                    const formattedAppointments = appointmentData.map((app: any) => ({
-                        id: app.id,
-                        patient: {
-                            full_name: app.patient?.full_name || 'Unknown',
-                            phone: app.patient?.phone || 'N/A'
-                        },
-                        appointment_date: app.appointment_date,
-                        appointment_time: app.appointment_time,
-                        status: app.status,
-                        reason: app.reason,
-                    }));
-                    setAppointments(formattedAppointments);
+                    if (appointmentData) {
+                        const formattedAppointments = appointmentData.map((app: any) => ({
+                            id: app.id,
+                            patient: {
+                                full_name: app.patient?.full_name || 'Unknown',
+                                phone: app.patient?.phone || 'N/A'
+                            },
+                            appointment_date: app.appointment_date,
+                            appointment_time: app.appointment_time,
+                            status: app.status,
+                            reason: app.reason,
+                        }));
+                        setAppointments(formattedAppointments);
+                    }
                 }
             } catch (error) {
                 console.error("Unexpected error loading dashboard:", error);

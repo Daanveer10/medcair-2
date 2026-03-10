@@ -51,9 +51,7 @@ export function AddDoctorDialog({ onSuccess }: { onSuccess?: () => void }) {
                 .single();
 
             if (!hospital) {
-                // Fallback: Check if user is a hospital role? 
-                // Assuming the current user IS the hospital admin and has an entry in `hospitals`
-                throw new Error("Hospital profile not found");
+                throw new Error("Hospital profile not found. Please complete your profile first.");
             }
 
             // 2. Insert Doctor

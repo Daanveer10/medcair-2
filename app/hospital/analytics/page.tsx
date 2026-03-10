@@ -205,212 +205,177 @@ export default function HospitalAnalytics() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent"></div>
-          <p className="text-gray-600 mt-4 font-medium">Loading analytics...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto"></div>
         </div>
       </div>
     );
   }
 
+  if (!analytics) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
+        <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
+          <CardContent className="pt-6 text-center py-12">
+            <BarChart3 className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">No data available</p>
+            <p className="text-gray-600 dark:text-gray-400">Start booking appointments to see analytics</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8 space-y-8">
-
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-4xl font-bold text-black dark:text-white mb-2">Analytics Dashboard</h2>
-              <p className="text-gray-600 dark:text-gray-400">Insights into your hospital's appointment data</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={dateRange === "week" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDateRange("week")}
-                className={dateRange === "week" ? "bg-green-600 text-white" : ""}
-              >
-                Last Week
-              </Button>
-              <Button
-                variant={dateRange === "month" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDateRange("month")}
-                className={dateRange === "month" ? "bg-green-600 text-white" : ""}
-              >
-                Last Month
-              </Button>
-              <Button
-                variant={dateRange === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setDateRange("all")}
-                className={dateRange === "all" ? "bg-green-600 text-white" : ""}
-              >
-                All Time
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {!analytics ? (
-          <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
-            <CardContent className="pt-6 text-center py-12">
-              <BarChart3 className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">No data available</p>
-              <p className="text-gray-600 dark:text-gray-400">Start booking appointments to see analytics</p>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-primary text-primary-foreground border-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold opacity-90 mb-1">Total Appointments</p>
+                  <p className="text-4xl font-bold">{analytics.totalAppointments}</p>
+                </div>
+                <Calendar className="h-12 w-12 opacity-80" />
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <>
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Card className="bg-green-600 text-white">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold opacity-90 mb-1">Total Appointments</p>
-                      <p className="text-4xl font-bold">{analytics.totalAppointments}</p>
-                    </div>
-                    <Calendar className="h-12 w-12 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-blue-600 text-white">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold opacity-90 mb-1">Today</p>
-                      <p className="text-4xl font-bold">{analytics.todayAppointments}</p>
-                    </div>
-                    <Clock className="h-12 w-12 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-yellow-500 text-white">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold opacity-90 mb-1">Upcoming</p>
-                      <p className="text-4xl font-bold">{analytics.upcomingAppointments}</p>
-                    </div>
-                    <TrendingUp className="h-12 w-12 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-green-600 text-white">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold opacity-90 mb-1">Completed</p>
-                      <p className="text-4xl font-bold">{analytics.completedAppointments}</p>
-                    </div>
-                    <CheckCircle2 className="h-12 w-12 opacity-80" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Status Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-white">Appointments by Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {analytics.appointmentsByStatus.map((item) => (
-                      <div key={item.status} className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900 dark:text-gray-200 capitalize">{item.status}</span>
-                        <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full"
-                              style={{
-                                width: `${(item.count / analytics.totalAppointments) * 100}%`
-                              }}
-                            ></div>
-                          </div>
-                          <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-white">Appointments by Clinic</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {analytics.appointmentsByClinic.slice(0, 5).map((item) => (
-                      <div key={item.clinicName} className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900 dark:text-gray-200">{item.clinicName}</span>
-                        <div className="flex items-center gap-3">
-                          <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full"
-                              style={{
-                                width: `${(item.count / analytics.totalAppointments) * 100}%`
-                              }}
-                            ></div>
-                          </div>
-                          <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Popular Time Slots */}
-            <Card className="mb-8 bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Popular Time Slots</CardTitle>
-                <CardDescription className="text-gray-500 dark:text-gray-400">Most booked appointment times</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {analytics.popularTimeSlots.map((slot) => (
-                    <div key={slot.time} className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <p className="font-bold text-lg text-gray-900 dark:text-white">{slot.time}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{slot.count} appointments</p>
-                    </div>
-                  ))}
+          <Card className="bg-blue-600 text-white border-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold opacity-90 mb-1">Today</p>
+                  <p className="text-4xl font-bold">{analytics.todayAppointments}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Clock className="h-12 w-12 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-amber-500 text-white border-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold opacity-90 mb-1">Upcoming</p>
+                  <p className="text-4xl font-bold">{analytics.upcomingAppointments}</p>
+                </div>
+                <TrendingUp className="h-12 w-12 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-emerald-600 text-white border-none">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold opacity-90 mb-1">Completed</p>
+                  <p className="text-4xl font-bold">{analytics.completedAppointments}</p>
+                </div>
+                <CheckCircle2 className="h-12 w-12 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Recent Activity */}
-            <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Appointments Trend (Last 7 Days)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end gap-2 h-48">
-                  {analytics.appointmentsByDate.map((item) => {
-                    const maxCount = Math.max(...analytics.appointmentsByDate.map(d => d.count), 1);
-                    const height = (item.count / maxCount) * 100;
-                    return (
-                      <div key={item.date} className="flex-1 flex flex-col items-center gap-2">
+        {/* Status Breakdown */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white">Appointments by Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {analytics.appointmentsByStatus.map((item) => (
+                  <div key={item.status} className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-gray-200 capitalize">{item.status}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
-                          className="w-full bg-green-600 rounded-t transition-all hover:bg-green-700"
-                          style={{ height: `${height}%` }}
-                          title={`${item.count} appointments`}
+                          className="bg-primary h-2 rounded-full"
+                          style={{
+                            width: `${(item.count / analytics.totalAppointments) * 100}%`
+                          }}
                         ></div>
-                        <span className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
-                          {new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </span>
-                        <span className="text-xs font-bold text-gray-900 dark:text-white">{item.count}</span>
                       </div>
-                    );
-                  })}
+                      <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-900 dark:text-white">Appointments by Clinic</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {analytics.appointmentsByClinic.slice(0, 5).map((item) => (
+                  <div key={item.clinicName} className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-900 dark:text-gray-200">{item.clinicName}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{
+                            width: `${(item.count / analytics.totalAppointments) * 100}%`
+                          }}
+                        ></div>
+                      </div>
+                      <span className="font-bold text-gray-900 dark:text-white w-12 text-right">{item.count}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Popular Time Slots */}
+        <Card className="mb-8 bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white">Popular Time Slots</CardTitle>
+            <CardDescription className="text-gray-500 dark:text-gray-400">Most booked appointment times</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {analytics.popularTimeSlots.map((slot) => (
+                <div key={slot.time} className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
+                  <p className="font-bold text-lg text-primary dark:text-primary-foreground">{slot.time}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{slot.count} appointments</p>
                 </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="bg-white dark:bg-gray-800 border border-[#e6f3f4] dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-white">Appointments Trend (Last 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end gap-2 h-48">
+              {analytics.appointmentsByDate.map((item) => {
+                const maxCount = Math.max(...analytics.appointmentsByDate.map(d => d.count), 1);
+                const height = (item.count / maxCount) * 100;
+                return (
+                  <div key={item.date} className="flex-1 flex flex-col items-center gap-2">
+                    <div
+                      className="w-full bg-primary rounded-t transition-all hover:bg-primary/90"
+                      style={{ height: `${height}%` }}
+                      title={`${item.count} appointments`}
+                    ></div>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-semibold">
+                      {new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                    <span className="text-xs font-bold text-gray-900 dark:text-white">{item.count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -212,22 +212,24 @@ export default function DoctorPage() {
         const slot = slots.find(s => s.id === slotId);
         if (!slot) return;
 
-        // Logic similar to ClinicPage booking...
+        // We need clinic_id for the appointment. Get it from slot or from the doctor.
         try {
-            // We need clinic_id. If slot has it, use it. If not, maybe use hospital linkage?
-            // Schema says appointments need clinic_id.
-            // If doctor is hospital-bound, we might not have a "clinic_id" if they aren't in a clinic department.
-            // But let's assume slot.clinic_id is present or we fetch a default clinic for hospital?
-            // For MVP, if slot.clinic_id is missing, we might fail constraint.
-            // I'll assume slot.clinic_id is there or I updated schema to make it optional?
-            // My schema update in Step 39 made clinic_id optional in `doctors`, but `appointments` table might still require it.
-            // Let's check `appointments` schema constraint if needed.
-            // Assuming it's optional in Appointments if I updated it, or I just pass null.
+            let clinicId = slot.clinic_id;
+
+            // If slot doesn't have clinic_id, try to get it from the doctor
+            if (!clinicId) {
+                const { data: doctorRecord } = await supabase
+                    .from("doctors")
+                    .select("clinic_id")
+                    .eq("id", slot.doctor_id)
+                    .single();
+                clinicId = doctorRecord?.clinic_id || null;
+            }
 
             const { error } = await supabase.from("appointments").insert({
                 patient_id: profile.id,
                 doctor_id: slot.doctor_id,
-                clinic_id: slot.clinic_id || null, // Allow null if schema supports
+                clinic_id: clinicId,
                 slot_id: slotId,
                 appointment_date: slot.date,
                 appointment_time: slot.start_time,
@@ -236,7 +238,7 @@ export default function DoctorPage() {
 
             if (error) throw error;
 
-            toast.success("Appointment Requested");
+            toast.success("Appointment Requested!");
             loadDoctorData();
         } catch (error: any) {
             console.error(error);

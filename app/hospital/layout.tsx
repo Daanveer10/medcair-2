@@ -52,8 +52,8 @@ export default function HospitalLayout({
     const navItems = [
         { icon: "dashboard", label: "Overview", href: "/hospital/dashboard" },
         { icon: "stethoscope", label: "Doctors", href: "/hospital/doctors" },
-        { icon: "calendar_month", label: "Schedule", href: "#" },
-        { icon: "group", label: "Patients", href: "#" },
+        { icon: "calendar_month", label: "Schedule", href: "/hospital/schedule" },
+        { icon: "group", label: "Patients", href: "/hospital/dashboard" },
         { icon: "chat", label: "Messages", badge: 3, href: "/hospital/messages" },
         { icon: "payments", label: "Finances", href: "/hospital/analytics" },
         { icon: "settings", label: "Settings", href: "/hospital/settings" },

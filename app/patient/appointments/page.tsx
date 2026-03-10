@@ -122,24 +122,23 @@ export default function PatientAppointments() {
             name,
             department
           ),
-          hospital:hospitals!inner (
-            name,
-            address
-          ),
           doctor:doctors (
             name,
-            specialization
+            specialization,
+            hospital:hospitals (
+              name,
+              address
+            )
           )
         `)
         .eq("patient_id", profile.id);
 
       // Filter based on showPrevious state
       if (showPrevious) {
-        // Show previous appointments (past dates or completed/cancelled)
         query = query.or(`appointment_date.lt.${today.toISOString().split("T")[0]},status.eq.completed,status.eq.cancelled`);
       } else {
-        // Show active appointments (future dates with scheduled status)
-        query = query.gte("appointment_date", today.toISOString().split("T")[0]).eq("status", "scheduled");
+        // Show active appointments: pending, accepted, and scheduled
+        query = query.gte("appointment_date", today.toISOString().split("T")[0]).in("status", ["pending", "accepted", "scheduled"]);
       }
 
       const { data, error } = await query
@@ -157,7 +156,11 @@ export default function PatientAppointments() {
             .eq("appointment_id", apt.id)
             .order("follow_up_date", { ascending: true });
 
-          // Transform relations from arrays to objects
+          // Transform relations from arrays to objects (doctor has nested hospital)
+          const doctorData = Array.isArray(apt.doctor) ? apt.doctor[0] : apt.doctor;
+          const hospitalData = doctorData?.hospital;
+          const hospitalObj = Array.isArray(hospitalData) ? hospitalData[0] : hospitalData;
+
           return {
             id: apt.id,
             appointment_date: apt.appointment_date,
@@ -168,15 +171,15 @@ export default function PatientAppointments() {
             clinic_id: apt.clinic_id,
             clinic: {
               name: Array.isArray(apt.clinic) ? apt.clinic[0]?.name : apt.clinic?.name || "Unknown",
-              department: Array.isArray(apt.clinic) ? apt.clinic[0]?.department : apt.clinic?.department || "Unknown",
+              department: Array.isArray(apt.clinic) ? apt.clinic[0]?.department : apt.clinic?.department || "General",
             },
             hospital: {
-              name: Array.isArray(apt.hospital) ? apt.hospital[0]?.name : apt.hospital?.name || "Unknown",
-              address: Array.isArray(apt.hospital) ? apt.hospital[0]?.address : apt.hospital?.address || "Unknown",
+              name: hospitalObj?.name || "Unknown",
+              address: hospitalObj?.address || "Unknown",
             },
             doctor: {
-              name: Array.isArray(apt.doctor) ? apt.doctor[0]?.name : apt.doctor?.name || "Unknown",
-              specialization: Array.isArray(apt.doctor) ? apt.doctor[0]?.specialization : apt.doctor?.specialization || "Unknown",
+              name: doctorData?.name || "Unknown",
+              specialization: doctorData?.specialization || "Unknown",
             },
             follow_ups: followUps || [],
           };
@@ -412,7 +415,7 @@ export default function PatientAppointments() {
   };
 
   const activeAppointments = appointments.filter(
-    apt => apt.status === "scheduled" && new Date(apt.appointment_date) >= new Date()
+    apt => ["pending", "accepted", "scheduled"].includes(apt.status) && new Date(apt.appointment_date) >= new Date()
   );
 
   return (
@@ -492,7 +495,8 @@ export default function PatientAppointments() {
                   key={appointment.id}
                   className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white transform hover:-translate-y-1"
                 >
-                  <div className={`absolute top-0 left-0 right-0 h-2 ${appointment.status === "scheduled" ? "bg-green-600" :
+                  <div className={`absolute top-0 left-0 right-0 h-2 ${appointment.status === "scheduled" || appointment.status === "accepted" ? "bg-green-600" :
+                    appointment.status === "pending" ? "bg-orange-500" :
                       appointment.status === "completed" ? "bg-green-600" :
                         appointment.status === "cancelled" ? "bg-red-500" :
                           "bg-gray-400"
@@ -506,8 +510,10 @@ export default function PatientAppointments() {
                         <CardDescription className="font-medium">{appointment.clinic.department}</CardDescription>
                       </div>
                       <span
-                        className={`px-4 py-2 rounded-full text-sm font-bold ${appointment.status === "scheduled"
-                            ? "bg-green-600 text-white"
+                        className={`px-4 py-2 rounded-full text-sm font-bold ${appointment.status === "scheduled" || appointment.status === "accepted"
+                          ? "bg-green-600 text-white"
+                          : appointment.status === "pending"
+                            ? "bg-orange-500 text-white"
                             : appointment.status === "completed"
                               ? "bg-green-600 text-white"
                               : appointment.status === "cancelled"
@@ -592,10 +598,10 @@ export default function PatientAppointments() {
                                   </span>
                                   <span
                                     className={`px-2 py-1 rounded text-xs font-bold ${followUp.status === "completed"
-                                        ? "bg-green-500 text-white"
-                                        : followUp.status === "pending"
-                                          ? "bg-yellow-500 text-white"
-                                          : "bg-red-500 text-white"
+                                      ? "bg-green-500 text-white"
+                                      : followUp.status === "pending"
+                                        ? "bg-yellow-500 text-white"
+                                        : "bg-red-500 text-white"
                                       }`}
                                   >
                                     {followUp.status}
@@ -610,7 +616,7 @@ export default function PatientAppointments() {
                         </div>
                       )}
 
-                      {appointment.status === "scheduled" && !showPrevious && (
+                      {["pending", "accepted", "scheduled"].includes(appointment.status) && !showPrevious && (
                         <div className="flex gap-3">
                           <Button
                             variant="outline"
@@ -709,8 +715,8 @@ export default function PatientAppointments() {
                           key={slot.id}
                           onClick={() => setSelectedSlot(slot.id)}
                           className={`p-3 border-2 rounded-lg text-left transition-all ${selectedSlot === slot.id
-                              ? "border-green-600 bg-green-50"
-                              : "border-gray-200 hover:border-gray-300"
+                            ? "border-green-600 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
                             }`}
                         >
                           <div className="font-semibold text-gray-900">

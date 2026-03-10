@@ -375,7 +375,7 @@ export default function HospitalSettings() {
                     type="button"
                     onClick={handleSearchAddress}
                     disabled={searching}
-                    className="bg-gray-800 dark:bg-gray-700 text-white hover:bg-gray-700 dark:hover:bg-gray-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {searching ? "Searching..." : "Search"}
                   </Button>
@@ -383,7 +383,7 @@ export default function HospitalSettings() {
                   {/* Search Results Dropdown */}
                   {showResults && searchResults.length > 0 && (
                     <div className="absolute top-12 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-md z-10 max-h-60 overflow-y-auto">
-                      <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/80">
+                      <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-primary/5 dark:bg-primary/10">
                         <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Select the closest match:</span>
                         <Button
                           variant="ghost"
@@ -398,7 +398,7 @@ export default function HospitalSettings() {
                         <button
                           key={index}
                           type="button"
-                          className="w-full text-left p-3 hover:bg-green-50 dark:hover:bg-green-900/20 border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
+                          className="w-full text-left p-3 hover:bg-primary/5 dark:hover:bg-primary/10 border-b border-gray-50 dark:border-gray-700 last:border-0 transition-colors"
                           onClick={() => handleSelectAddress(result)}
                         >
                           <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{result.display_name.split(",")[0]}</p>
@@ -422,7 +422,7 @@ export default function HospitalSettings() {
                     size="sm"
                     onClick={handleUseCurrentLocation}
                     disabled={gettingLocation}
-                    className="text-green-600 dark:text-green-400 p-0 h-auto font-semibold"
+                    className="text-primary dark:text-primary-foreground p-0 h-auto font-semibold hover:text-primary/80"
                   >
                     {gettingLocation ? "Locating..." : "📍 Use Current Location"}
                   </Button>
@@ -450,7 +450,7 @@ export default function HospitalSettings() {
                   onChange={(e) => setHospitalForm({ ...hospitalForm, address: e.target.value })}
                   required
                   placeholder="123 Medical Center Drive"
-                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-primary dark:focus:border-primary placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -461,7 +461,7 @@ export default function HospitalSettings() {
                     onChange={(e) => setHospitalForm({ ...hospitalForm, city: e.target.value })}
                     required
                     placeholder="New York"
-                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-primary dark:focus:border-primary placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
                 <div>
@@ -471,7 +471,7 @@ export default function HospitalSettings() {
                     onChange={(e) => setHospitalForm({ ...hospitalForm, state: e.target.value })}
                     required
                     placeholder="NY"
-                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-primary dark:focus:border-primary placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ export default function HospitalSettings() {
                   onChange={(e) => setHospitalForm({ ...hospitalForm, zip_code: e.target.value })}
                   required
                   placeholder="10001"
-                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-primary dark:focus:border-primary placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div>
@@ -492,7 +492,7 @@ export default function HospitalSettings() {
                   onChange={(e) => setHospitalForm({ ...hospitalForm, phone: e.target.value })}
                   required
                   placeholder="+1-555-0100"
-                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-green-600 dark:focus:border-green-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  className="border-2 border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 focus:border-primary dark:focus:border-primary placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               <div>
@@ -502,15 +502,15 @@ export default function HospitalSettings() {
                   onChange={(e) => setHospitalForm({ ...hospitalForm, description: e.target.value })}
                   placeholder="Brief description of your hospital..."
                   rows={3}
-                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 bg-transparent rounded-md focus:border-green-600 dark:focus:border-green-500 focus:outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  className="w-full px-3 py-2 border-2 border-gray-300 dark:border-gray-600 bg-transparent rounded-md focus:border-primary dark:focus:border-primary focus:outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
               </div>
               {hospital?.latitude && hospital?.longitude && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-300">
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-primary dark:text-primary-foreground">
                     <strong>Location verified:</strong> {hospital.latitude.toFixed(6)}, {hospital.longitude.toFixed(6)}
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-xs text-primary/80 dark:text-primary-foreground/80 mt-1">
                     Your hospital will appear in nearby clinic searches for patients.
                   </p>
                 </div>
@@ -526,7 +526,7 @@ export default function HospitalSettings() {
                 <Button
                   type="submit"
                   disabled={updatingHospital}
-                  className="bg-green-600 text-white hover:bg-green-700"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {updatingHospital ? "Updating..." : "Update & Geocode Location"}
                 </Button>

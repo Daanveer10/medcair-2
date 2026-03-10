@@ -410,7 +410,7 @@ export default function PatientDashboard() {
                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-1">
                         <p className="text-xs text-gray-400 mb-2">Available times for {new Date(selectedDate).toLocaleDateString()}:</p>
                         <div className="grid grid-cols-2 gap-2">
-                          {groupedSlots[selectedDate].map(slot => (
+                          {groupedSlots[selectedDate].map((slot: any) => (
                             <Link key={slot.id} href={`/patient/doctor/${selectedDoctorId}`}>
                               <button className="w-full py-2 bg-white/5 border border-white/10 hover:border-primary/50 text-xs text-white rounded-lg transition-colors">
                                 {slot.start_time}

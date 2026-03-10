@@ -104,21 +104,6 @@ export default function ConsultationSummary() {
                 ? appt.clinic[0]?.city
                 : appt.clinic?.city || "";
 
-            // Parse Notes / "AI Summary"
-            // Since we don't have a prescriptions table, we use 'notes'
-            // If notes contains JSON-like structure or specific delimiters, we could parse it
-            // For now, we treat notes as the main advice.
-
-            const rawNotes = appt.notes || "No notes provided by the doctor.";
-
-            // Mocking "AI" extraction from the raw notes for the sake of the UI
-            // In a real functionality, this would call an LLM API
-            const aiKeyPoints = [
-                "Consultation completed successfully.",
-                "Follow doctor's advice carefully.",
-                "Review the notes below for more details."
-            ];
-
             // Determine type
             const type = appt.reason?.toLowerCase().includes("video") ? "Video" : "In-Person";
 
@@ -127,25 +112,18 @@ export default function ConsultationSummary() {
                 doctor_name: docName,
                 doctor_specialty: docSpecialty,
                 clinic_name: clinicName,
-                clinic_address: clinicCity, // Just showing City for now as full address might be missing in select
+                clinic_address: clinicCity,
                 date: appt.appointment_date,
                 time: appt.appointment_time,
                 type: type,
                 status: appt.status,
                 notes: appt.notes,
-                prescription: {
-                    // Start with empty medicines for now or generic if notes present
-                    medicines: appt.notes ? [
-                        { name: "Refer to Doctor's Notes", dosage: "-", duration: "-", notes: "See below" }
-                    ] : [],
-                    diagnosis: appt.reason ? [appt.reason] : ["General Checkup"],
-                    advice: [rawNotes]
-                },
-                ai_summary: {
-                    key_points: aiKeyPoints,
-                    next_steps: ["Adhere to the plan outlined in notes."],
-                    lifestyle_tips: ["Stay hydrated", "Monitor symptoms"]
-                }
+                prescription: appt.notes ? {
+                    medicines: [],
+                    diagnosis: appt.reason ? [appt.reason] : [],
+                    advice: [appt.notes]
+                } : undefined,
+                ai_summary: undefined
             };
 
             setData(realData);
