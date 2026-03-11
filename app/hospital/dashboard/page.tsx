@@ -87,15 +87,53 @@ export default function HospitalDashboard() {
       if (!user) return;
 
       // Fetch hospital_id for this user
-      const { data: hospitalData, error: hospitalError } = await supabase
+      let { data: hospitalData, error: hospitalError } = await supabase
         .from("hospitals")
         .select("id, name")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (hospitalError || !hospitalData) {
+      if (hospitalError) {
         console.error("Error fetching hospital:", hospitalError);
         toast.error("Could not load hospital data");
+        setLoading(false);
+        return;
+      }
+
+      // Auto-create hospital if it doesn't exist yet
+      if (!hospitalData) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("full_name")
+          .eq("user_id", user.id)
+          .single();
+
+        const { data: newHospital, error: createError } = await supabase
+          .from("hospitals")
+          .insert({
+            user_id: user.id,
+            name: profile?.full_name || "My Hospital",
+            address: "",
+            city: "",
+            state: "",
+            zip_code: "",
+            phone: "",
+            email: user.email || "",
+          })
+          .select()
+          .single();
+
+        if (createError || !newHospital) {
+          console.error("Error creating hospital:", createError);
+          toast.error("Could not create hospital profile");
+          setLoading(false);
+          return;
+        }
+        hospitalData = newHospital;
+        toast.info("Hospital profile created. Update your details in Settings.");
+      }
+
+      if (!hospitalData) {
         setLoading(false);
         return;
       }

@@ -41,6 +41,13 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Hospital-specific fields
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZipCode] = useState("");
+
   const router = useRouter();
 
   useEffect(() => {
@@ -83,6 +90,13 @@ export function SignUpForm({
             ...(userRole === "doctor" && {
               hospital_id: selectedHospital,
               specialization: specialization || "General",
+            }),
+            ...(userRole === "hospital" && {
+              phone,
+              address,
+              city,
+              state,
+              zip_code: zipCode,
             }),
           },
         },
@@ -201,6 +215,73 @@ export function SignUpForm({
                       placeholder="e.g. Cardiology"
                       value={specialization}
                       onChange={(e) => setSpecialization(e.target.value)}
+                      className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                    />
+                  </div>
+                </>
+              )}
+
+              {userRole === "hospital" && (
+                <>
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone" className="text-[#0c1b1d] dark:text-white font-semibold">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 (555) 000-0000"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="address" className="text-[#0c1b1d] dark:text-white font-semibold">Street Address</Label>
+                    <Input
+                      id="address"
+                      type="text"
+                      placeholder="123 Medical Center Blvd"
+                      required
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="city" className="text-[#0c1b1d] dark:text-white font-semibold">City</Label>
+                      <Input
+                        id="city"
+                        type="text"
+                        placeholder="New York"
+                        required
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="state" className="text-[#0c1b1d] dark:text-white font-semibold">State</Label>
+                      <Input
+                        id="state"
+                        type="text"
+                        placeholder="NY"
+                        required
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="zipCode" className="text-[#0c1b1d] dark:text-white font-semibold">ZIP Code</Label>
+                    <Input
+                      id="zipCode"
+                      type="text"
+                      placeholder="10001"
+                      required
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
                       className="border-2 border-gray-200 dark:border-gray-700 focus:border-primary focus:ring-primary/20 text-[#0c1b1d] dark:text-white dark:bg-gray-900"
                     />
                   </div>
